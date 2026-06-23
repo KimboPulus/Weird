@@ -40,6 +40,14 @@ For an offscreen render check:
 
 It writes `out/visual-check.png`.
 
+To briefly open and capture the real Swing window:
+
+```powershell
+.\scripts\window-check.ps1
+```
+
+It writes `out/window-check.png`.
+
 ## Controls
 
 - `Rain` adds moisture around the clicked cell.
