@@ -22,6 +22,14 @@ A small Java terrarium simulation. Plants grow from soil conditions, rabbits gra
 
 The build output goes into `out/`, which is ignored by Git.
 
+## Check
+
+```powershell
+.\scripts\check.ps1
+```
+
+This runs a small simulation smoke check without installing a test framework.
+
 ## Controls
 
 - `Rain` adds moisture around the clicked cell.
@@ -29,4 +37,3 @@ The build output goes into `out/`, which is ignored by Git.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
 - `Pause` stops the timer.
 - `Step` advances one tick.
-
