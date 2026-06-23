@@ -2,7 +2,7 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, and wolves hunt rabbits. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes adaptive focus drills, population-trend recall prompts, changing weather events, veteran animals, persistent Focus XP, and ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, adaptive focus drills, population-trend recall prompts, changing weather events, veteran animals, persistent Focus XP, and ecosystem stability goals.
 
 ## Current build
 
@@ -62,6 +62,8 @@ It writes `out/window-check.png`.
 - `Restart` starts a fresh terrarium and training session.
 
 Move the pointer over the board to inspect moisture, fertility, temperature, and the current occupant.
+
+Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary cells have a gold border. Rabbits, wolves, plants, and veteran animals each have a distinct board silhouette.
 
 ## Focus training
 
