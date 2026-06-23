@@ -67,6 +67,7 @@ public final class TerrariumFrame extends JFrame {
                     return;
                 }
                 toolMode.apply(simulation, position);
+                terrariumPanel.showToolEffect(position, toolMode);
                 training.noteAction(toolMode.label(), terrariumPanel.describe(position));
                 terrariumPanel.repaint();
                 trainingPanel.refresh();

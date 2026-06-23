@@ -8,12 +8,16 @@ import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldGrid;
 
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public final class TerrariumPanel extends JPanel {
     private static final Color GRID_LINE = new Color(46, 38, 32, 40);
@@ -24,18 +28,31 @@ public final class TerrariumPanel extends JPanel {
     private static final Color WOLF = new Color(92, 96, 102);
     private static final Color WOLF_DARK = new Color(46, 49, 54);
     private static final Color HOVER = new Color(255, 246, 172, 180);
+    private static final long EFFECT_DURATION_MS = 600;
 
     private final Simulation simulation;
+    private final List<ToolEffect> toolEffects = new ArrayList<>();
+    private final Timer effectTimer;
     private Position hoverPosition;
 
     public TerrariumPanel(Simulation simulation) {
         this.simulation = simulation;
         setBackground(new Color(24, 26, 23));
         setPreferredSize(new Dimension(960, 640));
+        effectTimer = new Timer(32, event -> advanceEffects());
+        effectTimer.setCoalesce(true);
     }
 
     public void setHoverPosition(Position hoverPosition) {
         this.hoverPosition = hoverPosition;
+        repaint();
+    }
+
+    public void showToolEffect(Position position, ToolMode mode) {
+        toolEffects.add(new ToolEffect(position, mode, System.currentTimeMillis()));
+        if (!effectTimer.isRunning()) {
+            effectTimer.start();
+        }
         repaint();
     }
 
@@ -95,6 +112,7 @@ public final class TerrariumPanel extends JPanel {
         drawCells(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawOrganisms(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
+        drawToolEffects(g, metrics);
         drawHover(g, metrics);
 
         g.dispose();
@@ -217,6 +235,58 @@ public final class TerrariumPanel extends JPanel {
         g.drawRect(x + 1, y + 1, metrics.cellSize - 2, metrics.cellSize - 2);
     }
 
+    private void drawToolEffects(Graphics2D g, BoardMetrics metrics) {
+        long now = System.currentTimeMillis();
+        for (ToolEffect effect : toolEffects) {
+            double progress = Math.min(1.0, (now - effect.startedAt) / (double) EFFECT_DURATION_MS);
+            int centerX = metrics.offsetX + effect.position.x() * metrics.cellSize + metrics.cellSize / 2;
+            int centerY = metrics.offsetY + effect.position.y() * metrics.cellSize + metrics.cellSize / 2;
+            int reach = effect.mode == ToolMode.RAIN || effect.mode == ToolMode.DROUGHT
+                    ? metrics.cellSize * 3
+                    : metrics.cellSize * 2;
+            int radius = Math.max(metrics.cellSize / 2, (int) (reach * progress));
+            int alpha = (int) (190 * (1.0 - progress));
+
+            g.setColor(effectColor(effect.mode, alpha));
+            g.setStroke(new BasicStroke(Math.max(2f, metrics.cellSize / 5f)));
+            g.drawOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
+
+            if (effect.mode == ToolMode.RAIN) {
+                int dropOffset = (int) (metrics.cellSize * progress);
+                for (int offset = -metrics.cellSize; offset <= metrics.cellSize; offset += metrics.cellSize) {
+                    g.drawLine(centerX + offset, centerY - metrics.cellSize + dropOffset,
+                            centerX + offset - 2, centerY - metrics.cellSize / 2 + dropOffset);
+                }
+            }
+        }
+    }
+
+    private Color effectColor(ToolMode mode, int alpha) {
+        return switch (mode) {
+            case RAIN -> new Color(78, 151, 214, alpha);
+            case DROUGHT -> new Color(218, 135, 65, alpha);
+            case COMPOST -> new Color(104, 157, 78, alpha);
+            case CLEAR -> new Color(231, 220, 179, alpha);
+            case PLANT -> new Color(73, 184, 89, alpha);
+            case RABBIT -> new Color(235, 211, 171, alpha);
+            case WOLF -> new Color(157, 164, 177, alpha);
+        };
+    }
+
+    private void advanceEffects() {
+        long now = System.currentTimeMillis();
+        Iterator<ToolEffect> iterator = toolEffects.iterator();
+        while (iterator.hasNext()) {
+            if (now - iterator.next().startedAt > EFFECT_DURATION_MS) {
+                iterator.remove();
+            }
+        }
+        repaint();
+        if (toolEffects.isEmpty()) {
+            effectTimer.stop();
+        }
+    }
+
     private int clamp(int value) {
         return Math.max(0, Math.min(255, value));
     }
@@ -231,5 +301,8 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private record BoardMetrics(int cellSize, int width, int height, int offsetX, int offsetY) {
+    }
+
+    private record ToolEffect(Position position, ToolMode mode, long startedAt) {
     }
 }
