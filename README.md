@@ -30,6 +30,14 @@ The build output goes into `out/`, which is ignored by Git.
 
 This runs a small simulation smoke check without installing a test framework.
 
+For an offscreen render check:
+
+```powershell
+.\scripts\visual-check.ps1
+```
+
+It writes `out/visual-check.png`.
+
 ## Controls
 
 - `Rain` adds moisture around the clicked cell.

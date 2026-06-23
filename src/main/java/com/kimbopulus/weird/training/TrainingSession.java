@@ -114,7 +114,7 @@ public final class TrainingSession {
 
         PopulationSnapshot past = history.get(0);
         prompt = new TrainingPrompt(
-                "Recall: what was most common about " + RECALL_LOOKBACK + " ticks ago?",
+                "Recall: most common " + RECALL_LOOKBACK + " ticks ago?",
                 past.mostCommonKind(),
                 current.tick()
         );

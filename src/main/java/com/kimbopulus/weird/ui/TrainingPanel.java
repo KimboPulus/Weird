@@ -102,10 +102,15 @@ public final class TrainingPanel extends JPanel {
 
         JPanel answers = new JPanel(new GridLayout(1, 3, 8, 0));
         answers.setOpaque(false);
+        answers.setPreferredSize(new Dimension(260, 42));
         answers.add(answerButton("Plants", OrganismKind.PLANT));
         answers.add(answerButton("Rabbits", OrganismKind.RABBIT));
         answers.add(answerButton("Wolves", OrganismKind.WOLF));
-        panel.add(answers, BorderLayout.CENTER);
+
+        JPanel answerWrap = new JPanel(new BorderLayout());
+        answerWrap.setOpaque(false);
+        answerWrap.add(answers, BorderLayout.NORTH);
+        panel.add(answerWrap, BorderLayout.CENTER);
         return panel;
     }
 
