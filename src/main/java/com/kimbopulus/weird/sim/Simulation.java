@@ -233,6 +233,33 @@ public final class Simulation {
         }
     }
 
+    public void compost(Position center) {
+        if (grid.contains(center)) {
+            grid.fertilizeAround(center, 1, 0.18);
+            grid.rainAround(center, 1, 0.04);
+        }
+    }
+
+    public int clearPatch(Position center) {
+        if (!grid.contains(center)) {
+            return 0;
+        }
+
+        int removed = 0;
+        for (int y = Math.max(0, center.y() - 1); y <= Math.min(grid.height() - 1, center.y() + 1); y++) {
+            for (int x = Math.max(0, center.x() - 1); x <= Math.min(grid.width() - 1, center.x() + 1); x++) {
+                Position position = new Position(x, y);
+                Organism organism = organismAt(position);
+                if (organism != null && organism.kind() == OrganismKind.PLANT) {
+                    removeOrganism(position);
+                    grid.cellAt(position).addFertility(0.03);
+                    removed++;
+                }
+            }
+        }
+        return removed;
+    }
+
     public boolean addPlant(Position position) {
         return placeOrganism(position, new Plant());
     }

@@ -80,6 +80,10 @@ public final class WorldGrid {
         affectAround(center, radius, cell -> cell.dry(amount));
     }
 
+    public void fertilizeAround(Position center, int radius, double amount) {
+        affectAround(center, radius, cell -> cell.addFertility(amount));
+    }
+
     private void affectAround(Position center, int radius, CellAction action) {
         for (int y = Math.max(0, center.y() - radius); y <= Math.min(height - 1, center.y() + radius); y++) {
             for (int x = Math.max(0, center.x() - radius); x <= Math.min(width - 1, center.x() + radius); x++) {
