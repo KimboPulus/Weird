@@ -1,6 +1,7 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.training.TrainingDrill;
 import com.kimbopulus.weird.training.TrainingPrompt;
 import com.kimbopulus.weird.training.TrainingSession;
 
@@ -15,6 +16,7 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedWolves(3);
 
         TrainingSession training = new TrainingSession();
+        require(training.drill() == TrainingDrill.BALANCE, "Training should start with the balance drill.");
         TrainingPrompt prompt = null;
         for (int i = 0; i < 80; i++) {
             simulation.tick();
@@ -26,6 +28,7 @@ public final class TrainingSessionSmokeCheck {
         }
 
         require(prompt != null, "Training prompt did not appear.");
+        require(training.drillProgress() >= 0, "Drill progress should be available.");
         int oldScore = training.score();
         training.answer(prompt.answer());
         require(training.score() > oldScore, "Correct answer should increase score.");
@@ -40,4 +43,3 @@ public final class TrainingSessionSmokeCheck {
         }
     }
 }
-

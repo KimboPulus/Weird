@@ -14,13 +14,16 @@ public final class TrainingSession {
     private int score;
     private int streak;
     private int stableTicks;
+    private int drillProgress;
     private int lastPromptTick = -RECALL_INTERVAL;
     private String feedback = "Watch the food chain, then answer the memory prompts.";
     private TrainingPrompt prompt;
+    private TrainingDrill drill = TrainingDrill.BALANCE;
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
         updateStability(current);
+        updateDrill(current);
         updatePrompt(simulation, current);
     }
 
@@ -36,6 +39,14 @@ public final class TrainingSession {
         return stableTicks;
     }
 
+    public int drillProgress() {
+        return drillProgress;
+    }
+
+    public TrainingDrill drill() {
+        return drill;
+    }
+
     public String feedback() {
         return feedback;
     }
@@ -45,7 +56,7 @@ public final class TrainingSession {
     }
 
     public String focusGoal() {
-        return "Keep rabbits active, wolves present, and plants below 72% of the board.";
+        return drill.title() + ": " + drill.goal();
     }
 
     public String balanceStatus(PopulationSnapshot snapshot) {
@@ -77,6 +88,9 @@ public final class TrainingSession {
             streak++;
             score += 10 + Math.min(10, streak);
             feedback = "Correct. Streak " + streak + ".";
+            if (drill == TrainingDrill.RECALL) {
+                completeDrill("Recall drill complete.");
+            }
         } else {
             streak = 0;
             feedback = "Not this time. The answer was " + label(prompt.answer()) + ".";
@@ -94,6 +108,37 @@ public final class TrainingSession {
         } else {
             stableTicks = 0;
         }
+    }
+
+    private void updateDrill(PopulationSnapshot snapshot) {
+        if (drill == TrainingDrill.RECALL) {
+            return;
+        }
+
+        boolean onTrack = switch (drill) {
+            case BALANCE -> isBalanced(snapshot);
+            case PREDATORS -> snapshot.wolves() >= 3;
+            case OVERGROWTH -> snapshot.plants() < 900;
+            case RECALL -> false;
+        };
+
+        if (!onTrack) {
+            drillProgress = 0;
+            return;
+        }
+
+        drillProgress++;
+        int target = drill == TrainingDrill.BALANCE ? 35 : 30;
+        if (drillProgress >= target) {
+            completeDrill(drill.title() + " complete.");
+        }
+    }
+
+    private void completeDrill(String message) {
+        score += 25;
+        feedback = message + " New drill loaded.";
+        drill = drill.next();
+        drillProgress = 0;
     }
 
     private void updatePrompt(Simulation simulation, PopulationSnapshot current) {
