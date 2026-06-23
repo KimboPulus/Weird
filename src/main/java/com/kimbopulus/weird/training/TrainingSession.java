@@ -98,6 +98,10 @@ public final class TrainingSession {
         prompt = null;
     }
 
+    public void noteAction(String tool, String target) {
+        feedback = tool + " used. " + target;
+    }
+
     private void updateStability(PopulationSnapshot snapshot) {
         if (isBalanced(snapshot)) {
             stableTicks++;

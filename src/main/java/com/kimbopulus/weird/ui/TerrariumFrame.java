@@ -28,6 +28,7 @@ public final class TerrariumFrame extends JFrame {
     private final TerrariumPanel terrariumPanel;
     private final TrainingPanel trainingPanel;
     private final JLabel statusLabel;
+    private final JLabel toolHintLabel;
     private final Timer timer;
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
@@ -39,6 +40,10 @@ public final class TerrariumFrame extends JFrame {
         training = new TrainingSession();
         terrariumPanel = new TerrariumPanel(simulation);
         trainingPanel = new TrainingPanel(simulation, training);
+        toolHintLabel = new JLabel();
+        toolHintLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        toolHintLabel.setFont(toolHintLabel.getFont().deriveFont(Font.PLAIN, 13f));
+        toolHintLabel.setForeground(new Color(52, 55, 49));
         statusLabel = new JLabel();
         statusLabel.setFont(statusLabel.getFont().deriveFont(Font.PLAIN, 13f));
         statusLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
@@ -60,6 +65,7 @@ public final class TerrariumFrame extends JFrame {
                     return;
                 }
                 toolMode.apply(simulation, position);
+                training.noteAction(toolMode.label(), terrariumPanel.describe(position));
                 terrariumPanel.repaint();
                 trainingPanel.refresh();
                 updateStatus();
@@ -68,7 +74,9 @@ public final class TerrariumFrame extends JFrame {
         terrariumPanel.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent event) {
-                terrariumPanel.setHoverPosition(terrariumPanel.positionAtPoint(event.getX(), event.getY()));
+                Position position = terrariumPanel.positionAtPoint(event.getX(), event.getY());
+                terrariumPanel.setHoverPosition(position);
+                updateToolHint(position);
             }
         });
 
@@ -77,6 +85,7 @@ public final class TerrariumFrame extends JFrame {
         });
         timer.start();
         updateStatus();
+        updateToolHint(null);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1040, 760);
@@ -95,7 +104,11 @@ public final class TerrariumFrame extends JFrame {
         for (ToolMode mode : ToolMode.values()) {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
-            button.addActionListener(event -> toolMode = mode);
+            button.setToolTipText(mode.description());
+            button.addActionListener(event -> {
+                toolMode = mode;
+                updateToolHint(null);
+            });
             if (mode == toolMode) {
                 button.setSelected(true);
             }
@@ -103,6 +116,9 @@ public final class TerrariumFrame extends JFrame {
             toolButtons.add(button);
         }
         toolbar.add(toolButtons);
+
+        toolHintLabel.setText(toolMode.description());
+        toolbar.add(toolHintLabel);
 
         toolbar.addSeparator();
 
@@ -146,5 +162,13 @@ public final class TerrariumFrame extends JFrame {
                 simulation.count(OrganismKind.RABBIT),
                 simulation.count(OrganismKind.WOLF)
         ));
+    }
+
+    private void updateToolHint(Position position) {
+        if (position == null) {
+            toolHintLabel.setText(toolMode.label() + ": " + toolMode.description());
+            return;
+        }
+        toolHintLabel.setText(toolMode.label() + ": " + terrariumPanel.describe(position));
     }
 }

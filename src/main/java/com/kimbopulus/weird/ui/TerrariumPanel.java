@@ -55,6 +55,33 @@ public final class TerrariumPanel extends JPanel {
         return position;
     }
 
+    public String describe(Position position) {
+        if (position == null || !simulation.grid().contains(position)) {
+            return "Move over the board to inspect a cell.";
+        }
+
+        Cell cell = simulation.grid().cellAt(position);
+        Organism organism = simulation.organismAt(position);
+        String occupant = "empty";
+        if (organism != null) {
+            occupant = switch (organism.kind()) {
+                case PLANT -> "plant";
+                case RABBIT -> "rabbit";
+                case WOLF -> "wolf";
+            };
+        }
+
+        return String.format(
+                "Cell %d,%d: %s | moisture %.0f%% | fertility %.0f%% | temp %.1f C",
+                position.x(),
+                position.y(),
+                occupant,
+                cell.moisture() * 100.0,
+                cell.fertility() * 100.0,
+                cell.temperature()
+        );
+    }
+
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
