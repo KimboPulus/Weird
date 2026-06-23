@@ -85,6 +85,23 @@ public final class Simulation {
         return currentEvent;
     }
 
+    public void restart() {
+        for (int y = 0; y < grid.height(); y++) {
+            for (int x = 0; x < grid.width(); x++) {
+                organisms[y][x] = null;
+            }
+        }
+        grid.reset(random);
+        history.clear();
+        tick = 0;
+        season = Season.SPRING;
+        currentEvent = WorldEvent.CALM;
+        seedPlants(220);
+        seedRabbits(48);
+        seedWolves(4);
+        recordSnapshot();
+    }
+
     public PopulationSnapshot currentSnapshot() {
         if (history.isEmpty()) {
             recordSnapshot();

@@ -16,7 +16,7 @@ public final class TrainingSession {
     private int stableTicks;
     private int drillProgress;
     private int lastPromptTick = -RECALL_INTERVAL;
-    private String feedback = "Watch the food chain, then answer the memory prompts.";
+    private String feedback = "Watch the food chain.";
     private TrainingPrompt prompt;
     private TrainingDrill drill = TrainingDrill.BALANCE;
 
@@ -104,6 +104,17 @@ public final class TrainingSession {
 
     public void noteAction(String tool, String target) {
         feedback = tool + " used. " + target;
+    }
+
+    public void reset() {
+        score = 0;
+        streak = 0;
+        stableTicks = 0;
+        drillProgress = 0;
+        lastPromptTick = -RECALL_INTERVAL;
+        feedback = "Watch the food chain.";
+        prompt = null;
+        drill = TrainingDrill.BALANCE;
     }
 
     private void updateStability(PopulationSnapshot snapshot) {

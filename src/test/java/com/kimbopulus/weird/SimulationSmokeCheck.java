@@ -24,6 +24,12 @@ public final class SimulationSmokeCheck {
         int wolves = simulation.count(OrganismKind.WOLF);
         require(plants + rabbits + wolves > 0, "The terrarium should not be empty after the smoke run.");
 
+        simulation.restart();
+        require(simulation.tickCount() == 0, "Restart should reset the tick count.");
+        require(simulation.count(OrganismKind.PLANT) > 0, "Restart should restore plants.");
+        require(simulation.count(OrganismKind.RABBIT) > 0, "Restart should restore rabbits.");
+        require(simulation.count(OrganismKind.WOLF) > 0, "Restart should restore wolves.");
+
         System.out.printf("Smoke check passed: plants=%d rabbits=%d wolves=%d%n", plants, rabbits, wolves);
     }
 

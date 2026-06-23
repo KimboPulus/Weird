@@ -6,8 +6,10 @@ import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -51,7 +53,7 @@ public final class TerrariumFrame extends JFrame {
 
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(new Color(30, 32, 29));
-        content.add(createToolbar(), BorderLayout.NORTH);
+        content.add(createHeader(), BorderLayout.NORTH);
         content.add(terrariumPanel, BorderLayout.CENTER);
         content.add(trainingPanel, BorderLayout.EAST);
         content.add(statusLabel, BorderLayout.SOUTH);
@@ -88,8 +90,21 @@ public final class TerrariumFrame extends JFrame {
         updateToolHint(null);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1040, 760);
+        setMinimumSize(new java.awt.Dimension(1100, 720));
+        setSize(1240, 820);
         setLocationRelativeTo(null);
+    }
+
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(239, 233, 218));
+        header.add(createToolbar(), BorderLayout.NORTH);
+
+        toolHintLabel.setOpaque(true);
+        toolHintLabel.setBackground(new Color(228, 221, 204));
+        toolHintLabel.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        header.add(toolHintLabel, BorderLayout.SOUTH);
+        return header;
     }
 
     private JToolBar createToolbar() {
@@ -116,10 +131,14 @@ public final class TerrariumFrame extends JFrame {
             toolButtons.add(button);
         }
         toolbar.add(toolButtons);
+        toolbar.add(Box.createHorizontalGlue());
 
-        toolHintLabel.setText(toolMode.description());
-        toolbar.add(toolHintLabel);
-
+        toolbar.add(new JLabel("Speed "));
+        JComboBox<String> speedBox = new JComboBox<>(new String[]{"Slow", "Normal", "Fast"});
+        speedBox.setSelectedItem("Normal");
+        speedBox.setFocusable(false);
+        speedBox.addActionListener(event -> setSpeed((String) speedBox.getSelectedItem()));
+        toolbar.add(speedBox);
         toolbar.addSeparator();
 
         pauseButton = new JButton("Pause");
@@ -131,6 +150,11 @@ public final class TerrariumFrame extends JFrame {
         stepButton.setFocusable(false);
         stepButton.addActionListener(event -> stepSimulation());
         toolbar.add(stepButton);
+
+        JButton restartButton = new JButton("Restart");
+        restartButton.setFocusable(false);
+        restartButton.addActionListener(event -> restart());
+        toolbar.add(restartButton);
 
         return toolbar;
     }
@@ -151,6 +175,24 @@ public final class TerrariumFrame extends JFrame {
         terrariumPanel.repaint();
         trainingPanel.refresh();
         updateStatus();
+    }
+
+    private void setSpeed(String speed) {
+        int delay = switch (speed) {
+            case "Slow" -> 1200;
+            case "Fast" -> 300;
+            default -> 700;
+        };
+        timer.setDelay(delay);
+    }
+
+    private void restart() {
+        simulation.restart();
+        training.reset();
+        terrariumPanel.repaint();
+        trainingPanel.refresh();
+        updateStatus();
+        updateToolHint(null);
     }
 
     private void updateStatus() {

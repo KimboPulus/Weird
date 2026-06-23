@@ -6,9 +6,7 @@ public final class Cell {
     private double fertility;
 
     public Cell(double moisture, double temperature, double fertility) {
-        this.moisture = clamp01(moisture);
-        this.temperature = clamp(temperature, -20.0, 45.0);
-        this.fertility = clamp01(fertility);
+        reset(moisture, temperature, fertility);
     }
 
     public double moisture() {
@@ -61,6 +59,12 @@ public final class Cell {
         fertility = clamp01(fertility);
     }
 
+    public void reset(double moisture, double temperature, double fertility) {
+        this.moisture = clamp01(moisture);
+        this.temperature = clamp(temperature, -20.0, 45.0);
+        this.fertility = clamp01(fertility);
+    }
+
     private static double clamp01(double value) {
         return clamp(value, 0.0, 1.0);
     }
@@ -75,4 +79,3 @@ public final class Cell {
         return value;
     }
 }
-

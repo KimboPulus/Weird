@@ -14,13 +14,20 @@ public final class WorldGrid {
         this.width = width;
         this.height = height;
         this.cells = new Cell[height][width];
+        reset(random);
+    }
 
+    public void reset(Random random) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 double moisture = 0.35 + random.nextDouble() * 0.4;
                 double temperature = 16.0 + random.nextDouble() * 10.0;
                 double fertility = 0.35 + random.nextDouble() * 0.35;
-                cells[y][x] = new Cell(moisture, temperature, fertility);
+                if (cells[y][x] == null) {
+                    cells[y][x] = new Cell(moisture, temperature, fertility);
+                } else {
+                    cells[y][x].reset(moisture, temperature, fertility);
+                }
             }
         }
     }

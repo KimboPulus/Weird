@@ -48,7 +48,7 @@ public final class TrainingPanel extends JPanel {
         this.trendPanel = new TrendPanel(simulation);
 
         setBackground(BACKGROUND);
-        setPreferredSize(new Dimension(300, 640));
+        setPreferredSize(new Dimension(320, 640));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         setLayout(new BorderLayout(0, 14));
 
@@ -108,7 +108,7 @@ public final class TrainingPanel extends JPanel {
 
         TrainingPrompt prompt = training.prompt();
         if (prompt == null) {
-            promptLabel.setText(html("Scan the board. A recall prompt will appear soon."));
+            promptLabel.setText(html("Recall prompt coming soon."));
         } else {
             promptLabel.setText(html(prompt.question()));
         }
@@ -125,7 +125,7 @@ public final class TrainingPanel extends JPanel {
 
         JPanel answers = new JPanel(new GridLayout(1, 3, 8, 0));
         answers.setOpaque(false);
-        answers.setPreferredSize(new Dimension(260, 42));
+        answers.setPreferredSize(new Dimension(280, 42));
         answers.add(answerButton("Plants", OrganismKind.PLANT));
         answers.add(answerButton("Rabbits", OrganismKind.RABBIT));
         answers.add(answerButton("Wolves", OrganismKind.WOLF));
@@ -173,7 +173,7 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String html(String text) {
-        return "<html><body style='width:245px'>" + text + "</body></html>";
+        return "<html><body style='width:265px'>" + text + "</body></html>";
     }
 
     private static final class TrendPanel extends JPanel {
@@ -182,7 +182,7 @@ public final class TrainingPanel extends JPanel {
         private TrendPanel(Simulation simulation) {
             this.simulation = simulation;
             setOpaque(false);
-            setPreferredSize(new Dimension(260, 150));
+            setPreferredSize(new Dimension(280, 150));
         }
 
         @Override
