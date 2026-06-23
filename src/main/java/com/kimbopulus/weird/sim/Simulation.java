@@ -243,13 +243,20 @@ public final class Simulation {
 
     public NotableAnimal oldestAnimal() {
         NotableAnimal oldest = null;
-        for (Position position : occupiedPositions()) {
-            Organism organism = organismAt(position);
-            if (organism == null || organism.kind() == OrganismKind.PLANT) {
-                continue;
-            }
-            if (oldest == null || organism.age() > oldest.age()) {
-                oldest = new NotableAnimal(organism.kind(), organism.age(), organism.energy(), position);
+        for (int y = 0; y < grid.height(); y++) {
+            for (int x = 0; x < grid.width(); x++) {
+                Organism organism = organisms[y][x];
+                if (organism == null || organism.kind() == OrganismKind.PLANT) {
+                    continue;
+                }
+                if (oldest == null || organism.age() > oldest.age()) {
+                    oldest = new NotableAnimal(
+                            organism.kind(),
+                            organism.age(),
+                            organism.energy(),
+                            new Position(x, y)
+                    );
+                }
             }
         }
         return oldest;
@@ -419,7 +426,7 @@ public final class Simulation {
 
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
-                Cell cell = grid.cellAt(new Position(x, y));
+                Cell cell = grid.cellAt(x, y);
                 moisture += cell.moisture();
                 fertility += cell.fertility();
                 temperature += cell.temperature();
@@ -444,7 +451,7 @@ public final class Simulation {
     }
 
     private List<Position> occupiedPositions() {
-        List<Position> positions = new ArrayList<>();
+        List<Position> positions = new ArrayList<>(plantCount + rabbitCount + wolfCount);
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
                 if (organisms[y][x] != null) {

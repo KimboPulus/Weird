@@ -20,15 +20,29 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class TerrariumPanel extends JPanel {
-    private static final Color GRID_LINE = new Color(46, 38, 32, 40);
-    private static final Color PLANT = new Color(54, 145, 66);
-    private static final Color PLANT_DARK = new Color(31, 95, 45);
-    private static final Color RABBIT = new Color(214, 196, 163);
-    private static final Color RABBIT_DARK = new Color(129, 99, 73);
-    private static final Color WOLF = new Color(92, 96, 102);
-    private static final Color WOLF_DARK = new Color(46, 49, 54);
+    private static final Color GRID_LINE = new Color(39, 33, 27, 28);
+    private static final Color PLANT = new Color(66, 164, 77);
+    private static final Color PLANT_LIGHT = new Color(111, 196, 98);
+    private static final Color PLANT_DARK = new Color(31, 91, 42);
+    private static final Color RABBIT = new Color(222, 204, 170);
+    private static final Color RABBIT_LIGHT = new Color(244, 232, 205);
+    private static final Color RABBIT_DARK = new Color(112, 82, 61);
+    private static final Color WOLF = new Color(111, 119, 128);
+    private static final Color WOLF_LIGHT = new Color(164, 172, 178);
+    private static final Color WOLF_DARK = new Color(44, 48, 53);
+    private static final Color SHADOW = new Color(24, 25, 22, 85);
+    private static final Color WET_SOIL_DETAIL = new Color(129, 169, 170, 75);
+    private static final Color DRY_SOIL_DETAIL = new Color(74, 55, 35, 80);
+    private static final Color SOIL_SPECK = new Color(49, 45, 34, 48);
+    private static final Color SANCTUARY_EDGE = new Color(221, 215, 128, 185);
+    private static final Color VETERAN_EDGE = new Color(235, 240, 237, 220);
     private static final Color HOVER = new Color(255, 246, 172, 180);
+    private static final BasicStroke GRID_STROKE = new BasicStroke(1f);
+    private static final BasicStroke PLANT_STROKE = new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    private static final BasicStroke VETERAN_STROKE = new BasicStroke(1.5f);
+    private static final BasicStroke HOVER_STROKE = new BasicStroke(2f);
     private static final long EFFECT_DURATION_MS = 600;
+    private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
     private final List<ToolEffect> toolEffects = new ArrayList<>();
@@ -39,13 +53,19 @@ public final class TerrariumPanel extends JPanel {
         this.simulation = simulation;
         setBackground(new Color(24, 26, 23));
         setPreferredSize(new Dimension(960, 640));
-        effectTimer = new Timer(32, event -> advanceEffects());
+        effectTimer = new Timer(20, event -> advanceEffects());
         effectTimer.setCoalesce(true);
     }
 
-    public void setHoverPosition(Position hoverPosition) {
+    public boolean setHoverPosition(Position hoverPosition) {
+        if (positionsEqual(this.hoverPosition, hoverPosition)) {
+            return false;
+        }
+        Position previous = this.hoverPosition;
         this.hoverPosition = hoverPosition;
-        repaint();
+        repaintCell(previous);
+        repaintCell(hoverPosition);
+        return true;
     }
 
     public void showToolEffect(Position position, ToolMode mode) {
@@ -111,6 +131,7 @@ public final class TerrariumPanel extends JPanel {
 
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
 
         WorldGrid grid = simulation.grid();
         BoardMetrics metrics = boardMetrics(grid);
@@ -127,15 +148,15 @@ public final class TerrariumPanel extends JPanel {
     private void drawCells(Graphics2D g, WorldGrid grid, int cellSize, int offsetX, int offsetY) {
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
-                Position position = new Position(x, y);
-                Cell cell = grid.cellAt(position);
+                Cell cell = grid.cellAt(x, y);
                 g.setColor(soilColor(cell));
                 int px = offsetX + x * cellSize;
                 int py = offsetY + y * cellSize;
                 g.fillRect(px, py, cellSize, cellSize);
+                drawSoilTexture(g, cell, x, y, px, py, cellSize);
                 if (cell.sanctuary()) {
-                    g.setColor(new Color(221, 215, 128, 185));
-                    g.setStroke(new BasicStroke(2f));
+                    g.setColor(SANCTUARY_EDGE);
+                    g.setStroke(HOVER_STROKE);
                     g.drawRect(px + 1, py + 1, cellSize - 3, cellSize - 3);
                 }
             }
@@ -145,8 +166,7 @@ public final class TerrariumPanel extends JPanel {
     private void drawOrganisms(Graphics2D g, WorldGrid grid, int cellSize, int offsetX, int offsetY) {
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
-                Position position = new Position(x, y);
-                Organism organism = simulation.organismAt(position);
+                Organism organism = simulation.organismAt(x, y);
                 if (organism == null) {
                     continue;
                 }
@@ -154,11 +174,11 @@ public final class TerrariumPanel extends JPanel {
                 int px = offsetX + x * cellSize;
                 int py = offsetY + y * cellSize;
                 if (organism.kind() == OrganismKind.PLANT) {
-                    drawPlant(g, px, py, cellSize);
+                    drawPlant(g, px, py, cellSize, x + y);
                 } else if (organism.kind() == OrganismKind.RABBIT) {
-                    drawRabbit(g, px, py, cellSize, organism.veteran());
+                    drawRabbit(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
                 } else if (organism.kind() == OrganismKind.WOLF) {
-                    drawWolf(g, px, py, cellSize, organism.veteran());
+                    drawWolf(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
                 }
             }
         }
@@ -166,7 +186,7 @@ public final class TerrariumPanel extends JPanel {
 
     private void drawGridLines(Graphics2D g, WorldGrid grid, int cellSize, int offsetX, int offsetY) {
         g.setColor(GRID_LINE);
-        g.setStroke(new BasicStroke(1f));
+        g.setStroke(GRID_STROKE);
         int boardWidth = grid.width() * cellSize;
         int boardHeight = grid.height() * cellSize;
 
@@ -181,70 +201,113 @@ public final class TerrariumPanel extends JPanel {
         }
     }
 
-    private void drawPlant(Graphics2D g, int x, int y, int size) {
-        int pad = Math.max(2, size / 5);
+    private void drawPlant(Graphics2D g, int x, int y, int size, int variation) {
+        int pad = Math.max(2, size / 6);
         int stemX = x + size / 2;
-        int stemTop = y + pad;
-        int stemBottom = y + size - pad;
+        int stemTop = y + pad + variation % 2;
+        int stemBottom = y + size - 2;
 
+        g.setColor(SHADOW);
+        g.fillOval(x + size / 4, y + size - 5, size / 2, 4);
         g.setColor(PLANT_DARK);
+        g.setStroke(PLANT_STROKE);
         g.drawLine(stemX, stemTop, stemX, stemBottom);
         g.setColor(PLANT);
-        g.fillOval(x + pad, y + pad, size / 2, size / 2);
-        g.fillOval(x + size / 2 - pad / 2, y + size / 3, size / 2, size / 2);
+        g.fillOval(x + pad, y + size / 3, size / 2, size / 3);
+        g.fillOval(x + size / 2 - 1, y + size / 4, size / 3, size / 2);
+        g.setColor(PLANT_LIGHT);
+        g.fillOval(x + size / 2 - 2, y + pad, Math.max(3, size / 3), Math.max(3, size / 3));
+        g.setColor(PLANT_DARK);
+        g.drawLine(stemX, y + size / 2, x + pad + size / 4, y + size / 2);
     }
 
-    private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran) {
-        int pad = Math.max(2, size / 6);
-        int bodyW = size - pad * 2;
-        int bodyH = Math.max(4, size / 2);
-
+    private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
+        int direction = facesRight ? 1 : -1;
+        int headX = facesRight ? x + size - 7 : x + 2;
         drawVeteranMark(g, x, y, size, veteran);
+        g.setColor(SHADOW);
+        g.fillOval(x + 3, y + size - 5, size - 5, 4);
         g.setColor(RABBIT_DARK);
-        g.fillOval(x + pad, y + pad / 2, size / 5, size / 2);
-        g.fillOval(x + size - pad - size / 5, y + pad / 2, size / 5, size / 2);
+        g.fillOval(headX + (facesRight ? 1 : 3), y + 1, 2, size / 2);
+        g.fillOval(headX + (facesRight ? 4 : 0), y + 2, 2, size / 2);
         g.setColor(RABBIT);
-        g.fillOval(x + pad, y + size / 3, bodyW, bodyH);
+        g.fillOval(x + 3, y + size / 2 - 1, size - 7, size / 2);
+        g.fillOval(headX, y + size / 3, 7, 7);
+        g.setColor(RABBIT_LIGHT);
+        g.fillOval(x + (facesRight ? 2 : size - 6), y + size / 2, 5, 5);
+        g.fillOval(headX + (facesRight ? 4 : 1), y + size / 3 + 1, 2, 2);
+        g.setColor(RABBIT_DARK);
+        g.fillOval(headX + (facesRight ? 5 : 1), y + size / 3 + 2, 2, 2);
+        g.drawLine(headX + (facesRight ? 6 : 0), y + size / 3 + 5,
+                headX + (facesRight ? 6 + direction * 2 : -2), y + size / 3 + 5);
     }
 
-    private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran) {
-        int pad = Math.max(2, size / 6);
-        int[] xs = {
-                x + size / 2,
-                x + size - pad,
-                x + pad
-        };
-        int[] ys = {
-                y + pad,
-                y + size - pad,
-                y + size - pad
-        };
-
+    private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
+        int headX = facesRight ? x + size - 8 : x + 1;
         drawVeteranMark(g, x, y, size, veteran);
+        g.setColor(SHADOW);
+        g.fillOval(x + 2, y + size - 5, size - 3, 4);
         g.setColor(WOLF_DARK);
-        g.fillPolygon(xs, ys, 3);
+        int tailBase = facesRight ? x + 4 : x + size - 4;
+        int tailTip = facesRight ? x : x + size;
+        g.fillPolygon(
+                new int[]{tailBase, tailTip, tailBase + (facesRight ? 2 : -2)},
+                new int[]{y + size / 2, y + size / 3, y + size - 4},
+                3
+        );
         g.setColor(WOLF);
-        g.fillOval(x + size / 3, y + size / 3, size / 3, size / 3);
+        g.fillRoundRect(x + 3, y + size / 2 - 2, size - 7, size / 2, 5, 5);
+        g.fillOval(headX, y + size / 3 - 1, 8, 8);
+        g.setColor(WOLF_DARK);
+        g.fillPolygon(
+                new int[]{headX + 1, headX + 3, headX + 4},
+                new int[]{y + size / 3, y + 1, y + size / 3 + 1},
+                3
+        );
+        g.fillPolygon(
+                new int[]{headX + 4, headX + 6, headX + 7},
+                new int[]{y + size / 3, y + 2, y + size / 3 + 2},
+                3
+        );
+        g.setColor(WOLF_LIGHT);
+        g.fillOval(headX + (facesRight ? 4 : 1), y + size / 3 + 1, 3, 3);
+        g.setColor(WOLF_DARK);
+        g.fillOval(headX + (facesRight ? 6 : 1), y + size / 3 + 2, 2, 2);
+        g.fillRect(x + 5, y + size - 5, 2, 4);
+        g.fillRect(x + size - 6, y + size - 5, 2, 4);
     }
 
     private void drawVeteranMark(Graphics2D g, int x, int y, int size, boolean veteran) {
         if (!veteran) {
             return;
         }
-        g.setColor(new Color(235, 240, 237, 220));
-        g.setStroke(new BasicStroke(1.5f));
+        g.setColor(VETERAN_EDGE);
+        g.setStroke(VETERAN_STROKE);
         g.drawOval(x + 1, y + 1, size - 3, size - 3);
     }
 
     private Color soilColor(Cell cell) {
-        double moisture = cell.moisture();
-        double fertility = cell.fertility();
-        double heat = Math.min(1.0, Math.max(0.0, (cell.temperature() - 8.0) / 28.0));
+        int moisture = clampLevel((int) Math.round(cell.moisture() * 7));
+        int fertility = clampLevel((int) Math.round(cell.fertility() * 7));
+        int heat = clampLevel((int) Math.round((cell.temperature() - 8.0) / 28.0 * 7));
+        return SOIL_PALETTE[moisture][fertility][heat];
+    }
 
-        int red = (int) (92 + fertility * 48 + heat * 28);
-        int green = (int) (68 + fertility * 52 + moisture * 36);
-        int blue = (int) (42 + moisture * 58);
-        return new Color(clamp(red), clamp(green), clamp(blue));
+    private void drawSoilTexture(Graphics2D g, Cell cell, int gridX, int gridY, int x, int y, int size) {
+        int hash = gridX * 31 + gridY * 17;
+        int dotX = x + 3 + Math.floorMod(hash, Math.max(1, size - 6));
+        int dotY = y + 3 + Math.floorMod(hash / 7, Math.max(1, size - 6));
+        if (cell.moisture() > 0.68) {
+            g.setColor(WET_SOIL_DETAIL);
+            g.fillOval(dotX, dotY, Math.max(2, size / 6), Math.max(2, size / 7));
+        } else if (cell.moisture() < 0.28) {
+            g.setColor(DRY_SOIL_DETAIL);
+            g.drawLine(x + size / 3, y + size / 2, x + size / 2, y + size / 3);
+            g.drawLine(x + size / 2, y + size / 3, x + size * 2 / 3, y + size / 2);
+        } else if ((hash & 3) == 0) {
+            g.setColor(SOIL_SPECK);
+            g.fillOval(dotX, dotY, 2, 2);
+        }
     }
 
     private void drawHover(Graphics2D g, BoardMetrics metrics) {
@@ -255,7 +318,7 @@ public final class TerrariumPanel extends JPanel {
         int x = metrics.offsetX + hoverPosition.x() * metrics.cellSize;
         int y = metrics.offsetY + hoverPosition.y() * metrics.cellSize;
         g.setColor(HOVER);
-        g.setStroke(new BasicStroke(2f));
+        g.setStroke(HOVER_STROKE);
         g.drawRect(x + 1, y + 1, metrics.cellSize - 2, metrics.cellSize - 2);
     }
 
@@ -314,6 +377,46 @@ public final class TerrariumPanel extends JPanel {
 
     private int clamp(int value) {
         return Math.max(0, Math.min(255, value));
+    }
+
+    private int clampLevel(int value) {
+        return Math.max(0, Math.min(7, value));
+    }
+
+    private boolean positionsEqual(Position first, Position second) {
+        return first == second || (first != null && first.equals(second));
+    }
+
+    private void repaintCell(Position position) {
+        if (position == null) {
+            return;
+        }
+        BoardMetrics metrics = boardMetrics(simulation.grid());
+        int x = metrics.offsetX + position.x() * metrics.cellSize;
+        int y = metrics.offsetY + position.y() * metrics.cellSize;
+        repaint(x - 3, y - 3, metrics.cellSize + 6, metrics.cellSize + 6);
+    }
+
+    private static Color[][][] createSoilPalette() {
+        Color[][][] palette = new Color[8][8][8];
+        for (int moisture = 0; moisture < 8; moisture++) {
+            for (int fertility = 0; fertility < 8; fertility++) {
+                for (int heat = 0; heat < 8; heat++) {
+                    double wet = moisture / 7.0;
+                    double rich = fertility / 7.0;
+                    double warm = heat / 7.0;
+                    int red = (int) (83 + rich * 45 + warm * 29 - wet * 10);
+                    int green = (int) (62 + rich * 54 + wet * 29 - warm * 6);
+                    int blue = (int) (39 + wet * 61 + rich * 4);
+                    palette[moisture][fertility][heat] = new Color(
+                            Math.max(0, Math.min(255, red)),
+                            Math.max(0, Math.min(255, green)),
+                            Math.max(0, Math.min(255, blue))
+                    );
+                }
+            }
+        }
+        return palette;
     }
 
     private BoardMetrics boardMetrics(WorldGrid grid) {

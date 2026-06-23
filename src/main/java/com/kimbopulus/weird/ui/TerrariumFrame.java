@@ -82,14 +82,16 @@ public final class TerrariumFrame extends JFrame {
             @Override
             public void mouseMoved(MouseEvent event) {
                 Position position = terrariumPanel.positionAtPoint(event.getX(), event.getY());
-                terrariumPanel.setHoverPosition(position);
-                updateToolHint(position);
+                if (terrariumPanel.setHoverPosition(position)) {
+                    updateToolHint(position);
+                }
             }
         });
 
         timer = new Timer(700, event -> {
             stepSimulation();
         });
+        timer.setCoalesce(true);
         timer.start();
         updateToolAvailability();
         updateStatus();
