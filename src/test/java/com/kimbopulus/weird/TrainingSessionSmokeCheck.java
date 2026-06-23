@@ -11,6 +11,8 @@ public final class TrainingSessionSmokeCheck {
     }
 
     public static void main(String[] args) {
+        checkLevelAdvance();
+
         Simulation simulation = new Simulation(32, 22, 12L);
         simulation.seedPlants(130);
         simulation.seedRabbits(24);
@@ -43,6 +45,23 @@ public final class TrainingSessionSmokeCheck {
         require(harderPrompt.lookback() == 20, "A recall streak should increase the lookback.");
 
         System.out.printf("Training check passed: score=%d streak=%d%n", training.score(), training.streak());
+    }
+
+    private static void checkLevelAdvance() {
+        Simulation simulation = new Simulation(48, 32, 31L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedWolves(4);
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+
+        for (int i = 0; i < 24; i++) {
+            simulation.tick();
+            training.update(simulation);
+        }
+
+        require(training.levelNumber() == 2, "Completing the first objective should advance to level 2.");
+        require(training.drill() == TrainingDrill.RECALL, "Level 2 should train recall.");
+        require(training.score() >= 45, "Level completion should award points.");
     }
 
     private static void answerNextPromptCorrectly(Simulation simulation, TrainingSession training) {

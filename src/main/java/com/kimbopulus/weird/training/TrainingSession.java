@@ -3,9 +3,6 @@ package com.kimbopulus.weird.training;
 import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
-import com.kimbopulus.weird.sim.WorldEvent;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -19,12 +16,12 @@ public final class TrainingSession {
     private int score;
     private int streak;
     private int stableTicks;
-    private int drillProgress;
+    private int levelProgress;
     private int lastPromptTick = -RECALL_INTERVAL;
-    private String feedback = "Watch the food chain.";
+    private String feedback = "Hold the ecosystem steady.";
     private TrainingPrompt prompt;
-    private TrainingDrill drill = TrainingDrill.BALANCE;
-    private WorldEvent observedEvent = WorldEvent.CALM;
+    private TrainingLevel level = TrainingLevel.STEADY_START;
+    private FocusRule focusRule = FocusRule.NORMAL;
 
     public TrainingSession() {
         this(ProgressionProfile.loadDefault());
@@ -36,9 +33,8 @@ public final class TrainingSession {
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
-        checkForWeatherAlert(simulation.currentEvent());
         updateStability(current);
-        updateDrill(current);
+        updateLevel(current);
         updatePrompt(simulation, current);
     }
 
@@ -55,20 +51,35 @@ public final class TrainingSession {
     }
 
     public int drillProgress() {
-        return drillProgress;
+        return levelProgress;
     }
 
     public TrainingDrill drill() {
-        return drill;
+        return level.drill();
     }
 
     public int drillTarget() {
-        return switch (drill) {
-            case BALANCE -> 35;
-            case RECALL -> 1;
-            case CLIMATE_ALERT -> 20;
-            case PREDATORS, OVERGROWTH -> 30;
-        };
+        return level.target();
+    }
+
+    public int levelNumber() {
+        return level.ordinal() + 1;
+    }
+
+    public int levelCount() {
+        return TrainingLevel.values().length;
+    }
+
+    public String levelTitle() {
+        return level.title();
+    }
+
+    public String objective() {
+        return level.objective();
+    }
+
+    public FocusRule focusRule() {
+        return focusRule;
     }
 
     public String feedback() {
@@ -84,7 +95,7 @@ public final class TrainingSession {
     }
 
     public String focusGoal() {
-        return drill.title() + ": " + drill.goal();
+        return level.title() + ": " + level.objective();
     }
 
     public String balanceStatus(PopulationSnapshot snapshot) {
@@ -116,8 +127,11 @@ public final class TrainingSession {
             streak++;
             awardPoints(10 + Math.min(10, streak));
             feedback = "Correct. " + prompt.lookback() + "-tick recall held. Streak " + streak + ".";
-            if (drill == TrainingDrill.RECALL) {
-                completeDrill("Recall drill complete.");
+            if (level.drill() == TrainingDrill.RECALL) {
+                levelProgress++;
+                if (levelProgress >= level.target()) {
+                    completeLevel();
+                }
             }
         } else {
             streak = 0;
@@ -127,19 +141,19 @@ public final class TrainingSession {
     }
 
     public void noteAction(String tool, String target) {
-        feedback = tool + " used. " + target;
+        feedback = tool + " used.";
     }
 
     public void reset() {
         score = 0;
         streak = 0;
         stableTicks = 0;
-        drillProgress = 0;
+        levelProgress = 0;
         lastPromptTick = -RECALL_INTERVAL;
-        feedback = "Watch the food chain.";
+        feedback = "Hold the ecosystem steady.";
         prompt = null;
-        drill = TrainingDrill.BALANCE;
-        observedEvent = WorldEvent.CALM;
+        level = TrainingLevel.STEADY_START;
+        focusRule = FocusRule.NORMAL;
     }
 
     private void updateStability(PopulationSnapshot snapshot) {
@@ -154,12 +168,12 @@ public final class TrainingSession {
         }
     }
 
-    private void updateDrill(PopulationSnapshot snapshot) {
-        if (drill == TrainingDrill.RECALL) {
+    private void updateLevel(PopulationSnapshot snapshot) {
+        if (level.drill() == TrainingDrill.RECALL) {
             return;
         }
 
-        boolean onTrack = switch (drill) {
+        boolean onTrack = switch (level.drill()) {
             case BALANCE -> isBalanced(snapshot);
             case PREDATORS -> snapshot.wolves() >= 3;
             case OVERGROWTH -> snapshot.plants() < 900;
@@ -171,47 +185,30 @@ public final class TrainingSession {
         };
 
         if (!onTrack) {
-            drillProgress = 0;
+            levelProgress = 0;
             return;
         }
 
-        drillProgress++;
-        int target = drillTarget();
-        if (drillProgress >= target) {
-            completeDrill(drill.title() + " complete.");
+        levelProgress++;
+        if (levelProgress >= level.target()) {
+            completeLevel();
         }
     }
 
-    private void completeDrill(String message) {
-        awardPoints(25);
-        feedback = message + " New drill loaded.";
-        drill = chooseNextDrill();
-        drillProgress = 0;
+    private void completeLevel() {
+        TrainingLevel completed = level;
+        awardPoints(40 + levelNumber() * 5);
+        level = level.next();
+        levelProgress = 0;
+        focusRule = chooseFocusRule();
+        feedback = completed.title() + " complete. Level " + levelNumber() + " started.";
     }
 
-    private void checkForWeatherAlert(WorldEvent event) {
-        if (event == observedEvent) {
-            return;
+    private FocusRule chooseFocusRule() {
+        if (level.ordinal() < TrainingLevel.CANOPY_CONTROL.ordinal()) {
+            return FocusRule.NORMAL;
         }
-
-        observedEvent = event;
-        boolean disruptiveWeather = event == WorldEvent.HEAT_WAVE || event == WorldEvent.RAIN_FRONT;
-        if (disruptiveWeather && drill != TrainingDrill.CLIMATE_ALERT && random.nextDouble() < 0.7) {
-            drill = TrainingDrill.CLIMATE_ALERT;
-            drillProgress = 0;
-            feedback = "Weather alert: stabilize the climate before returning to normal drills.";
-        }
-    }
-
-    private TrainingDrill chooseNextDrill() {
-        List<TrainingDrill> choices = new ArrayList<>(List.of(
-                TrainingDrill.BALANCE,
-                TrainingDrill.RECALL,
-                TrainingDrill.PREDATORS,
-                TrainingDrill.OVERGROWTH
-        ));
-        choices.remove(drill);
-        return choices.get(random.nextInt(choices.size()));
+        return random.nextBoolean() ? FocusRule.NORMAL : FocusRule.OPPOSITE;
     }
 
     private void awardPoints(int points) {
@@ -241,13 +238,15 @@ public final class TrainingSession {
         int oldValue = metric.value(past);
         int newValue = metric.value(current);
         int tolerance = Math.max(2, (int) Math.ceil(Math.max(1, oldValue) * 0.06));
-        int answerIndex = newValue > oldValue + tolerance ? 0 : newValue < oldValue - tolerance ? 2 : 1;
+        int actualTrend = newValue > oldValue + tolerance ? 0 : newValue < oldValue - tolerance ? 2 : 1;
+        int answerIndex = focusRule == FocusRule.OPPOSITE ? oppositeTrend(actualTrend) : actualTrend;
         prompt = new TrainingPrompt(
-                "Over the last " + lookback + " ticks, were " + metric.label + " rising, stable, or falling?",
+                metric.label + " over " + lookback + " ticks?",
                 TREND_CHOICES,
                 answerIndex,
                 current.tick(),
-                lookback
+                lookback,
+                focusRule
         );
         lastPromptTick = current.tick();
     }
@@ -260,6 +259,10 @@ public final class TrainingSession {
             return 20;
         }
         return 10;
+    }
+
+    private int oppositeTrend(int trend) {
+        return trend == 0 ? 2 : trend == 2 ? 0 : 1;
     }
 
     private boolean isBalanced(PopulationSnapshot snapshot) {

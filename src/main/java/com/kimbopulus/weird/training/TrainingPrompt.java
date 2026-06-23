@@ -7,7 +7,8 @@ public record TrainingPrompt(
         List<String> choices,
         int answerIndex,
         int createdAtTick,
-        int lookback
+        int lookback,
+        FocusRule rule
 ) {
     public TrainingPrompt {
         choices = List.copyOf(choices);
