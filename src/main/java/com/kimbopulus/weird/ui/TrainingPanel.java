@@ -2,6 +2,7 @@ package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.sim.NotableAnimal;
 import com.kimbopulus.weird.training.TrainingPrompt;
 import com.kimbopulus.weird.training.TrainingSession;
 
@@ -37,6 +38,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel balanceLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
+    private final JLabel notableLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final JButton[] answerButtons = new JButton[3];
@@ -65,12 +67,14 @@ public final class TrainingPanel extends JPanel {
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
+        configureLabel(notableLabel, Font.PLAIN, 12f, MUTED);
         top.add(scoreLabel);
         top.add(goalLabel);
         top.add(drillLabel);
         top.add(balanceLabel);
         top.add(climateLabel);
         top.add(eventLabel);
+        top.add(notableLabel);
 
         add(top, BorderLayout.NORTH);
 
@@ -106,6 +110,15 @@ public final class TrainingPanel extends JPanel {
         eventLabel.setText(html(
                 simulation.currentEvent().title() + ": " + simulation.currentEvent().description()
         ));
+        NotableAnimal notable = simulation.oldestAnimal();
+        notableLabel.setText(notable == null
+                ? "Notable animal: none"
+                : String.format(
+                        "Oldest %s: age %d%s",
+                        notable.kind().name().toLowerCase(),
+                        notable.age(),
+                        notable.age() >= 80 ? " - veteran" : ""
+                ));
 
         TrainingPrompt prompt = training.prompt();
         if (prompt == null) {
@@ -184,7 +197,7 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String html(String text) {
-        return "<html><body style='width:265px'>" + text + "</body></html>";
+        return "<html><body style='width:275px'>" + text + "</body></html>";
     }
 
     private static final class TrendPanel extends JPanel {

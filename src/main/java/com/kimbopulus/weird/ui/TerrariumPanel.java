@@ -86,6 +86,12 @@ public final class TerrariumPanel extends JPanel {
                 case RABBIT -> "rabbit";
                 case WOLF -> "wolf";
             };
+            occupant += String.format(
+                    "%s, age %d, energy %d",
+                    organism.veteran() ? " veteran" : "",
+                    organism.age(),
+                    organism.energy()
+            );
         }
 
         return String.format(
@@ -143,9 +149,9 @@ public final class TerrariumPanel extends JPanel {
                 if (organism.kind() == OrganismKind.PLANT) {
                     drawPlant(g, px, py, cellSize);
                 } else if (organism.kind() == OrganismKind.RABBIT) {
-                    drawRabbit(g, px, py, cellSize);
+                    drawRabbit(g, px, py, cellSize, organism.veteran());
                 } else if (organism.kind() == OrganismKind.WOLF) {
-                    drawWolf(g, px, py, cellSize);
+                    drawWolf(g, px, py, cellSize, organism.veteran());
                 }
             }
         }
@@ -181,11 +187,12 @@ public final class TerrariumPanel extends JPanel {
         g.fillOval(x + size / 2 - pad / 2, y + size / 3, size / 2, size / 2);
     }
 
-    private void drawRabbit(Graphics2D g, int x, int y, int size) {
+    private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran) {
         int pad = Math.max(2, size / 6);
         int bodyW = size - pad * 2;
         int bodyH = Math.max(4, size / 2);
 
+        drawVeteranMark(g, x, y, size, veteran);
         g.setColor(RABBIT_DARK);
         g.fillOval(x + pad, y + pad / 2, size / 5, size / 2);
         g.fillOval(x + size - pad - size / 5, y + pad / 2, size / 5, size / 2);
@@ -193,7 +200,7 @@ public final class TerrariumPanel extends JPanel {
         g.fillOval(x + pad, y + size / 3, bodyW, bodyH);
     }
 
-    private void drawWolf(Graphics2D g, int x, int y, int size) {
+    private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran) {
         int pad = Math.max(2, size / 6);
         int[] xs = {
                 x + size / 2,
@@ -206,10 +213,20 @@ public final class TerrariumPanel extends JPanel {
                 y + size - pad
         };
 
+        drawVeteranMark(g, x, y, size, veteran);
         g.setColor(WOLF_DARK);
         g.fillPolygon(xs, ys, 3);
         g.setColor(WOLF);
         g.fillOval(x + size / 3, y + size / 3, size / 3, size / 3);
+    }
+
+    private void drawVeteranMark(Graphics2D g, int x, int y, int size, boolean veteran) {
+        if (!veteran) {
+            return;
+        }
+        g.setColor(new Color(235, 240, 237, 220));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawOval(x + 1, y + 1, size - 3, size - 3);
     }
 
     private Color soilColor(Cell cell) {

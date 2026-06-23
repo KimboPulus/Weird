@@ -33,6 +33,10 @@ public abstract class Organism {
         return alive;
     }
 
+    public boolean veteran() {
+        return age >= 80;
+    }
+
     protected void gainEnergy(int amount) {
         energy += amount;
     }
@@ -49,4 +53,3 @@ public abstract class Organism {
         alive = false;
     }
 }
-

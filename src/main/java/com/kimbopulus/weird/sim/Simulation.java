@@ -228,6 +228,20 @@ public final class Simulation {
         return total;
     }
 
+    public NotableAnimal oldestAnimal() {
+        NotableAnimal oldest = null;
+        for (Position position : occupiedPositions()) {
+            Organism organism = organismAt(position);
+            if (organism == null || organism.kind() == OrganismKind.PLANT) {
+                continue;
+            }
+            if (oldest == null || organism.age() > oldest.age()) {
+                oldest = new NotableAnimal(organism.kind(), organism.age(), organism.energy(), position);
+            }
+        }
+        return oldest;
+    }
+
     public void seedPlants(int amount) {
         for (int i = 0; i < amount; i++) {
             placeRandomly(new Plant(), 150);
