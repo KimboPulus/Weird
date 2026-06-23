@@ -10,7 +10,7 @@ public final class SimulationSmokeCheck {
     public static void main(String[] args) {
         Simulation simulation = new Simulation(24, 16, 42L);
         simulation.seedPlants(80);
-        simulation.seedRabbits(12);
+        simulation.seedRabbits(15);
         simulation.seedWolves(2);
 
         for (int i = 0; i < 240; i++) {
@@ -33,4 +33,3 @@ public final class SimulationSmokeCheck {
         }
     }
 }
-

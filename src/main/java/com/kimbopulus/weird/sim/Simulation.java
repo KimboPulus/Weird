@@ -27,8 +27,8 @@ public final class Simulation {
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
         simulation.seedPlants(220);
-        simulation.seedRabbits(34);
-        simulation.seedWolves(5);
+        simulation.seedRabbits(48);
+        simulation.seedWolves(4);
         simulation.recordSnapshot();
         return simulation;
     }
@@ -41,6 +41,7 @@ public final class Simulation {
 
         grid.applySeason(season);
         sproutWildPlants();
+        migrateWildlife();
 
         List<Position> positions = occupiedPositions();
         Collections.shuffle(positions, random);
@@ -244,6 +245,10 @@ public final class Simulation {
         return placeOrganism(position, new Wolf());
     }
 
+    public boolean canPlantsSpread() {
+        return count(OrganismKind.PLANT) < plantLimit();
+    }
+
     private void placeRandomly(Organism organism, int attempts) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             Position position = new Position(random.nextInt(grid.width()), random.nextInt(grid.height()));
@@ -254,8 +259,7 @@ public final class Simulation {
     }
 
     private void sproutWildPlants() {
-        int plantLimit = (grid.width() * grid.height()) / 2;
-        if (count(OrganismKind.PLANT) >= plantLimit) {
+        if (!canPlantsSpread()) {
             return;
         }
 
@@ -272,6 +276,26 @@ public final class Simulation {
                 cell.spendFertility(0.02);
             }
         }
+    }
+
+    private void migrateWildlife() {
+        int cells = grid.width() * grid.height();
+        int plants = count(OrganismKind.PLANT);
+        int rabbits = count(OrganismKind.RABBIT);
+        int wolves = count(OrganismKind.WOLF);
+
+        int rabbitFloor = Math.max(6, cells / 96);
+        if (plants > cells / 5 && rabbits < rabbitFloor && random.nextDouble() < 0.2) {
+            placeRandomly(new Rabbit(), 60);
+        }
+
+        if (rabbits > cells / 26 && wolves < 2 && random.nextDouble() < 0.04) {
+            placeRandomly(new Wolf(), 60);
+        }
+    }
+
+    private int plantLimit() {
+        return (int) (grid.width() * grid.height() * 0.72);
     }
 
     private void recordSnapshot() {
