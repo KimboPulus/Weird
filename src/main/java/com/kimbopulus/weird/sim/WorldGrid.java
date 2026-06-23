@@ -51,6 +51,10 @@ public final class WorldGrid {
         return cells[position.y()][position.x()];
     }
 
+    public Cell cellAt(int x, int y) {
+        return cells[y][x];
+    }
+
     public List<Position> neighbors(Position position, Random random) {
         List<Position> result = new ArrayList<>(4);
         for (Direction direction : Direction.values()) {

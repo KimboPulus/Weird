@@ -19,6 +19,9 @@ public final class Simulation {
     private Season season = Season.SPRING;
     private WorldEvent currentEvent = WorldEvent.CALM;
     private boolean sanctuaryPlaced;
+    private int plantCount;
+    private int rabbitCount;
+    private int wolfCount;
 
     public Simulation(int width, int height, long seed) {
         this.random = new Random(seed);
@@ -92,6 +95,9 @@ public final class Simulation {
                 organisms[y][x] = null;
             }
         }
+        plantCount = 0;
+        rabbitCount = 0;
+        wolfCount = 0;
         grid.reset(random);
         history.clear();
         tick = 0;
@@ -123,6 +129,10 @@ public final class Simulation {
         return organisms[position.y()][position.x()];
     }
 
+    public Organism organismAt(int x, int y) {
+        return organisms[y][x];
+    }
+
     public boolean isEmpty(Position position) {
         return grid.contains(position) && organismAt(position) == null;
     }
@@ -132,6 +142,7 @@ public final class Simulation {
             return false;
         }
         organisms[position.y()][position.x()] = organism;
+        adjustCount(organism.kind(), 1);
         return true;
     }
 
@@ -141,6 +152,9 @@ public final class Simulation {
         }
         Organism organism = organismAt(position);
         organisms[position.y()][position.x()] = null;
+        if (organism != null) {
+            adjustCount(organism.kind(), -1);
+        }
         return organism;
     }
 
@@ -220,14 +234,11 @@ public final class Simulation {
     }
 
     public int count(OrganismKind kind) {
-        int total = 0;
-        for (Position position : occupiedPositions()) {
-            Organism organism = organismAt(position);
-            if (organism != null && organism.kind() == kind) {
-                total++;
-            }
-        }
-        return total;
+        return switch (kind) {
+            case PLANT -> plantCount;
+            case RABBIT -> rabbitCount;
+            case WOLF -> wolfCount;
+        };
     }
 
     public NotableAnimal oldestAnimal() {
@@ -418,9 +429,9 @@ public final class Simulation {
         history.add(new PopulationSnapshot(
                 tick,
                 season,
-                count(OrganismKind.PLANT),
-                count(OrganismKind.RABBIT),
-                count(OrganismKind.WOLF),
+                plantCount,
+                rabbitCount,
+                wolfCount,
                 moisture / cells,
                 fertility / cells,
                 temperature / cells
@@ -442,5 +453,13 @@ public final class Simulation {
             }
         }
         return positions;
+    }
+
+    private void adjustCount(OrganismKind kind, int amount) {
+        switch (kind) {
+            case PLANT -> plantCount += amount;
+            case RABBIT -> rabbitCount += amount;
+            case WOLF -> wolfCount += amount;
+        }
     }
 }

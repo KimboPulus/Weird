@@ -24,6 +24,9 @@ public final class SimulationSmokeCheck {
         int rabbits = simulation.count(OrganismKind.RABBIT);
         int wolves = simulation.count(OrganismKind.WOLF);
         require(plants + rabbits + wolves > 0, "The terrarium should not be empty after the smoke run.");
+        require(populationByScan(simulation, OrganismKind.PLANT) == plants, "Plant counter should match the board.");
+        require(populationByScan(simulation, OrganismKind.RABBIT) == rabbits, "Rabbit counter should match the board.");
+        require(populationByScan(simulation, OrganismKind.WOLF) == wolves, "Wolf counter should match the board.");
         require(simulation.oldestAnimal() != null, "A surviving animal should be tracked as notable.");
         require(simulation.addSanctuary(new Position(2, 2)), "The first sanctuary should be accepted.");
         require(!simulation.addSanctuary(new Position(5, 5)), "Only one sanctuary should be allowed per run.");
@@ -43,5 +46,17 @@ public final class SimulationSmokeCheck {
         if (!condition) {
             throw new IllegalStateException(message);
         }
+    }
+
+    private static int populationByScan(Simulation simulation, OrganismKind kind) {
+        int count = 0;
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) != null && simulation.organismAt(x, y).kind() == kind) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 }
