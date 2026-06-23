@@ -2,8 +2,10 @@ package com.kimbopulus.weird.sim;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public final class Simulation {
     public static final int DEFAULT_WIDTH = 48;
@@ -24,6 +26,8 @@ public final class Simulation {
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
         simulation.seedPlants(220);
+        simulation.seedRabbits(34);
+        simulation.seedWolves(5);
         return simulation;
     }
 
@@ -37,9 +41,10 @@ public final class Simulation {
 
         List<Position> positions = occupiedPositions();
         Collections.shuffle(positions, random);
+        Set<Organism> acted = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Position position : positions) {
             Organism organism = organismAt(position);
-            if (organism == null || !organism.alive()) {
+            if (organism == null || !organism.alive() || !acted.add(organism)) {
                 continue;
             }
 
@@ -95,6 +100,21 @@ public final class Simulation {
         return organism;
     }
 
+    public boolean moveOrganism(Position from, Position to) {
+        if (!grid.contains(from) || !grid.contains(to) || !isEmpty(to)) {
+            return false;
+        }
+
+        Organism organism = organismAt(from);
+        if (organism == null) {
+            return false;
+        }
+
+        organisms[to.y()][to.x()] = organism;
+        organisms[from.y()][from.x()] = null;
+        return true;
+    }
+
     public List<Position> emptyNeighbors(Position position) {
         List<Position> empty = new ArrayList<>();
         for (Position neighbor : grid.neighbors(position, random)) {
@@ -103,6 +123,17 @@ public final class Simulation {
             }
         }
         return empty;
+    }
+
+    public List<Position> neighborsWithKind(Position position, OrganismKind kind) {
+        List<Position> matches = new ArrayList<>();
+        for (Position neighbor : grid.neighbors(position, random)) {
+            Organism organism = organismAt(neighbor);
+            if (organism != null && organism.kind() == kind) {
+                matches.add(neighbor);
+            }
+        }
+        return matches;
     }
 
     public int count(OrganismKind kind) {
@@ -119,6 +150,18 @@ public final class Simulation {
     public void seedPlants(int amount) {
         for (int i = 0; i < amount; i++) {
             placeRandomly(new Plant(), 150);
+        }
+    }
+
+    public void seedRabbits(int amount) {
+        for (int i = 0; i < amount; i++) {
+            placeRandomly(new Rabbit(), 150);
+        }
+    }
+
+    public void seedWolves(int amount) {
+        for (int i = 0; i < amount; i++) {
+            placeRandomly(new Wolf(), 150);
         }
     }
 
