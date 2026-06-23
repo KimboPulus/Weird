@@ -47,6 +47,10 @@ public final class TrainingSession {
         return drill;
     }
 
+    public int drillTarget() {
+        return drill == TrainingDrill.BALANCE ? 35 : drill == TrainingDrill.RECALL ? 1 : 30;
+    }
+
     public String feedback() {
         return feedback;
     }
@@ -132,7 +136,7 @@ public final class TrainingSession {
         }
 
         drillProgress++;
-        int target = drill == TrainingDrill.BALANCE ? 35 : 30;
+        int target = drillTarget();
         if (drillProgress >= target) {
             completeDrill(drill.title() + " complete.");
         }

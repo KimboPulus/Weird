@@ -34,7 +34,9 @@ public final class TrainingPanel extends JPanel {
     private final JLabel titleLabel = new JLabel("Focus Grove");
     private final JLabel scoreLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
+    private final JLabel drillLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
+    private final JLabel climateLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final TrendPanel trendPanel;
@@ -58,17 +60,25 @@ public final class TrainingPanel extends JPanel {
 
         configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
         configureLabel(goalLabel, Font.PLAIN, 13f, MUTED);
+        configureLabel(drillLabel, Font.BOLD, 13f, new Color(86, 96, 61));
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
+        configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
         top.add(scoreLabel);
         top.add(goalLabel);
+        top.add(drillLabel);
         top.add(balanceLabel);
+        top.add(climateLabel);
 
         add(top, BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout(0, 14));
         center.setOpaque(false);
         center.add(trendPanel, BorderLayout.NORTH);
-        center.add(createPromptPanel(), BorderLayout.CENTER);
+        JPanel stack = new JPanel(new BorderLayout(0, 12));
+        stack.setOpaque(false);
+        stack.add(createPromptPanel(), BorderLayout.NORTH);
+        stack.add(createControlsPanel(), BorderLayout.CENTER);
+        center.add(stack, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
         configureLabel(feedbackLabel, Font.PLAIN, 13f, MUTED);
@@ -81,7 +91,14 @@ public final class TrainingPanel extends JPanel {
         PopulationSnapshot snapshot = simulation.currentSnapshot();
         scoreLabel.setText("Score " + training.score() + "   Streak " + training.streak());
         goalLabel.setText(html(training.focusGoal()));
+        drillLabel.setText("Drill progress: " + training.drillProgress() + "/" + training.drillTarget());
         balanceLabel.setText(training.balanceStatus(snapshot));
+        climateLabel.setText(String.format(
+                "Moisture %.0f%%   Fertility %.0f%%   Temp %.1f C",
+                snapshot.averageMoisture() * 100.0,
+                snapshot.averageFertility() * 100.0,
+                snapshot.averageTemperature()
+        ));
 
         TrainingPrompt prompt = training.prompt();
         if (prompt == null) {
@@ -122,6 +139,26 @@ public final class TrainingPanel extends JPanel {
             refresh();
         });
         return button;
+    }
+
+    private JPanel createControlsPanel() {
+        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 6));
+        panel.setOpaque(false);
+
+        JLabel title = new JLabel("Quick read");
+        configureLabel(title, Font.BOLD, 14f, TEXT);
+        panel.add(title);
+        panel.add(help("Rain or Compost: recover weak plant zones."));
+        panel.add(help("Drought or Trim: slow plant overgrowth."));
+        panel.add(help("Rabbit: restore grazers when plants surge."));
+        panel.add(help("Wolf: control rabbit spikes."));
+        return panel;
+    }
+
+    private JLabel help(String text) {
+        JLabel label = new JLabel(html(text));
+        configureLabel(label, Font.PLAIN, 12f, MUTED);
+        return label;
     }
 
     private void configureLabel(JLabel label, int style, float size, Color color) {
