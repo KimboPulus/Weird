@@ -84,6 +84,17 @@ public final class WorldGrid {
         affectAround(center, radius, cell -> cell.addFertility(amount));
     }
 
+    public void rainAll(double amount) {
+        forEachCell(cell -> cell.addRain(amount));
+    }
+
+    public void dryAndWarmAll(double dryAmount, double heatAmount) {
+        forEachCell(cell -> {
+            cell.dry(dryAmount);
+            cell.warm(heatAmount);
+        });
+    }
+
     private void affectAround(Position center, int radius, CellAction action) {
         for (int y = Math.max(0, center.y() - radius); y <= Math.min(height - 1, center.y() + radius); y++) {
             for (int x = Math.max(0, center.x() - radius); x <= Math.min(width - 1, center.x() + radius); x++) {

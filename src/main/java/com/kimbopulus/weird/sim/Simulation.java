@@ -17,6 +17,7 @@ public final class Simulation {
     private final List<PopulationSnapshot> history = new ArrayList<>();
     private int tick;
     private Season season = Season.SPRING;
+    private WorldEvent currentEvent = WorldEvent.CALM;
 
     public Simulation(int width, int height, long seed) {
         this.random = new Random(seed);
@@ -37,6 +38,9 @@ public final class Simulation {
         tick++;
         if (tick % 160 == 0) {
             season = season.next();
+        }
+        if (tick % 90 == 0) {
+            triggerWorldEvent();
         }
 
         grid.applySeason(season);
@@ -75,6 +79,10 @@ public final class Simulation {
 
     public Season season() {
         return season;
+    }
+
+    public WorldEvent currentEvent() {
+        return currentEvent;
     }
 
     public PopulationSnapshot currentSnapshot() {
@@ -318,6 +326,27 @@ public final class Simulation {
 
         if (rabbits > cells / 26 && wolves < 2 && random.nextDouble() < 0.04) {
             placeRandomly(new Wolf(), 60);
+        }
+    }
+
+    private void triggerWorldEvent() {
+        WorldEvent[] events = {
+                WorldEvent.RAIN_FRONT,
+                WorldEvent.HEAT_WAVE,
+                WorldEvent.WILD_BLOOM,
+                WorldEvent.RABBIT_ARRIVAL,
+                WorldEvent.WOLF_ARRIVAL
+        };
+        currentEvent = events[random.nextInt(events.length)];
+
+        switch (currentEvent) {
+            case RAIN_FRONT -> grid.rainAll(0.12);
+            case HEAT_WAVE -> grid.dryAndWarmAll(0.1, 2.5);
+            case WILD_BLOOM -> seedPlants(Math.max(18, grid.width() * grid.height() / 45));
+            case RABBIT_ARRIVAL -> seedRabbits(Math.max(3, grid.width() * grid.height() / 380));
+            case WOLF_ARRIVAL -> seedWolves(Math.max(1, grid.width() * grid.height() / 900));
+            case CALM -> {
+            }
         }
     }
 

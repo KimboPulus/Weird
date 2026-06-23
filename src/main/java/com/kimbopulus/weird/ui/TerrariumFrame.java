@@ -155,9 +155,10 @@ public final class TerrariumFrame extends JFrame {
 
     private void updateStatus() {
         statusLabel.setText(String.format(
-                "Tick %d   Season: %s   Plants: %d   Rabbits: %d   Wolves: %d",
+                "Tick %d   Season: %s   Event: %s   Plants: %d   Rabbits: %d   Wolves: %d",
                 simulation.tickCount(),
                 simulation.season(),
+                simulation.currentEvent().title(),
                 simulation.count(OrganismKind.PLANT),
                 simulation.count(OrganismKind.RABBIT),
                 simulation.count(OrganismKind.WOLF)

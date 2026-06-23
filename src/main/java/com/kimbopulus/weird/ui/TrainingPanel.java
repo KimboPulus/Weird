@@ -37,6 +37,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel drillLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
+    private final JLabel eventLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final TrendPanel trendPanel;
@@ -63,11 +64,13 @@ public final class TrainingPanel extends JPanel {
         configureLabel(drillLabel, Font.BOLD, 13f, new Color(86, 96, 61));
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
+        configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
         top.add(scoreLabel);
         top.add(goalLabel);
         top.add(drillLabel);
         top.add(balanceLabel);
         top.add(climateLabel);
+        top.add(eventLabel);
 
         add(top, BorderLayout.NORTH);
 
@@ -98,6 +101,9 @@ public final class TrainingPanel extends JPanel {
                 snapshot.averageMoisture() * 100.0,
                 snapshot.averageFertility() * 100.0,
                 snapshot.averageTemperature()
+        ));
+        eventLabel.setText(html(
+                simulation.currentEvent().title() + ": " + simulation.currentEvent().description()
         ));
 
         TrainingPrompt prompt = training.prompt();
