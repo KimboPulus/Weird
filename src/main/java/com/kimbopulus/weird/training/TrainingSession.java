@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 public final class TrainingSession {
-    private static final int RECALL_INTERVAL = 38;
-    private static final int PROMPT_LIFETIME = 34;
+    private static final int BASE_RECALL_INTERVAL = 40;
     private static final List<String> TREND_CHOICES = List.of("Rising", "Stable", "Falling");
 
     private final Random random = new Random();
@@ -17,7 +16,7 @@ public final class TrainingSession {
     private int streak;
     private int stableTicks;
     private int levelProgress;
-    private int lastPromptTick = -RECALL_INTERVAL;
+    private int lastPromptTick = -BASE_RECALL_INTERVAL;
     private String feedback = "Hold the ecosystem steady.";
     private TrainingPrompt prompt;
     private TrainingLevel level = TrainingLevel.STEADY_START;
@@ -80,6 +79,10 @@ public final class TrainingSession {
 
     public FocusRule focusRule() {
         return focusRule;
+    }
+
+    public int memorySpan() {
+        return recallLookback();
     }
 
     public String feedback() {
@@ -149,7 +152,7 @@ public final class TrainingSession {
         streak = 0;
         stableTicks = 0;
         levelProgress = 0;
-        lastPromptTick = -RECALL_INTERVAL;
+        lastPromptTick = -BASE_RECALL_INTERVAL;
         feedback = "Hold the ecosystem steady.";
         prompt = null;
         level = TrainingLevel.STEADY_START;
@@ -217,14 +220,14 @@ public final class TrainingSession {
     }
 
     private void updatePrompt(Simulation simulation, PopulationSnapshot current) {
-        if (prompt != null && current.tick() - prompt.createdAtTick() > PROMPT_LIFETIME) {
+        if (prompt != null && current.tick() - prompt.createdAtTick() > promptLifetime()) {
             streak = 0;
             feedback = "Recall missed.";
             prompt = null;
         }
 
         int lookback = recallLookback();
-        if (prompt != null || current.tick() - lastPromptTick < RECALL_INTERVAL || current.tick() < lookback) {
+        if (prompt != null || current.tick() - lastPromptTick < recallInterval() || current.tick() < lookback) {
             return;
         }
 
@@ -259,6 +262,26 @@ public final class TrainingSession {
             return 20;
         }
         return 10;
+    }
+
+    private int recallInterval() {
+        if (streak >= 5) {
+            return 30;
+        }
+        if (streak >= 2) {
+            return 35;
+        }
+        return BASE_RECALL_INTERVAL;
+    }
+
+    private int promptLifetime() {
+        if (streak >= 5) {
+            return 28;
+        }
+        if (streak >= 2) {
+            return 34;
+        }
+        return 44;
     }
 
     private int oppositeTrend(int trend) {

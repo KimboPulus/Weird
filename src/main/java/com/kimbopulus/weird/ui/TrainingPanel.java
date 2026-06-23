@@ -121,7 +121,8 @@ public final class TrainingPanel extends JPanel {
                 snapshot.averageTemperature()
         ));
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
-        ruleLabel.setText("Rule: " + training.focusRule().instruction());
+        ruleLabel.setText("Rule: " + training.focusRule().instruction()
+                + "   Memory " + training.memorySpan());
         ruleLabel.setForeground(training.focusRule() == FocusRule.OPPOSITE
                 ? RULE_OPPOSITE
                 : RULE_NORMAL);
