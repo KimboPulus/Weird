@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Weird" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.kimbopulus.weird.Main" />
+    <module name="Weird" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
+
