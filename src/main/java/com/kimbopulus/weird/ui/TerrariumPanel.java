@@ -32,6 +32,22 @@ public final class TerrariumPanel extends JPanel {
         setPreferredSize(new Dimension(960, 640));
     }
 
+    public Position positionAtPoint(int x, int y) {
+        WorldGrid grid = simulation.grid();
+        BoardMetrics metrics = boardMetrics(grid);
+        if (x < metrics.offsetX || y < metrics.offsetY || x >= metrics.offsetX + metrics.width || y >= metrics.offsetY + metrics.height) {
+            return null;
+        }
+
+        int gridX = (x - metrics.offsetX) / metrics.cellSize;
+        int gridY = (y - metrics.offsetY) / metrics.cellSize;
+        Position position = new Position(gridX, gridY);
+        if (!grid.contains(position)) {
+            return null;
+        }
+        return position;
+    }
+
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
@@ -40,15 +56,11 @@ public final class TerrariumPanel extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         WorldGrid grid = simulation.grid();
-        int cellSize = Math.max(4, Math.min(getWidth() / grid.width(), getHeight() / grid.height()));
-        int boardWidth = cellSize * grid.width();
-        int boardHeight = cellSize * grid.height();
-        int offsetX = (getWidth() - boardWidth) / 2;
-        int offsetY = (getHeight() - boardHeight) / 2;
+        BoardMetrics metrics = boardMetrics(grid);
 
-        drawCells(g, grid, cellSize, offsetX, offsetY);
-        drawOrganisms(g, grid, cellSize, offsetX, offsetY);
-        drawGridLines(g, grid, cellSize, offsetX, offsetY);
+        drawCells(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
+        drawOrganisms(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
+        drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
 
         g.dispose();
     }
@@ -161,5 +173,16 @@ public final class TerrariumPanel extends JPanel {
     private int clamp(int value) {
         return Math.max(0, Math.min(255, value));
     }
-}
 
+    private BoardMetrics boardMetrics(WorldGrid grid) {
+        int cellSize = Math.max(4, Math.min(getWidth() / grid.width(), getHeight() / grid.height()));
+        int boardWidth = cellSize * grid.width();
+        int boardHeight = cellSize * grid.height();
+        int offsetX = (getWidth() - boardWidth) / 2;
+        int offsetY = (getHeight() - boardHeight) / 2;
+        return new BoardMetrics(cellSize, boardWidth, boardHeight, offsetX, offsetY);
+    }
+
+    private record BoardMetrics(int cellSize, int width, int height, int offsetX, int offsetY) {
+    }
+}

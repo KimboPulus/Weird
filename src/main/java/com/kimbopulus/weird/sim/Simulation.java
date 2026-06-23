@@ -165,6 +165,30 @@ public final class Simulation {
         }
     }
 
+    public void rain(Position center) {
+        if (grid.contains(center)) {
+            grid.rainAround(center, 2, 0.18);
+        }
+    }
+
+    public void drought(Position center) {
+        if (grid.contains(center)) {
+            grid.dryAround(center, 2, 0.16);
+        }
+    }
+
+    public boolean addPlant(Position position) {
+        return placeOrganism(position, new Plant());
+    }
+
+    public boolean addRabbit(Position position) {
+        return placeOrganism(position, new Rabbit());
+    }
+
+    public boolean addWolf(Position position) {
+        return placeOrganism(position, new Wolf());
+    }
+
     private void placeRandomly(Organism organism, int attempts) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             Position position = new Position(random.nextInt(grid.width()), random.nextInt(grid.height()));
