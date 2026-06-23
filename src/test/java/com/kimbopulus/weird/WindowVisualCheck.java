@@ -20,7 +20,10 @@ public final class WindowVisualCheck {
 
         SwingUtilities.invokeAndWait(() -> {
             TerrariumFrame frame = new TerrariumFrame();
+            frame.setAlwaysOnTop(true);
             frame.setVisible(true);
+            frame.toFront();
+            frame.requestFocus();
             frameRef.set(frame);
         });
 
@@ -31,7 +34,10 @@ public final class WindowVisualCheck {
         output.getParentFile().mkdirs();
         ImageIO.write(image, "png", output);
 
-        SwingUtilities.invokeAndWait(frame::dispose);
+        SwingUtilities.invokeAndWait(() -> {
+            frame.setAlwaysOnTop(false);
+            frame.dispose();
+        });
         System.out.println("Window check saved " + output.getAbsolutePath());
         System.exit(0);
     }
