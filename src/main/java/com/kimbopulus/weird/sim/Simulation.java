@@ -14,6 +14,7 @@ public final class Simulation {
     private final Random random;
     private final WorldGrid grid;
     private final Organism[][] organisms;
+    private final List<PopulationSnapshot> history = new ArrayList<>();
     private int tick;
     private Season season = Season.SPRING;
 
@@ -28,6 +29,7 @@ public final class Simulation {
         simulation.seedPlants(220);
         simulation.seedRabbits(34);
         simulation.seedWolves(5);
+        simulation.recordSnapshot();
         return simulation;
     }
 
@@ -55,6 +57,7 @@ public final class Simulation {
                 grid.cellAt(position).addFertility(0.08);
             }
         }
+        recordSnapshot();
     }
 
     public WorldGrid grid() {
@@ -71,6 +74,18 @@ public final class Simulation {
 
     public Season season() {
         return season;
+    }
+
+    public PopulationSnapshot currentSnapshot() {
+        if (history.isEmpty()) {
+            recordSnapshot();
+        }
+        return history.get(history.size() - 1);
+    }
+
+    public List<PopulationSnapshot> recentHistory(int limit) {
+        int from = Math.max(0, history.size() - limit);
+        return List.copyOf(history.subList(from, history.size()));
     }
 
     public Organism organismAt(Position position) {
@@ -256,6 +271,38 @@ public final class Simulation {
                 placeOrganism(position, new Plant());
                 cell.spendFertility(0.02);
             }
+        }
+    }
+
+    private void recordSnapshot() {
+        double moisture = 0.0;
+        double fertility = 0.0;
+        double temperature = 0.0;
+        int cells = grid.width() * grid.height();
+
+        for (int y = 0; y < grid.height(); y++) {
+            for (int x = 0; x < grid.width(); x++) {
+                Cell cell = grid.cellAt(new Position(x, y));
+                moisture += cell.moisture();
+                fertility += cell.fertility();
+                temperature += cell.temperature();
+            }
+        }
+
+        history.add(new PopulationSnapshot(
+                tick,
+                season,
+                count(OrganismKind.PLANT),
+                count(OrganismKind.RABBIT),
+                count(OrganismKind.WOLF),
+                moisture / cells,
+                fertility / cells,
+                temperature / cells
+        ));
+
+        int maxHistory = 320;
+        if (history.size() > maxHistory) {
+            history.remove(0);
         }
     }
 
