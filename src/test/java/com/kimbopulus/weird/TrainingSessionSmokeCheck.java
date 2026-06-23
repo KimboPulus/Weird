@@ -38,7 +38,27 @@ public final class TrainingSessionSmokeCheck {
         require(training.progression().focusXp() == training.score(), "Earned score should become persistent XP.");
         require(training.streak() == 1, "Correct answer should start a streak.");
 
+        answerNextPromptCorrectly(simulation, training);
+        TrainingPrompt harderPrompt = waitForPrompt(simulation, training, 100);
+        require(harderPrompt.lookback() == 20, "A recall streak should increase the lookback.");
+
         System.out.printf("Training check passed: score=%d streak=%d%n", training.score(), training.streak());
+    }
+
+    private static void answerNextPromptCorrectly(Simulation simulation, TrainingSession training) {
+        TrainingPrompt prompt = waitForPrompt(simulation, training, 100);
+        training.answer(prompt.answerIndex());
+    }
+
+    private static TrainingPrompt waitForPrompt(Simulation simulation, TrainingSession training, int limit) {
+        for (int i = 0; i < limit; i++) {
+            simulation.tick();
+            training.update(simulation);
+            if (training.prompt() != null) {
+                return training.prompt();
+            }
+        }
+        throw new IllegalStateException("Training prompt did not appear within the expected interval.");
     }
 
     private static void require(boolean condition, String message) {
