@@ -23,13 +23,20 @@ public final class TerrariumPanel extends JPanel {
     private static final Color RABBIT_DARK = new Color(129, 99, 73);
     private static final Color WOLF = new Color(92, 96, 102);
     private static final Color WOLF_DARK = new Color(46, 49, 54);
+    private static final Color HOVER = new Color(255, 246, 172, 180);
 
     private final Simulation simulation;
+    private Position hoverPosition;
 
     public TerrariumPanel(Simulation simulation) {
         this.simulation = simulation;
         setBackground(new Color(24, 26, 23));
         setPreferredSize(new Dimension(960, 640));
+    }
+
+    public void setHoverPosition(Position hoverPosition) {
+        this.hoverPosition = hoverPosition;
+        repaint();
     }
 
     public Position positionAtPoint(int x, int y) {
@@ -61,6 +68,7 @@ public final class TerrariumPanel extends JPanel {
         drawCells(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawOrganisms(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
+        drawHover(g, metrics);
 
         g.dispose();
     }
@@ -168,6 +176,18 @@ public final class TerrariumPanel extends JPanel {
         int green = (int) (68 + fertility * 52 + moisture * 36);
         int blue = (int) (42 + moisture * 58);
         return new Color(clamp(red), clamp(green), clamp(blue));
+    }
+
+    private void drawHover(Graphics2D g, BoardMetrics metrics) {
+        if (hoverPosition == null) {
+            return;
+        }
+
+        int x = metrics.offsetX + hoverPosition.x() * metrics.cellSize;
+        int y = metrics.offsetY + hoverPosition.y() * metrics.cellSize;
+        g.setColor(HOVER);
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(x + 1, y + 1, metrics.cellSize - 2, metrics.cellSize - 2);
     }
 
     private int clamp(int value) {

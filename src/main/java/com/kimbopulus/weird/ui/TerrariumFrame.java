@@ -3,6 +3,7 @@ package com.kimbopulus.weird.ui;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -14,13 +15,18 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public final class TerrariumFrame extends JFrame {
     private final Simulation simulation;
+    private final TrainingSession training;
     private final TerrariumPanel terrariumPanel;
+    private final TrainingPanel trainingPanel;
     private final JLabel statusLabel;
     private final Timer timer;
     private ToolMode toolMode = ToolMode.RAIN;
@@ -30,14 +36,19 @@ public final class TerrariumFrame extends JFrame {
         super("Weird");
 
         simulation = Simulation.createDefault();
+        training = new TrainingSession();
         terrariumPanel = new TerrariumPanel(simulation);
+        trainingPanel = new TrainingPanel(simulation, training);
         statusLabel = new JLabel();
         statusLabel.setFont(statusLabel.getFont().deriveFont(Font.PLAIN, 13f));
         statusLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        statusLabel.setForeground(new Color(227, 222, 205));
 
         JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(new Color(30, 32, 29));
         content.add(createToolbar(), BorderLayout.NORTH);
         content.add(terrariumPanel, BorderLayout.CENTER);
+        content.add(trainingPanel, BorderLayout.EAST);
         content.add(statusLabel, BorderLayout.SOUTH);
         setContentPane(content);
 
@@ -50,7 +61,14 @@ public final class TerrariumFrame extends JFrame {
                 }
                 toolMode.apply(simulation, position);
                 terrariumPanel.repaint();
+                trainingPanel.refresh();
                 updateStatus();
+            }
+        });
+        terrariumPanel.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                terrariumPanel.setHoverPosition(terrariumPanel.positionAtPoint(event.getX(), event.getY()));
             }
         });
 
@@ -68,9 +86,12 @@ public final class TerrariumFrame extends JFrame {
     private JToolBar createToolbar() {
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        toolbar.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+        toolbar.setBackground(new Color(239, 233, 218));
+        toolbar.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
         ButtonGroup tools = new ButtonGroup();
+        JPanel toolButtons = new JPanel(new GridLayout(1, ToolMode.values().length, 6, 0));
+        toolButtons.setOpaque(false);
         for (ToolMode mode : ToolMode.values()) {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
@@ -79,8 +100,9 @@ public final class TerrariumFrame extends JFrame {
                 button.setSelected(true);
             }
             tools.add(button);
-            toolbar.add(button);
+            toolButtons.add(button);
         }
+        toolbar.add(toolButtons);
 
         toolbar.addSeparator();
 
@@ -109,7 +131,9 @@ public final class TerrariumFrame extends JFrame {
 
     private void stepSimulation() {
         simulation.tick();
+        training.update(simulation);
         terrariumPanel.repaint();
+        trainingPanel.refresh();
         updateStatus();
     }
 
