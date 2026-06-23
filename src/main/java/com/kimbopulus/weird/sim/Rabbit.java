@@ -2,7 +2,7 @@ package com.kimbopulus.weird.sim;
 
 public final class Rabbit extends Animal {
     public Rabbit() {
-        super(22, 2, 42, 11, 34, 18, OrganismKind.PLANT);
+        super(16, 4, 34, 7, 31, 20, 1, 0.1, OrganismKind.PLANT);
     }
 
     @Override
@@ -15,4 +15,3 @@ public final class Rabbit extends Animal {
         return new Rabbit();
     }
 }
-

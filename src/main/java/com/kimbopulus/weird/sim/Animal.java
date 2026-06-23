@@ -8,6 +8,8 @@ public abstract class Animal extends Organism {
     private final int foodEnergy;
     private final int reproductionEnergy;
     private final int reproductionCost;
+    private final int sightRange;
+    private final double reproductionChance;
     private final OrganismKind foodKind;
 
     protected Animal(
@@ -17,6 +19,8 @@ public abstract class Animal extends Organism {
             int foodEnergy,
             int reproductionEnergy,
             int reproductionCost,
+            int sightRange,
+            double reproductionChance,
             OrganismKind foodKind
     ) {
         super(startingEnergy);
@@ -25,6 +29,8 @@ public abstract class Animal extends Organism {
         this.foodEnergy = foodEnergy;
         this.reproductionEnergy = reproductionEnergy;
         this.reproductionCost = reproductionCost;
+        this.sightRange = sightRange;
+        this.reproductionChance = reproductionChance;
         this.foodKind = foodKind;
     }
 
@@ -48,13 +54,14 @@ public abstract class Animal extends Organism {
                 setEnergy(maxEnergy);
             }
         } else {
-            Position empty = first(simulation.emptyNeighbors(position));
-            if (empty != null && simulation.moveOrganism(position, empty)) {
-                current = empty;
+            Position target = first(simulation.visibleWithKind(position, foodKind, sightRange));
+            Position next = target == null ? first(simulation.passableNeighbors(position, foodKind)) : stepToward(simulation, position, target);
+            if (next != null && simulation.moveAnimal(position, next, foodKind)) {
+                current = next;
             }
         }
 
-        if (energy() >= reproductionEnergy) {
+        if (age() > 8 && energy() >= reproductionEnergy && simulation.random().nextDouble() < reproductionChance) {
             List<Position> emptyNeighbors = simulation.emptyNeighbors(current);
             if (!emptyNeighbors.isEmpty()) {
                 simulation.placeOrganism(emptyNeighbors.get(0), createOffspring());
@@ -65,6 +72,21 @@ public abstract class Animal extends Organism {
 
     protected abstract Animal createOffspring();
 
+    private Position stepToward(Simulation simulation, Position position, Position target) {
+        Position best = null;
+        int bestDistance = Integer.MAX_VALUE;
+
+        for (Position neighbor : simulation.passableNeighbors(position, foodKind)) {
+            int distance = Math.abs(neighbor.x() - target.x()) + Math.abs(neighbor.y() - target.y());
+            if (distance < bestDistance) {
+                best = neighbor;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
     private Position first(List<Position> positions) {
         if (positions.isEmpty()) {
             return null;
@@ -72,4 +94,3 @@ public abstract class Animal extends Organism {
         return positions.get(0);
     }
 }
-

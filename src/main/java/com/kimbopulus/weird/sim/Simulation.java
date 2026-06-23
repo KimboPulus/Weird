@@ -38,6 +38,7 @@ public final class Simulation {
         }
 
         grid.applySeason(season);
+        sproutWildPlants();
 
         List<Position> positions = occupiedPositions();
         Collections.shuffle(positions, random);
@@ -115,6 +116,14 @@ public final class Simulation {
         return true;
     }
 
+    public boolean moveAnimal(Position from, Position to, OrganismKind foodKind) {
+        Organism target = organismAt(to);
+        if (target != null && foodKind != OrganismKind.PLANT && target.kind() == OrganismKind.PLANT) {
+            removeOrganism(to);
+        }
+        return moveOrganism(from, to);
+    }
+
     public List<Position> emptyNeighbors(Position position) {
         List<Position> empty = new ArrayList<>();
         for (Position neighbor : grid.neighbors(position, random)) {
@@ -125,6 +134,17 @@ public final class Simulation {
         return empty;
     }
 
+    public List<Position> passableNeighbors(Position position, OrganismKind foodKind) {
+        List<Position> passable = new ArrayList<>();
+        for (Position neighbor : grid.neighbors(position, random)) {
+            Organism organism = organismAt(neighbor);
+            if (organism == null || (foodKind != OrganismKind.PLANT && organism.kind() == OrganismKind.PLANT)) {
+                passable.add(neighbor);
+            }
+        }
+        return passable;
+    }
+
     public List<Position> neighborsWithKind(Position position, OrganismKind kind) {
         List<Position> matches = new ArrayList<>();
         for (Position neighbor : grid.neighbors(position, random)) {
@@ -133,6 +153,26 @@ public final class Simulation {
                 matches.add(neighbor);
             }
         }
+        return matches;
+    }
+
+    public List<Position> visibleWithKind(Position position, OrganismKind kind, int range) {
+        List<Position> matches = new ArrayList<>();
+        for (int y = Math.max(0, position.y() - range); y <= Math.min(grid.height() - 1, position.y() + range); y++) {
+            for (int x = Math.max(0, position.x() - range); x <= Math.min(grid.width() - 1, position.x() + range); x++) {
+                Position candidate = new Position(x, y);
+                int distance = Math.abs(position.x() - candidate.x()) + Math.abs(position.y() - candidate.y());
+                if (distance == 0 || distance > range) {
+                    continue;
+                }
+
+                Organism organism = organismAt(candidate);
+                if (organism != null && organism.kind() == kind) {
+                    matches.add(candidate);
+                }
+            }
+        }
+        Collections.shuffle(matches, random);
         return matches;
     }
 
@@ -194,6 +234,27 @@ public final class Simulation {
             Position position = new Position(random.nextInt(grid.width()), random.nextInt(grid.height()));
             if (placeOrganism(position, organism)) {
                 return;
+            }
+        }
+    }
+
+    private void sproutWildPlants() {
+        int plantLimit = (grid.width() * grid.height()) / 2;
+        if (count(OrganismKind.PLANT) >= plantLimit) {
+            return;
+        }
+
+        int attempts = Math.max(4, (grid.width() * grid.height()) / 80);
+        for (int i = 0; i < attempts; i++) {
+            Position position = new Position(random.nextInt(grid.width()), random.nextInt(grid.height()));
+            if (!isEmpty(position)) {
+                continue;
+            }
+
+            Cell cell = grid.cellAt(position);
+            if (random.nextDouble() < cell.plantGrowthFactor() * 0.08) {
+                placeOrganism(position, new Plant());
+                cell.spendFertility(0.02);
             }
         }
     }

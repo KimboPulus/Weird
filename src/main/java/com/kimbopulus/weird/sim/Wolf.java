@@ -2,7 +2,7 @@ package com.kimbopulus.weird.sim;
 
 public final class Wolf extends Animal {
     public Wolf() {
-        super(45, 5, 78, 28, 68, 36, OrganismKind.RABBIT);
+        super(52, 3, 78, 28, 68, 42, 5, 0.08, OrganismKind.RABBIT);
     }
 
     @Override
@@ -15,4 +15,3 @@ public final class Wolf extends Animal {
         return new Wolf();
     }
 }
-

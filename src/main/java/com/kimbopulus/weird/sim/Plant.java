@@ -27,7 +27,7 @@ public final class Plant extends Organism {
             return;
         }
 
-        if (energy() >= SEED_COST && simulation.random().nextDouble() < growth * 0.28) {
+        if (energy() >= SEED_COST && simulation.random().nextDouble() < growth * 0.38) {
             List<Position> emptyNeighbors = simulation.emptyNeighbors(position);
             if (!emptyNeighbors.isEmpty()) {
                 simulation.placeOrganism(emptyNeighbors.get(0), new Plant());
@@ -41,4 +41,3 @@ public final class Plant extends Organism {
         return OrganismKind.PLANT;
     }
 }
-
