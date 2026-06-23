@@ -4,6 +4,7 @@ public final class Cell {
     private double moisture;
     private double temperature;
     private double fertility;
+    private boolean sanctuary;
 
     public Cell(double moisture, double temperature, double fertility) {
         reset(moisture, temperature, fertility);
@@ -19,6 +20,10 @@ public final class Cell {
 
     public double fertility() {
         return fertility;
+    }
+
+    public boolean sanctuary() {
+        return sanctuary;
     }
 
     public void addRain(double amount) {
@@ -63,6 +68,21 @@ public final class Cell {
         this.moisture = clamp01(moisture);
         this.temperature = clamp(temperature, -20.0, 45.0);
         this.fertility = clamp01(fertility);
+        sanctuary = false;
+    }
+
+    public void makeSanctuary() {
+        sanctuary = true;
+        stabilizeSanctuary();
+    }
+
+    public void stabilizeSanctuary() {
+        if (!sanctuary) {
+            return;
+        }
+        moisture = 0.62;
+        temperature = 21.0;
+        fertility = Math.max(fertility, 0.62);
     }
 
     private static double clamp01(double value) {

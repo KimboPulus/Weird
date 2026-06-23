@@ -1,6 +1,7 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.training.TrainingDrill;
 import com.kimbopulus.weird.training.TrainingPrompt;
 import com.kimbopulus.weird.training.TrainingSession;
@@ -15,7 +16,7 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedRabbits(24);
         simulation.seedWolves(3);
 
-        TrainingSession training = new TrainingSession();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
         require(training.drill() == TrainingDrill.BALANCE, "Training should start with the balance drill.");
         TrainingPrompt prompt = null;
         for (int i = 0; i < 80; i++) {
@@ -34,6 +35,7 @@ public final class TrainingSessionSmokeCheck {
         require(prompt.choices().size() == 3, "Recall should offer three trend choices.");
         training.answer(prompt.answerIndex());
         require(training.score() > oldScore, "Correct answer should increase score.");
+        require(training.progression().focusXp() == training.score(), "Earned score should become persistent XP.");
         require(training.streak() == 1, "Correct answer should start a streak.");
 
         System.out.printf("Training check passed: score=%d streak=%d%n", training.score(), training.streak());

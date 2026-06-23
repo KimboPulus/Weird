@@ -33,6 +33,7 @@ public final class TrainingPanel extends JPanel {
     private final TrainingSession training;
     private final JLabel titleLabel = new JLabel("Focus Grove");
     private final JLabel scoreLabel = new JLabel();
+    private final JLabel progressionLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
     private final JLabel drillLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
@@ -51,10 +52,10 @@ public final class TrainingPanel extends JPanel {
 
         setBackground(BACKGROUND);
         setPreferredSize(new Dimension(320, 640));
-        setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
-        setLayout(new BorderLayout(0, 14));
+        setBorder(BorderFactory.createEmptyBorder(14, 18, 12, 18));
+        setLayout(new BorderLayout(0, 9));
 
-        JPanel top = new JPanel(new GridLayout(0, 1, 0, 8));
+        JPanel top = new JPanel(new GridLayout(0, 1, 0, 4));
         top.setOpaque(false);
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 22f));
@@ -62,6 +63,7 @@ public final class TrainingPanel extends JPanel {
         top.add(titleLabel);
 
         configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
+        configureLabel(progressionLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(goalLabel, Font.PLAIN, 13f, MUTED);
         configureLabel(drillLabel, Font.BOLD, 13f, new Color(86, 96, 61));
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
@@ -69,6 +71,7 @@ public final class TrainingPanel extends JPanel {
         configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
         configureLabel(notableLabel, Font.PLAIN, 12f, MUTED);
         top.add(scoreLabel);
+        top.add(progressionLabel);
         top.add(goalLabel);
         top.add(drillLabel);
         top.add(balanceLabel);
@@ -78,10 +81,10 @@ public final class TrainingPanel extends JPanel {
 
         add(top, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout(0, 14));
+        JPanel center = new JPanel(new BorderLayout(0, 9));
         center.setOpaque(false);
         center.add(trendPanel, BorderLayout.NORTH);
-        JPanel stack = new JPanel(new BorderLayout(0, 12));
+        JPanel stack = new JPanel(new BorderLayout(0, 8));
         stack.setOpaque(false);
         stack.add(createPromptPanel(), BorderLayout.NORTH);
         stack.add(createControlsPanel(), BorderLayout.CENTER);
@@ -97,6 +100,10 @@ public final class TrainingPanel extends JPanel {
     public void refresh() {
         PopulationSnapshot snapshot = simulation.currentSnapshot();
         scoreLabel.setText("Score " + training.score() + "   Streak " + training.streak());
+        int focusXp = training.progression().focusXp();
+        progressionLabel.setText(training.progression().sanctuaryUnlocked()
+                ? "Focus XP " + focusXp + "   Sanctuary unlocked"
+                : "Focus XP " + focusXp + "/100   Next: Sanctuary");
         goalLabel.setText(html(training.focusGoal()));
         drillLabel.setText("Drill progress: " + training.drillProgress() + "/" + training.drillTarget());
         drillLabel.setForeground(training.drill().urgent() ? new Color(166, 57, 44) : new Color(86, 96, 61));
@@ -133,7 +140,7 @@ public final class TrainingPanel extends JPanel {
     }
 
     private JPanel createPromptPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        JPanel panel = new JPanel(new BorderLayout(0, 7));
         panel.setOpaque(false);
 
         configureLabel(promptLabel, Font.BOLD, 15f, TEXT);
@@ -141,7 +148,7 @@ public final class TrainingPanel extends JPanel {
 
         JPanel answers = new JPanel(new GridLayout(1, 3, 8, 0));
         answers.setOpaque(false);
-        answers.setPreferredSize(new Dimension(280, 42));
+        answers.setPreferredSize(new Dimension(280, 38));
         for (int i = 0; i < answerButtons.length; i++) {
             answerButtons[i] = answerButton(i);
             answers.add(answerButtons[i]);
@@ -172,7 +179,7 @@ public final class TrainingPanel extends JPanel {
     }
 
     private JPanel createControlsPanel() {
-        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 6));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 3));
         panel.setOpaque(false);
 
         JLabel title = new JLabel("Quick read");
@@ -206,7 +213,7 @@ public final class TrainingPanel extends JPanel {
         private TrendPanel(Simulation simulation) {
             this.simulation = simulation;
             setOpaque(false);
-            setPreferredSize(new Dimension(280, 150));
+            setPreferredSize(new Dimension(280, 125));
         }
 
         @Override

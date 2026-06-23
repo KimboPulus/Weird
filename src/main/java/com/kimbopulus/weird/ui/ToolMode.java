@@ -45,6 +45,12 @@ public enum ToolMode {
         public void apply(Simulation simulation, Position position) {
             simulation.addWolf(position);
         }
+    },
+    SANCTUARY("Sanctuary", "Protect one 2 x 2 seed patch from seasons and world weather.") {
+        @Override
+        public void apply(Simulation simulation, Position position) {
+            simulation.addSanctuary(position);
+        }
     };
 
     private final String label;

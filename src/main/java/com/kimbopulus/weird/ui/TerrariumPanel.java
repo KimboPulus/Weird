@@ -130,7 +130,14 @@ public final class TerrariumPanel extends JPanel {
                 Position position = new Position(x, y);
                 Cell cell = grid.cellAt(position);
                 g.setColor(soilColor(cell));
-                g.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                int px = offsetX + x * cellSize;
+                int py = offsetY + y * cellSize;
+                g.fillRect(px, py, cellSize, cellSize);
+                if (cell.sanctuary()) {
+                    g.setColor(new Color(221, 215, 128, 185));
+                    g.setStroke(new BasicStroke(2f));
+                    g.drawRect(px + 1, py + 1, cellSize - 3, cellSize - 3);
+                }
             }
         }
     }
@@ -287,6 +294,7 @@ public final class TerrariumPanel extends JPanel {
             case PLANT -> new Color(73, 184, 89, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
+            case SANCTUARY -> new Color(232, 218, 112, alpha);
         };
     }
 

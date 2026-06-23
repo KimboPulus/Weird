@@ -23,6 +23,8 @@ import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.EnumMap;
+import java.util.Map;
 
 public final class TerrariumFrame extends JFrame {
     private final Simulation simulation;
@@ -32,6 +34,7 @@ public final class TerrariumFrame extends JFrame {
     private final JLabel statusLabel;
     private final JLabel toolHintLabel;
     private final Timer timer;
+    private final Map<ToolMode, JToggleButton> toolButtons = new EnumMap<>(ToolMode.class);
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
 
@@ -71,6 +74,7 @@ public final class TerrariumFrame extends JFrame {
                 training.noteAction(toolMode.label(), terrariumPanel.describe(position));
                 terrariumPanel.repaint();
                 trainingPanel.refresh();
+                updateToolAvailability();
                 updateStatus();
             }
         });
@@ -87,6 +91,7 @@ public final class TerrariumFrame extends JFrame {
             stepSimulation();
         });
         timer.start();
+        updateToolAvailability();
         updateStatus();
         updateToolHint(null);
 
@@ -130,6 +135,7 @@ public final class TerrariumFrame extends JFrame {
             }
             tools.add(button);
             toolButtons.add(button);
+            this.toolButtons.put(mode, button);
         }
         toolbar.add(toolButtons);
         toolbar.add(Box.createHorizontalGlue());
@@ -175,6 +181,7 @@ public final class TerrariumFrame extends JFrame {
         training.update(simulation);
         terrariumPanel.repaint();
         trainingPanel.refresh();
+        updateToolAvailability();
         updateStatus();
     }
 
@@ -192,6 +199,7 @@ public final class TerrariumFrame extends JFrame {
         training.reset();
         terrariumPanel.repaint();
         trainingPanel.refresh();
+        updateToolAvailability();
         updateStatus();
         updateToolHint(null);
     }
@@ -214,5 +222,29 @@ public final class TerrariumFrame extends JFrame {
             return;
         }
         toolHintLabel.setText(toolMode.label() + ": " + terrariumPanel.describe(position));
+    }
+
+    private void updateToolAvailability() {
+        JToggleButton sanctuaryButton = toolButtons.get(ToolMode.SANCTUARY);
+        if (sanctuaryButton == null) {
+            return;
+        }
+
+        boolean unlocked = training.progression().sanctuaryUnlocked();
+        sanctuaryButton.setEnabled(unlocked && !simulation.sanctuaryPlaced());
+        if (!unlocked) {
+            sanctuaryButton.setToolTipText(
+                    "Unlock at 100 Focus XP. Current: " + training.progression().focusXp()
+            );
+        } else if (simulation.sanctuaryPlaced()) {
+            sanctuaryButton.setToolTipText("The one sanctuary for this terrarium has been placed.");
+            if (toolMode == ToolMode.SANCTUARY) {
+                toolMode = ToolMode.RAIN;
+                toolButtons.get(ToolMode.RAIN).setSelected(true);
+                updateToolHint(null);
+            }
+        } else {
+            sanctuaryButton.setToolTipText(ToolMode.SANCTUARY.description());
+        }
     }
 }

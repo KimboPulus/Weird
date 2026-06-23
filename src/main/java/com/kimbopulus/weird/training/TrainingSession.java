@@ -1,5 +1,6 @@
 package com.kimbopulus.weird.training;
 
+import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldEvent;
@@ -14,6 +15,7 @@ public final class TrainingSession {
     private static final List<String> TREND_CHOICES = List.of("Rising", "Stable", "Falling");
 
     private final Random random = new Random();
+    private final ProgressionProfile progression;
     private int score;
     private int streak;
     private int stableTicks;
@@ -23,6 +25,14 @@ public final class TrainingSession {
     private TrainingPrompt prompt;
     private TrainingDrill drill = TrainingDrill.BALANCE;
     private WorldEvent observedEvent = WorldEvent.CALM;
+
+    public TrainingSession() {
+        this(ProgressionProfile.loadDefault());
+    }
+
+    public TrainingSession(ProgressionProfile progression) {
+        this.progression = progression;
+    }
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
@@ -69,6 +79,10 @@ public final class TrainingSession {
         return prompt;
     }
 
+    public ProgressionProfile progression() {
+        return progression;
+    }
+
     public String focusGoal() {
         return drill.title() + ": " + drill.goal();
     }
@@ -100,7 +114,7 @@ public final class TrainingSession {
 
         if (selectedIndex == prompt.answerIndex()) {
             streak++;
-            score += 10 + Math.min(10, streak);
+            awardPoints(10 + Math.min(10, streak));
             feedback = "Correct. " + prompt.lookback() + "-tick recall held. Streak " + streak + ".";
             if (drill == TrainingDrill.RECALL) {
                 completeDrill("Recall drill complete.");
@@ -132,7 +146,7 @@ public final class TrainingSession {
         if (isBalanced(snapshot)) {
             stableTicks++;
             if (stableTicks > 0 && stableTicks % 25 == 0) {
-                score += 5;
+                awardPoints(5);
                 feedback = "Good control: balance held for " + stableTicks + " ticks.";
             }
         } else {
@@ -169,7 +183,7 @@ public final class TrainingSession {
     }
 
     private void completeDrill(String message) {
-        score += 25;
+        awardPoints(25);
         feedback = message + " New drill loaded.";
         drill = chooseNextDrill();
         drillProgress = 0;
@@ -198,6 +212,11 @@ public final class TrainingSession {
         ));
         choices.remove(drill);
         return choices.get(random.nextInt(choices.size()));
+    }
+
+    private void awardPoints(int points) {
+        score += points;
+        progression.addFocusXp(points);
     }
 
     private void updatePrompt(Simulation simulation, PopulationSnapshot current) {

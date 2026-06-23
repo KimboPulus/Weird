@@ -1,6 +1,7 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
 import com.kimbopulus.weird.ui.TrainingPanel;
@@ -37,7 +38,7 @@ public final class VisualSmokeCheck {
             simulation.seedRabbits(48);
             simulation.seedWolves(4);
 
-            TrainingSession training = new TrainingSession();
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             for (int i = 0; i < 80; i++) {
                 simulation.tick();
                 training.update(simulation);

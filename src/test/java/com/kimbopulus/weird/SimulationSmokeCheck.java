@@ -1,6 +1,7 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.sim.OrganismKind;
+import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 
 public final class SimulationSmokeCheck {
@@ -24,12 +25,16 @@ public final class SimulationSmokeCheck {
         int wolves = simulation.count(OrganismKind.WOLF);
         require(plants + rabbits + wolves > 0, "The terrarium should not be empty after the smoke run.");
         require(simulation.oldestAnimal() != null, "A surviving animal should be tracked as notable.");
+        require(simulation.addSanctuary(new Position(2, 2)), "The first sanctuary should be accepted.");
+        require(!simulation.addSanctuary(new Position(5, 5)), "Only one sanctuary should be allowed per run.");
+        require(simulation.grid().cellAt(new Position(2, 2)).sanctuary(), "Sanctuary soil should be marked.");
 
         simulation.restart();
         require(simulation.tickCount() == 0, "Restart should reset the tick count.");
         require(simulation.count(OrganismKind.PLANT) > 0, "Restart should restore plants.");
         require(simulation.count(OrganismKind.RABBIT) > 0, "Restart should restore rabbits.");
         require(simulation.count(OrganismKind.WOLF) > 0, "Restart should restore wolves.");
+        require(!simulation.sanctuaryPlaced(), "Restart should allow a new sanctuary.");
 
         System.out.printf("Smoke check passed: plants=%d rabbits=%d wolves=%d%n", plants, rabbits, wolves);
     }

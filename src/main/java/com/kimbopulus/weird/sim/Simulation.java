@@ -18,6 +18,7 @@ public final class Simulation {
     private int tick;
     private Season season = Season.SPRING;
     private WorldEvent currentEvent = WorldEvent.CALM;
+    private boolean sanctuaryPlaced;
 
     public Simulation(int width, int height, long seed) {
         this.random = new Random(seed);
@@ -96,6 +97,7 @@ public final class Simulation {
         tick = 0;
         season = Season.SPRING;
         currentEvent = WorldEvent.CALM;
+        sanctuaryPlaced = false;
         seedPlants(220);
         seedRabbits(48);
         seedWolves(4);
@@ -277,6 +279,19 @@ public final class Simulation {
             grid.fertilizeAround(center, 1, 0.18);
             grid.rainAround(center, 1, 0.04);
         }
+    }
+
+    public boolean addSanctuary(Position position) {
+        if (sanctuaryPlaced || !grid.contains(position)) {
+            return false;
+        }
+        grid.createSanctuary(position);
+        sanctuaryPlaced = true;
+        return true;
+    }
+
+    public boolean sanctuaryPlaced() {
+        return sanctuaryPlaced;
     }
 
     public int clearPatch(Position center) {
