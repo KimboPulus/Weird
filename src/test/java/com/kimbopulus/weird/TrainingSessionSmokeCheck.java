@@ -30,7 +30,9 @@ public final class TrainingSessionSmokeCheck {
         require(prompt != null, "Training prompt did not appear.");
         require(training.drillProgress() >= 0, "Drill progress should be available.");
         int oldScore = training.score();
-        training.answer(prompt.answer());
+        require(prompt.lookback() == 10, "Recall should begin with a short lookback.");
+        require(prompt.choices().size() == 3, "Recall should offer three trend choices.");
+        training.answer(prompt.answerIndex());
         require(training.score() > oldScore, "Correct answer should increase score.");
         require(training.streak() == 1, "Correct answer should start a streak.");
 

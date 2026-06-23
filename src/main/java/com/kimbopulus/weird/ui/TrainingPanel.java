@@ -1,6 +1,5 @@
 package com.kimbopulus.weird.ui;
 
-import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.training.TrainingPrompt;
@@ -40,6 +39,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel eventLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
+    private final JButton[] answerButtons = new JButton[3];
     private final TrendPanel trendPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
@@ -109,8 +109,10 @@ public final class TrainingPanel extends JPanel {
         TrainingPrompt prompt = training.prompt();
         if (prompt == null) {
             promptLabel.setText(html("Recall prompt coming soon."));
+            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
         } else {
             promptLabel.setText(html(prompt.question()));
+            setAnswerChoices(prompt.choices(), true);
         }
         feedbackLabel.setText(html(training.feedback()));
         trendPanel.repaint();
@@ -126,9 +128,10 @@ public final class TrainingPanel extends JPanel {
         JPanel answers = new JPanel(new GridLayout(1, 3, 8, 0));
         answers.setOpaque(false);
         answers.setPreferredSize(new Dimension(280, 42));
-        answers.add(answerButton("Plants", OrganismKind.PLANT));
-        answers.add(answerButton("Rabbits", OrganismKind.RABBIT));
-        answers.add(answerButton("Wolves", OrganismKind.WOLF));
+        for (int i = 0; i < answerButtons.length; i++) {
+            answerButtons[i] = answerButton(i);
+            answers.add(answerButtons[i]);
+        }
 
         JPanel answerWrap = new JPanel(new BorderLayout());
         answerWrap.setOpaque(false);
@@ -137,14 +140,21 @@ public final class TrainingPanel extends JPanel {
         return panel;
     }
 
-    private JButton answerButton(String text, OrganismKind kind) {
-        JButton button = new JButton(text);
+    private JButton answerButton(int answerIndex) {
+        JButton button = new JButton();
         button.setFocusable(false);
         button.addActionListener(event -> {
-            training.answer(kind);
+            training.answer(answerIndex);
             refresh();
         });
         return button;
+    }
+
+    private void setAnswerChoices(List<String> choices, boolean enabled) {
+        for (int i = 0; i < answerButtons.length; i++) {
+            answerButtons[i].setText(choices.get(i));
+            answerButtons[i].setEnabled(enabled);
+        }
     }
 
     private JPanel createControlsPanel() {

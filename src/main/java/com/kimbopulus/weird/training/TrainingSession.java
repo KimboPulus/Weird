@@ -1,16 +1,17 @@
 package com.kimbopulus.weird.training;
 
-import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
 
 import java.util.List;
+import java.util.Random;
 
 public final class TrainingSession {
-    private static final int RECALL_LOOKBACK = 24;
-    private static final int RECALL_INTERVAL = 42;
+    private static final int RECALL_INTERVAL = 38;
     private static final int PROMPT_LIFETIME = 34;
+    private static final List<String> TREND_CHOICES = List.of("Rising", "Stable", "Falling");
 
+    private final Random random = new Random();
     private int score;
     private int streak;
     private int stableTicks;
@@ -82,22 +83,22 @@ public final class TrainingSession {
         return "Balance is shifting";
     }
 
-    public void answer(OrganismKind selected) {
+    public void answer(int selectedIndex) {
         if (prompt == null) {
             feedback = "No recall prompt is active right now.";
             return;
         }
 
-        if (selected == prompt.answer()) {
+        if (selectedIndex == prompt.answerIndex()) {
             streak++;
             score += 10 + Math.min(10, streak);
-            feedback = "Correct. Streak " + streak + ".";
+            feedback = "Correct. " + prompt.lookback() + "-tick recall held. Streak " + streak + ".";
             if (drill == TrainingDrill.RECALL) {
                 completeDrill("Recall drill complete.");
             }
         } else {
             streak = 0;
-            feedback = "Not this time. The answer was " + label(prompt.answer()) + ".";
+            feedback = "Not this time. The trend was " + prompt.answerLabel().toLowerCase() + ".";
         }
         prompt = null;
     }
@@ -167,22 +168,40 @@ public final class TrainingSession {
             prompt = null;
         }
 
-        if (prompt != null || current.tick() - lastPromptTick < RECALL_INTERVAL || current.tick() < RECALL_LOOKBACK) {
+        int lookback = recallLookback();
+        if (prompt != null || current.tick() - lastPromptTick < RECALL_INTERVAL || current.tick() < lookback) {
             return;
         }
 
-        List<PopulationSnapshot> history = simulation.recentHistory(RECALL_LOOKBACK + 2);
-        if (history.size() <= RECALL_LOOKBACK) {
+        List<PopulationSnapshot> history = simulation.recentHistory(lookback + 1);
+        if (history.size() <= lookback) {
             return;
         }
 
         PopulationSnapshot past = history.get(0);
+        PopulationMetric metric = PopulationMetric.values()[random.nextInt(PopulationMetric.values().length)];
+        int oldValue = metric.value(past);
+        int newValue = metric.value(current);
+        int tolerance = Math.max(2, (int) Math.ceil(Math.max(1, oldValue) * 0.06));
+        int answerIndex = newValue > oldValue + tolerance ? 0 : newValue < oldValue - tolerance ? 2 : 1;
         prompt = new TrainingPrompt(
-                "Recall: most common " + RECALL_LOOKBACK + " ticks ago?",
-                past.mostCommonKind(),
-                current.tick()
+                "Over the last " + lookback + " ticks, were " + metric.label + " rising, stable, or falling?",
+                TREND_CHOICES,
+                answerIndex,
+                current.tick(),
+                lookback
         );
         lastPromptTick = current.tick();
+    }
+
+    private int recallLookback() {
+        if (streak >= 5) {
+            return 32;
+        }
+        if (streak >= 2) {
+            return 20;
+        }
+        return 10;
     }
 
     private boolean isBalanced(PopulationSnapshot snapshot) {
@@ -194,11 +213,32 @@ public final class TrainingSession {
                 && snapshot.wolves() <= 16;
     }
 
-    private String label(OrganismKind kind) {
-        return switch (kind) {
-            case PLANT -> "plants";
-            case RABBIT -> "rabbits";
-            case WOLF -> "wolves";
+    private enum PopulationMetric {
+        PLANTS("plants") {
+            @Override
+            int value(PopulationSnapshot snapshot) {
+                return snapshot.plants();
+            }
+        },
+        RABBITS("rabbits") {
+            @Override
+            int value(PopulationSnapshot snapshot) {
+                return snapshot.rabbits();
+            }
+        },
+        WOLVES("wolves") {
+            @Override
+            int value(PopulationSnapshot snapshot) {
+                return snapshot.wolves();
+            }
         };
+
+        private final String label;
+
+        PopulationMetric(String label) {
+            this.label = label;
+        }
+
+        abstract int value(PopulationSnapshot snapshot);
     }
 }
