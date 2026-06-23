@@ -15,6 +15,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -23,6 +26,7 @@ import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.ActionEvent;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -61,6 +65,7 @@ public final class TerrariumFrame extends JFrame {
         content.add(trainingPanel, BorderLayout.EAST);
         content.add(statusLabel, BorderLayout.SOUTH);
         setContentPane(content);
+        installKeyBindings();
 
         terrariumPanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -124,10 +129,11 @@ public final class TerrariumFrame extends JFrame {
         ButtonGroup tools = new ButtonGroup();
         JPanel toolButtons = new JPanel(new GridLayout(1, ToolMode.values().length, 6, 0));
         toolButtons.setOpaque(false);
+        int shortcut = 1;
         for (ToolMode mode : ToolMode.values()) {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
-            button.setToolTipText(mode.description());
+            button.setToolTipText(shortcut + ": " + mode.description());
             button.addActionListener(event -> {
                 toolMode = mode;
                 updateToolHint(null);
@@ -138,6 +144,7 @@ public final class TerrariumFrame extends JFrame {
             tools.add(button);
             toolButtons.add(button);
             this.toolButtons.put(mode, button);
+            shortcut++;
         }
         toolbar.add(toolButtons);
         toolbar.add(Box.createHorizontalGlue());
@@ -179,8 +186,12 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void stepSimulation() {
+        int previousLevel = training.levelNumber();
         simulation.tick();
         training.update(simulation);
+        if (training.levelNumber() != previousLevel) {
+            terrariumPanel.showBanner("Level " + training.levelNumber() + ": " + training.levelTitle());
+        }
         terrariumPanel.repaint();
         trainingPanel.refresh();
         updateToolAvailability();
@@ -246,7 +257,48 @@ public final class TerrariumFrame extends JFrame {
                 updateToolHint(null);
             }
         } else {
-            sanctuaryButton.setToolTipText(ToolMode.SANCTUARY.description());
+            sanctuaryButton.setToolTipText("8: " + ToolMode.SANCTUARY.description());
         }
+    }
+
+    private void installKeyBindings() {
+        JComponent root = getRootPane();
+        ToolMode[] modes = ToolMode.values();
+        for (int i = 0; i < modes.length; i++) {
+            ToolMode mode = modes[i];
+            String actionName = "tool-" + mode.name();
+            root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                    .put(KeyStroke.getKeyStroke(Character.forDigit(i + 1, 10)), actionName);
+            root.getActionMap().put(actionName, new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent event) {
+                    selectTool(mode);
+                }
+            });
+        }
+
+        bindKey(root, "SPACE", "toggle-pause", this::togglePause);
+        bindKey(root, "N", "step", this::stepSimulation);
+        bindKey(root, "R", "restart", this::restart);
+    }
+
+    private void bindKey(JComponent root, String key, String actionName, Runnable action) {
+        root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key), actionName);
+        root.getActionMap().put(actionName, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                action.run();
+            }
+        });
+    }
+
+    private void selectTool(ToolMode mode) {
+        JToggleButton button = toolButtons.get(mode);
+        if (button == null || !button.isEnabled()) {
+            return;
+        }
+        toolMode = mode;
+        button.setSelected(true);
+        updateToolHint(null);
     }
 }

@@ -14,6 +14,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,12 +44,15 @@ public final class TerrariumPanel extends JPanel {
     private static final BasicStroke VETERAN_STROKE = new BasicStroke(1.5f);
     private static final BasicStroke HOVER_STROKE = new BasicStroke(2f);
     private static final long EFFECT_DURATION_MS = 600;
+    private static final long BANNER_DURATION_MS = 1800;
     private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
     private final List<ToolEffect> toolEffects = new ArrayList<>();
     private final Timer effectTimer;
     private Position hoverPosition;
+    private String bannerText;
+    private long bannerStartedAt;
 
     public TerrariumPanel(Simulation simulation) {
         this.simulation = simulation;
@@ -70,6 +75,15 @@ public final class TerrariumPanel extends JPanel {
 
     public void showToolEffect(Position position, ToolMode mode) {
         toolEffects.add(new ToolEffect(position, mode, System.currentTimeMillis()));
+        if (!effectTimer.isRunning()) {
+            effectTimer.start();
+        }
+        repaint();
+    }
+
+    public void showBanner(String text) {
+        bannerText = text;
+        bannerStartedAt = System.currentTimeMillis();
         if (!effectTimer.isRunning()) {
             effectTimer.start();
         }
@@ -141,6 +155,8 @@ public final class TerrariumPanel extends JPanel {
         drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawToolEffects(g, metrics);
         drawHover(g, metrics);
+        drawCrisisEdge(g, metrics);
+        drawBanner(g, metrics);
 
         g.dispose();
     }
@@ -348,6 +364,59 @@ public final class TerrariumPanel extends JPanel {
         }
     }
 
+    private void drawCrisisEdge(Graphics2D g, BoardMetrics metrics) {
+        String crisis = null;
+        Color color = null;
+        if (simulation.count(OrganismKind.RABBIT) < 12) {
+            crisis = "RABBITS LOW";
+            color = new Color(212, 153, 67, 210);
+        } else if (simulation.count(OrganismKind.WOLF) < 2) {
+            crisis = "WOLVES LOW";
+            color = new Color(194, 83, 66, 210);
+        } else if (simulation.count(OrganismKind.RABBIT) > 105) {
+            crisis = "RABBITS HIGH";
+            color = new Color(194, 83, 66, 210);
+        } else if (simulation.count(OrganismKind.PLANT) > 1100) {
+            crisis = "PLANTS HIGH";
+            color = new Color(212, 153, 67, 210);
+        }
+        if (crisis == null) {
+            return;
+        }
+
+        g.setColor(color);
+        g.setStroke(new BasicStroke(4f));
+        g.drawRect(metrics.offsetX + 2, metrics.offsetY + 2, metrics.width - 5, metrics.height - 5);
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 12f));
+        FontMetrics fontMetrics = g.getFontMetrics();
+        int labelWidth = fontMetrics.stringWidth(crisis) + 16;
+        g.fillRoundRect(metrics.offsetX + 8, metrics.offsetY + 8, labelWidth, 24, 5, 5);
+        g.setColor(Color.WHITE);
+        g.drawString(crisis, metrics.offsetX + 16, metrics.offsetY + 25);
+    }
+
+    private void drawBanner(Graphics2D g, BoardMetrics metrics) {
+        if (bannerText == null) {
+            return;
+        }
+        double progress = (System.currentTimeMillis() - bannerStartedAt) / (double) BANNER_DURATION_MS;
+        if (progress >= 1.0) {
+            return;
+        }
+
+        int alpha = progress < 0.75 ? 225 : (int) (225 * (1.0 - progress) / 0.25);
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 22f));
+        FontMetrics fontMetrics = g.getFontMetrics();
+        int width = fontMetrics.stringWidth(bannerText) + 42;
+        int height = 54;
+        int x = metrics.offsetX + (metrics.width - width) / 2;
+        int y = metrics.offsetY + 28;
+        g.setColor(new Color(32, 38, 32, alpha));
+        g.fillRoundRect(x, y, width, height, 8, 8);
+        g.setColor(new Color(239, 235, 211, alpha));
+        g.drawString(bannerText, x + 21, y + 35);
+    }
+
     private Color effectColor(ToolMode mode, int alpha) {
         return switch (mode) {
             case RAIN -> new Color(78, 151, 214, alpha);
@@ -370,7 +439,12 @@ public final class TerrariumPanel extends JPanel {
             }
         }
         repaint();
-        if (toolEffects.isEmpty()) {
+        boolean bannerActive = bannerText != null
+                && now - bannerStartedAt <= BANNER_DURATION_MS;
+        if (!bannerActive) {
+            bannerText = null;
+        }
+        if (toolEffects.isEmpty() && !bannerActive) {
             effectTimer.stop();
         }
     }

@@ -61,6 +61,13 @@ It writes `out/window-check.png`.
 - `Speed` changes the simulation pace.
 - `Restart` starts a fresh terrarium and training session.
 
+Keyboard controls:
+
+- `1` to `8` select gardener tools.
+- `Space` pauses or resumes.
+- `N` advances one tick.
+- `R` restarts the run.
+
 Move the pointer over the board to inspect moisture, fertility, temperature, and the current occupant.
 
 Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary cells have a gold border. Rabbits, wolves, plants, and veteran animals each have a distinct board silhouette.
@@ -71,5 +78,6 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 - Recall questions ask whether a selected population was rising, stable, or falling.
 - Recall lookback grows from 10 to 20 and then 32 ticks as the answer streak improves.
 - Later levels can reverse the recall rule and ask for the opposite trend.
+- Level changes appear briefly over the board, and ecosystem crises add a labeled border.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
 - Score also becomes persistent Focus XP in `data/progress.properties`.
