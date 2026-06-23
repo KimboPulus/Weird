@@ -2,7 +2,9 @@ package com.kimbopulus.weird.training;
 
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.sim.WorldEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -20,9 +22,11 @@ public final class TrainingSession {
     private String feedback = "Watch the food chain.";
     private TrainingPrompt prompt;
     private TrainingDrill drill = TrainingDrill.BALANCE;
+    private WorldEvent observedEvent = WorldEvent.CALM;
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
+        checkForWeatherAlert(simulation.currentEvent());
         updateStability(current);
         updateDrill(current);
         updatePrompt(simulation, current);
@@ -49,7 +53,12 @@ public final class TrainingSession {
     }
 
     public int drillTarget() {
-        return drill == TrainingDrill.BALANCE ? 35 : drill == TrainingDrill.RECALL ? 1 : 30;
+        return switch (drill) {
+            case BALANCE -> 35;
+            case RECALL -> 1;
+            case CLIMATE_ALERT -> 20;
+            case PREDATORS, OVERGROWTH -> 30;
+        };
     }
 
     public String feedback() {
@@ -116,6 +125,7 @@ public final class TrainingSession {
         feedback = "Watch the food chain.";
         prompt = null;
         drill = TrainingDrill.BALANCE;
+        observedEvent = WorldEvent.CALM;
     }
 
     private void updateStability(PopulationSnapshot snapshot) {
@@ -139,6 +149,10 @@ public final class TrainingSession {
             case BALANCE -> isBalanced(snapshot);
             case PREDATORS -> snapshot.wolves() >= 3;
             case OVERGROWTH -> snapshot.plants() < 900;
+            case CLIMATE_ALERT -> snapshot.averageMoisture() >= 0.34
+                    && snapshot.averageMoisture() <= 0.72
+                    && snapshot.averageTemperature() >= 12.0
+                    && snapshot.averageTemperature() <= 30.0;
             case RECALL -> false;
         };
 
@@ -157,8 +171,33 @@ public final class TrainingSession {
     private void completeDrill(String message) {
         score += 25;
         feedback = message + " New drill loaded.";
-        drill = drill.next();
+        drill = chooseNextDrill();
         drillProgress = 0;
+    }
+
+    private void checkForWeatherAlert(WorldEvent event) {
+        if (event == observedEvent) {
+            return;
+        }
+
+        observedEvent = event;
+        boolean disruptiveWeather = event == WorldEvent.HEAT_WAVE || event == WorldEvent.RAIN_FRONT;
+        if (disruptiveWeather && drill != TrainingDrill.CLIMATE_ALERT && random.nextDouble() < 0.7) {
+            drill = TrainingDrill.CLIMATE_ALERT;
+            drillProgress = 0;
+            feedback = "Weather alert: stabilize the climate before returning to normal drills.";
+        }
+    }
+
+    private TrainingDrill chooseNextDrill() {
+        List<TrainingDrill> choices = new ArrayList<>(List.of(
+                TrainingDrill.BALANCE,
+                TrainingDrill.RECALL,
+                TrainingDrill.PREDATORS,
+                TrainingDrill.OVERGROWTH
+        ));
+        choices.remove(drill);
+        return choices.get(random.nextInt(choices.size()));
     }
 
     private void updatePrompt(Simulation simulation, PopulationSnapshot current) {

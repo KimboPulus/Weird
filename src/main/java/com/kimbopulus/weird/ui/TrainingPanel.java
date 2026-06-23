@@ -95,6 +95,7 @@ public final class TrainingPanel extends JPanel {
         scoreLabel.setText("Score " + training.score() + "   Streak " + training.streak());
         goalLabel.setText(html(training.focusGoal()));
         drillLabel.setText("Drill progress: " + training.drillProgress() + "/" + training.drillTarget());
+        drillLabel.setForeground(training.drill().urgent() ? new Color(166, 57, 44) : new Color(86, 96, 61));
         balanceLabel.setText(training.balanceStatus(snapshot));
         climateLabel.setText(String.format(
                 "Moisture %.0f%%   Fertility %.0f%%   Temp %.1f C",
