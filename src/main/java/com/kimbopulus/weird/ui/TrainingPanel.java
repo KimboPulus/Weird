@@ -2,7 +2,7 @@ package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
-import com.kimbopulus.weird.sim.NotableAnimal;
+import com.kimbopulus.weird.training.FocusRule;
 import com.kimbopulus.weird.training.TrainingPrompt;
 import com.kimbopulus.weird.training.TrainingSession;
 
@@ -10,6 +10,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -28,20 +29,22 @@ public final class TrainingPanel extends JPanel {
     private static final Color GREEN = new Color(71, 139, 84);
     private static final Color RABBIT = new Color(166, 119, 74);
     private static final Color WOLF = new Color(78, 88, 103);
+    private static final Color RULE_NORMAL = new Color(75, 80, 112);
+    private static final Color RULE_OPPOSITE = new Color(160, 66, 48);
 
     private final Simulation simulation;
     private final TrainingSession training;
-    private final JLabel titleLabel = new JLabel("Focus Grove");
+    private final JLabel titleLabel = new JLabel("Focus Path");
+    private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
-    private final JLabel progressionLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
-    private final JLabel drillLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
-    private final JLabel notableLabel = new JLabel();
+    private final JLabel ruleLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
+    private final JProgressBar levelProgress = new JProgressBar();
     private final JButton[] answerButtons = new JButton[3];
     private final TrendPanel trendPanel;
 
@@ -62,22 +65,26 @@ public final class TrainingPanel extends JPanel {
         titleLabel.setForeground(TEXT);
         top.add(titleLabel);
 
+        configureLabel(levelLabel, Font.BOLD, 15f, new Color(75, 101, 67));
         configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
-        configureLabel(progressionLabel, Font.PLAIN, 12f, MUTED);
-        configureLabel(goalLabel, Font.PLAIN, 13f, MUTED);
-        configureLabel(drillLabel, Font.BOLD, 13f, new Color(86, 96, 61));
+        configureLabel(goalLabel, Font.BOLD, 14f, TEXT);
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
-        configureLabel(notableLabel, Font.PLAIN, 12f, MUTED);
-        top.add(scoreLabel);
-        top.add(progressionLabel);
+        configureLabel(ruleLabel, Font.BOLD, 13f, RULE_NORMAL);
+        levelProgress.setStringPainted(true);
+        levelProgress.setForeground(new Color(77, 143, 85));
+        levelProgress.setBackground(new Color(222, 216, 199));
+        levelProgress.setBorderPainted(false);
+        levelProgress.setPreferredSize(new Dimension(280, 18));
+        top.add(levelLabel);
         top.add(goalLabel);
-        top.add(drillLabel);
+        top.add(levelProgress);
+        top.add(scoreLabel);
         top.add(balanceLabel);
         top.add(climateLabel);
         top.add(eventLabel);
-        top.add(notableLabel);
+        top.add(ruleLabel);
 
         add(top, BorderLayout.NORTH);
 
@@ -100,36 +107,28 @@ public final class TrainingPanel extends JPanel {
     public void refresh() {
         PopulationSnapshot snapshot = simulation.currentSnapshot();
         scoreLabel.setText("Score " + training.score() + "   Streak " + training.streak());
-        int focusXp = training.progression().focusXp();
-        progressionLabel.setText(training.progression().sanctuaryUnlocked()
-                ? "Focus XP " + focusXp + "   Sanctuary unlocked"
-                : "Focus XP " + focusXp + "/100   Next: Sanctuary");
-        goalLabel.setText(html(training.focusGoal()));
-        drillLabel.setText("Drill progress: " + training.drillProgress() + "/" + training.drillTarget());
-        drillLabel.setForeground(training.drill().urgent() ? new Color(166, 57, 44) : new Color(86, 96, 61));
+        levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
+                + "   " + training.levelTitle());
+        goalLabel.setText(training.objective());
+        levelProgress.setMaximum(training.drillTarget());
+        levelProgress.setValue(training.drillProgress());
+        levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
         balanceLabel.setText(training.balanceStatus(snapshot));
         climateLabel.setText(String.format(
-                "Moisture %.0f%%   Fertility %.0f%%   Temp %.1f C",
+                "Water %.0f%%   Soil %.0f%%   %.0f C",
                 snapshot.averageMoisture() * 100.0,
                 snapshot.averageFertility() * 100.0,
                 snapshot.averageTemperature()
         ));
-        eventLabel.setText(html(
-                simulation.currentEvent().title() + ": " + simulation.currentEvent().description()
-        ));
-        NotableAnimal notable = simulation.oldestAnimal();
-        notableLabel.setText(notable == null
-                ? "Notable animal: none"
-                : String.format(
-                        "Oldest %s: age %d%s",
-                        notable.kind().name().toLowerCase(),
-                        notable.age(),
-                        notable.age() >= 80 ? " - veteran" : ""
-                ));
+        eventLabel.setText("Weather: " + simulation.currentEvent().title());
+        ruleLabel.setText("Rule: " + training.focusRule().instruction());
+        ruleLabel.setForeground(training.focusRule() == FocusRule.OPPOSITE
+                ? RULE_OPPOSITE
+                : RULE_NORMAL);
 
         TrainingPrompt prompt = training.prompt();
         if (prompt == null) {
-            promptLabel.setText(html("Recall prompt coming soon."));
+            promptLabel.setText("Watch for the next recall.");
             setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
         } else {
             promptLabel.setText(html(prompt.question()));
@@ -179,16 +178,15 @@ public final class TrainingPanel extends JPanel {
     }
 
     private JPanel createControlsPanel() {
-        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 3));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 4));
         panel.setOpaque(false);
 
-        JLabel title = new JLabel("Quick read");
+        JLabel title = new JLabel("Quick help");
         configureLabel(title, Font.BOLD, 14f, TEXT);
         panel.add(title);
-        panel.add(help("Rain or Compost: recover weak plant zones."));
-        panel.add(help("Drought or Trim: slow plant overgrowth."));
-        panel.add(help("Rabbit: restore grazers when plants surge."));
-        panel.add(help("Wolf: control rabbit spikes."));
+        panel.add(help("Low plants: Rain or Compost"));
+        panel.add(help("Too many plants: Rabbit or Trim"));
+        panel.add(help("Too many rabbits: Wolf"));
         return panel;
     }
 

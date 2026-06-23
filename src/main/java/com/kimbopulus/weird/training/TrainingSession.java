@@ -100,21 +100,21 @@ public final class TrainingSession {
 
     public String balanceStatus(PopulationSnapshot snapshot) {
         if (isBalanced(snapshot)) {
-            return "Balanced for " + stableTicks + " ticks";
+            return "Balance: steady";
         }
         if (snapshot.rabbits() < 12) {
-            return "Rabbits are low";
+            return "Need rabbits";
         }
         if (snapshot.wolves() < 2) {
-            return "Predators are missing";
+            return "Need wolves";
         }
         if (snapshot.plants() > 1100) {
-            return "Plants are crowding the board";
+            return "Too many plants";
         }
         if (snapshot.rabbits() > 105) {
-            return "Rabbits are overgrazing";
+            return "Too many rabbits";
         }
-        return "Balance is shifting";
+        return "Balance: changing";
     }
 
     public void answer(int selectedIndex) {
@@ -126,7 +126,7 @@ public final class TrainingSession {
         if (selectedIndex == prompt.answerIndex()) {
             streak++;
             awardPoints(10 + Math.min(10, streak));
-            feedback = "Correct. " + prompt.lookback() + "-tick recall held. Streak " + streak + ".";
+            feedback = "Correct. Streak " + streak + ".";
             if (level.drill() == TrainingDrill.RECALL) {
                 levelProgress++;
                 if (levelProgress >= level.target()) {
@@ -135,7 +135,7 @@ public final class TrainingSession {
             }
         } else {
             streak = 0;
-            feedback = "Not this time. The trend was " + prompt.answerLabel().toLowerCase() + ".";
+            feedback = "Answer: " + prompt.answerLabel() + ".";
         }
         prompt = null;
     }
@@ -161,7 +161,7 @@ public final class TrainingSession {
             stableTicks++;
             if (stableTicks > 0 && stableTicks % 25 == 0) {
                 awardPoints(5);
-                feedback = "Good control: balance held for " + stableTicks + " ticks.";
+                feedback = "Balance held. +5";
             }
         } else {
             stableTicks = 0;
@@ -219,7 +219,7 @@ public final class TrainingSession {
     private void updatePrompt(Simulation simulation, PopulationSnapshot current) {
         if (prompt != null && current.tick() - prompt.createdAtTick() > PROMPT_LIFETIME) {
             streak = 0;
-            feedback = "Prompt expired. Keep scanning the board.";
+            feedback = "Recall missed.";
             prompt = null;
         }
 

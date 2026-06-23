@@ -2,7 +2,7 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, and wolves hunt rabbits. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes illustrated terrain and wildlife, adaptive focus drills, population-trend recall prompts, changing weather events, veteran animals, persistent Focus XP, and ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, six objective-based levels, adaptive recall prompts, changing weather events, veteran animals, persistent Focus XP, and ecosystem stability goals.
 
 ## Current build
 
@@ -67,9 +67,9 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 
 ## Focus training
 
+- Six levels give the run a clear objective and advance when its progress bar is filled.
 - Recall questions ask whether a selected population was rising, stable, or falling.
 - Recall lookback grows from 10 to 20 and then 32 ticks as the answer streak improves.
-- Completed drills are replaced unpredictably instead of following a fixed order.
-- Rain fronts and heat waves can interrupt the current task with a climate response drill.
+- Later levels can reverse the recall rule and ask for the opposite trend.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
 - Score also becomes persistent Focus XP in `data/progress.properties`.
