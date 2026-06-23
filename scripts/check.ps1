@@ -19,4 +19,4 @@ if ($tests.Count -eq 0) {
 
 javac -cp (Join-Path $root "out") -d $testOutput $tests
 java -cp "$($root)\out;$testOutput" com.kimbopulus.weird.SimulationSmokeCheck
-
+java -cp "$($root)\out;$testOutput" com.kimbopulus.weird.TrainingSessionSmokeCheck

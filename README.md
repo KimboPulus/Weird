@@ -2,6 +2,8 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, and wolves hunt rabbits. The player acts as a gardener by changing the environment or adding species to the board.
 
+The current version includes a focus-training layer: watch the ecosystem, keep the food chain stable, and answer short recall prompts from recent population changes.
+
 ## Current build
 
 - Java 17
