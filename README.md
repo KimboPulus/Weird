@@ -2,7 +2,7 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, and wolves hunt rabbits. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes illustrated terrain and wildlife, six objective-based levels, adaptive recall prompts, changing weather events, veteran animals, persistent Focus XP, and ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, six objective-based levels, adaptive recall prompts, changing weather events, a persistent score and upgrade shop, veteran animals, and ecosystem stability goals.
 
 ## Current build
 
@@ -55,7 +55,7 @@ It writes `out/window-check.png`.
 - `Compost` raises fertility in a small area.
 - `Trim` clears nearby plants and opens movement paths.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
-- `Sanctuary` unlocks at 100 Focus XP and protects one 2 x 2 soil patch per run.
+- `Sanctuary` is purchased in the shop and protects one 2 x 2 soil patch per run.
 - `Pause` stops the timer.
 - `Step` advances one tick.
 - `Speed` changes the simulation pace.
@@ -74,10 +74,18 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 
 ## Focus training
 
-- Six levels give the run a clear objective and advance when its progress bar is filled.
+- Six levels give the run a clear objective. Fill the progress bar, collect the reward, then press `Next Level`.
 - Recall questions ask whether a selected population was rising, stable, or falling.
 - Recall lookback grows from 10 to 20 and then 32 ticks as the answer streak improves.
 - Later levels can reverse the recall rule and ask for the opposite trend.
 - Level changes appear briefly over the board, and ecosystem crises add a labeled border.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
-- Score also becomes persistent Focus XP in `data/progress.properties`.
+- Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
+
+## Shop
+
+Level rewards and correct recall answers grant tokens without reducing total score. The shop contains permanent upgrades:
+
+- `Sanctuary Permit` unlocks the protected soil tool.
+- `Rain Barrel` increases Rain strength by 50%.
+- `Rich Compost` increases Compost strength by 50%.
