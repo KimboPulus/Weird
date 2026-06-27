@@ -1,8 +1,11 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.ui.TerrariumFrame;
+import com.kimbopulus.weird.ui.ShopDialog;
+import com.kimbopulus.weird.progression.ProgressionProfile;
 
 import javax.imageio.ImageIO;
+import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -34,11 +37,31 @@ public final class WindowVisualCheck {
         output.getParentFile().mkdirs();
         ImageIO.write(image, "png", output);
 
+        File shopOutput = new File(output.getParentFile(), "shop-check.png");
+        AtomicReference<JDialog> shopRef = new AtomicReference<>();
+        SwingUtilities.invokeLater(() -> {
+            ProgressionProfile profile = ProgressionProfile.inMemory();
+            profile.addFocusXp(120);
+            JDialog shop = ShopDialog.createForVisualCheck(frame, profile);
+            shop.setAlwaysOnTop(true);
+            shopRef.set(shop);
+            shop.setVisible(true);
+        });
+        Thread.sleep(600);
+        JDialog shop = shopRef.get();
+        if (shop == null) {
+            throw new IllegalStateException("Shop window did not open.");
+        }
+        BufferedImage shopImage = new Robot().createScreenCapture(shop.getBounds());
+        ImageIO.write(shopImage, "png", shopOutput);
+        SwingUtilities.invokeAndWait(shop::dispose);
+
         SwingUtilities.invokeAndWait(() -> {
             frame.setAlwaysOnTop(false);
             frame.dispose();
         });
         System.out.println("Window check saved " + output.getAbsolutePath());
+        System.out.println("Shop check saved " + shopOutput.getAbsolutePath());
         System.exit(0);
     }
 }

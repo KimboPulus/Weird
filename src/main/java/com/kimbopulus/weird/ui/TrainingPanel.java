@@ -11,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -34,6 +35,7 @@ public final class TrainingPanel extends JPanel {
 
     private final Simulation simulation;
     private final TrainingSession training;
+    private final Runnable onProgressionChanged;
     private final JLabel titleLabel = new JLabel("Focus Path");
     private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
@@ -46,11 +48,18 @@ public final class TrainingPanel extends JPanel {
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton[] answerButtons = new JButton[3];
+    private final JButton nextLevelButton = new JButton("Next Level");
     private final TrendPanel trendPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
+        this(simulation, training, () -> {
+        });
+    }
+
+    public TrainingPanel(Simulation simulation, TrainingSession training, Runnable onProgressionChanged) {
         this.simulation = simulation;
         this.training = training;
+        this.onProgressionChanged = onProgressionChanged;
         this.trendPanel = new TrendPanel(simulation);
 
         setBackground(BACKGROUND);
@@ -80,7 +89,7 @@ public final class TrainingPanel extends JPanel {
         top.add(levelLabel);
         top.add(goalLabel);
         top.add(levelProgress);
-        top.add(scoreLabel);
+        top.add(createEconomyRow());
         top.add(balanceLabel);
         top.add(climateLabel);
         top.add(eventLabel);
@@ -106,13 +115,17 @@ public final class TrainingPanel extends JPanel {
 
     public void refresh() {
         PopulationSnapshot snapshot = simulation.currentSnapshot();
-        scoreLabel.setText("Score " + training.score() + "   Streak " + training.streak());
+        scoreLabel.setText("Run " + training.score() + "   Total " + training.progression().totalScore()
+                + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
         goalLabel.setText(training.objective());
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
+        levelProgress.setForeground(training.levelComplete()
+                ? new Color(189, 137, 56)
+                : new Color(77, 143, 85));
         balanceLabel.setText(training.balanceStatus(snapshot));
         climateLabel.setText(String.format(
                 "Water %.0f%%   Soil %.0f%%   %.0f C",
@@ -128,7 +141,10 @@ public final class TrainingPanel extends JPanel {
                 : RULE_NORMAL);
 
         TrainingPrompt prompt = training.prompt();
-        if (prompt == null) {
+        if (training.levelComplete()) {
+            promptLabel.setText("Level complete. +" + training.lastLevelReward() + " tokens");
+            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
+        } else if (prompt == null) {
             promptLabel.setText("Watch for the next recall.");
             setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
         } else {
@@ -136,6 +152,7 @@ public final class TrainingPanel extends JPanel {
             setAnswerChoices(prompt.choices(), true);
         }
         feedbackLabel.setText(html(training.feedback()));
+        nextLevelButton.setVisible(training.levelComplete());
         trendPanel.repaint();
     }
 
@@ -158,7 +175,34 @@ public final class TrainingPanel extends JPanel {
         answerWrap.setOpaque(false);
         answerWrap.add(answers, BorderLayout.NORTH);
         panel.add(answerWrap, BorderLayout.CENTER);
+        nextLevelButton.setFocusable(false);
+        nextLevelButton.setPreferredSize(new Dimension(280, 38));
+        nextLevelButton.addActionListener(event -> {
+            if (training.advanceLevel()) {
+                onProgressionChanged.run();
+                refresh();
+            }
+        });
+        panel.add(nextLevelButton, BorderLayout.SOUTH);
         return panel;
+    }
+
+    private JPanel createEconomyRow() {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        JButton shopButton = new JButton("Shop");
+        shopButton.setFocusable(false);
+        shopButton.addActionListener(event -> ShopDialog.show(
+                SwingUtilities.getWindowAncestor(this),
+                training.progression(),
+                () -> {
+                    onProgressionChanged.run();
+                    refresh();
+                }
+        ));
+        row.add(scoreLabel, BorderLayout.CENTER);
+        row.add(shopButton, BorderLayout.EAST);
+        return row;
     }
 
     private JButton answerButton(int answerIndex) {

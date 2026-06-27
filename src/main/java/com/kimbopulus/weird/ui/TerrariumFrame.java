@@ -3,6 +3,7 @@ package com.kimbopulus.weird.ui;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.progression.ShopItem;
 import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
@@ -48,7 +49,7 @@ public final class TerrariumFrame extends JFrame {
         simulation = Simulation.createDefault();
         training = new TrainingSession();
         terrariumPanel = new TerrariumPanel(simulation);
-        trainingPanel = new TrainingPanel(simulation, training);
+        trainingPanel = new TrainingPanel(simulation, training, this::updateToolAvailability);
         toolHintLabel = new JLabel();
         toolHintLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         toolHintLabel.setFont(toolHintLabel.getFont().deriveFont(Font.PLAIN, 13f));
@@ -75,6 +76,7 @@ public final class TerrariumFrame extends JFrame {
                     return;
                 }
                 toolMode.apply(simulation, position);
+                applyPurchasedUpgrade(position);
                 terrariumPanel.showToolEffect(position, toolMode);
                 training.noteAction(toolMode.label(), terrariumPanel.describe(position));
                 terrariumPanel.repaint();
@@ -186,11 +188,11 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void stepSimulation() {
-        int previousLevel = training.levelNumber();
+        boolean wasComplete = training.levelComplete();
         simulation.tick();
         training.update(simulation);
-        if (training.levelNumber() != previousLevel) {
-            terrariumPanel.showBanner("Level " + training.levelNumber() + ": " + training.levelTitle());
+        if (!wasComplete && training.levelComplete()) {
+            terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
         }
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -246,9 +248,7 @@ public final class TerrariumFrame extends JFrame {
         boolean unlocked = training.progression().sanctuaryUnlocked();
         sanctuaryButton.setEnabled(unlocked && !simulation.sanctuaryPlaced());
         if (!unlocked) {
-            sanctuaryButton.setToolTipText(
-                    "Unlock at 100 Focus XP. Current: " + training.progression().focusXp()
-            );
+            sanctuaryButton.setToolTipText("Buy the Sanctuary Permit in the shop.");
         } else if (simulation.sanctuaryPlaced()) {
             sanctuaryButton.setToolTipText("The one sanctuary for this terrarium has been placed.");
             if (toolMode == ToolMode.SANCTUARY) {
@@ -300,5 +300,13 @@ public final class TerrariumFrame extends JFrame {
         toolMode = mode;
         button.setSelected(true);
         updateToolHint(null);
+    }
+
+    private void applyPurchasedUpgrade(Position position) {
+        if (toolMode == ToolMode.RAIN && training.progression().owns(ShopItem.RAIN_BARREL)) {
+            simulation.rainBoost(position);
+        } else if (toolMode == ToolMode.COMPOST && training.progression().owns(ShopItem.RICH_COMPOST)) {
+            simulation.compostBoost(position);
+        }
     }
 }

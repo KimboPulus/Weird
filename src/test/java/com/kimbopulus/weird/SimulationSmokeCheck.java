@@ -28,6 +28,17 @@ public final class SimulationSmokeCheck {
         require(populationByScan(simulation, OrganismKind.RABBIT) == rabbits, "Rabbit counter should match the board.");
         require(populationByScan(simulation, OrganismKind.WOLF) == wolves, "Wolf counter should match the board.");
         require(simulation.oldestAnimal() != null, "A surviving animal should be tracked as notable.");
+        Position upgradeTarget = new Position(10, 8);
+        double moistureBefore = simulation.grid().cellAt(upgradeTarget).moisture();
+        simulation.rain(upgradeTarget);
+        simulation.rainBoost(upgradeTarget);
+        require(simulation.grid().cellAt(upgradeTarget).moisture() > moistureBefore,
+                "The rain upgrade should increase moisture.");
+        double fertilityBefore = simulation.grid().cellAt(upgradeTarget).fertility();
+        simulation.compost(upgradeTarget);
+        simulation.compostBoost(upgradeTarget);
+        require(simulation.grid().cellAt(upgradeTarget).fertility() > fertilityBefore,
+                "The compost upgrade should increase fertility.");
         require(simulation.addSanctuary(new Position(2, 2)), "The first sanctuary should be accepted.");
         require(!simulation.addSanctuary(new Position(5, 5)), "Only one sanctuary should be allowed per run.");
         require(simulation.grid().cellAt(new Position(2, 2)).sanctuary(), "Sanctuary soil should be marked.");

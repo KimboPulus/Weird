@@ -286,6 +286,12 @@ public final class Simulation {
         }
     }
 
+    public void rainBoost(Position center) {
+        if (grid.contains(center)) {
+            grid.rainAround(center, 2, 0.09);
+        }
+    }
+
     public void drought(Position center) {
         if (grid.contains(center)) {
             grid.dryAround(center, 2, 0.16);
@@ -296,6 +302,12 @@ public final class Simulation {
         if (grid.contains(center)) {
             grid.fertilizeAround(center, 1, 0.18);
             grid.rainAround(center, 1, 0.04);
+        }
+    }
+
+    public void compostBoost(Position center) {
+        if (grid.contains(center)) {
+            grid.fertilizeAround(center, 1, 0.09);
         }
     }
 
