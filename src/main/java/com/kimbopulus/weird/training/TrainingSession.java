@@ -21,6 +21,8 @@ public final class TrainingSession {
     private TrainingPrompt prompt;
     private TrainingLevel level = TrainingLevel.STEADY_START;
     private FocusRule focusRule = FocusRule.NORMAL;
+    private boolean levelComplete;
+    private int lastLevelReward;
 
     public TrainingSession() {
         this(ProgressionProfile.loadDefault());
@@ -32,6 +34,9 @@ public final class TrainingSession {
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
+        if (levelComplete) {
+            return;
+        }
         updateStability(current);
         updateLevel(current);
         updatePrompt(simulation, current);
@@ -83,6 +88,14 @@ public final class TrainingSession {
 
     public int memorySpan() {
         return recallLookback();
+    }
+
+    public boolean levelComplete() {
+        return levelComplete;
+    }
+
+    public int lastLevelReward() {
+        return lastLevelReward;
     }
 
     public String feedback() {
@@ -147,6 +160,19 @@ public final class TrainingSession {
         feedback = tool + " used.";
     }
 
+    public boolean advanceLevel() {
+        if (!levelComplete) {
+            return false;
+        }
+        level = level.next();
+        levelProgress = 0;
+        levelComplete = false;
+        prompt = null;
+        focusRule = chooseFocusRule();
+        feedback = "Level " + levelNumber() + " started.";
+        return true;
+    }
+
     public void reset() {
         score = 0;
         streak = 0;
@@ -157,6 +183,8 @@ public final class TrainingSession {
         prompt = null;
         level = TrainingLevel.STEADY_START;
         focusRule = FocusRule.NORMAL;
+        levelComplete = false;
+        lastLevelReward = 0;
     }
 
     private void updateStability(PopulationSnapshot snapshot) {
@@ -199,12 +227,12 @@ public final class TrainingSession {
     }
 
     private void completeLevel() {
-        TrainingLevel completed = level;
-        awardPoints(40 + levelNumber() * 5);
-        level = level.next();
-        levelProgress = 0;
-        focusRule = chooseFocusRule();
-        feedback = completed.title() + " complete. Level " + levelNumber() + " started.";
+        lastLevelReward = 40 + levelNumber() * 5;
+        awardPoints(lastLevelReward);
+        levelProgress = level.target();
+        levelComplete = true;
+        prompt = null;
+        feedback = "Level complete. +" + lastLevelReward + " tokens.";
     }
 
     private FocusRule chooseFocusRule() {
