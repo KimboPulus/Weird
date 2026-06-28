@@ -25,6 +25,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.awt.RenderingHints;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -503,7 +505,11 @@ public final class TerrariumPanel extends JPanel {
     private static BufferedImage loadSprite(String resourcePath) {
         try (InputStream input = TerrariumPanel.class.getResourceAsStream(resourcePath)) {
             if (input == null) {
-                return null;
+                Path fallback = Path.of("src", "main", "resources", resourcePath.substring(1).replace('/', java.io.File.separatorChar));
+                if (!Files.exists(fallback)) {
+                    return null;
+                }
+                return javax.imageio.ImageIO.read(fallback.toFile());
             }
             return javax.imageio.ImageIO.read(input);
         } catch (IOException exception) {
