@@ -2,7 +2,9 @@ package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.ui.TerrariumFrame;
 import com.kimbopulus.weird.ui.ShopDialog;
+import com.kimbopulus.weird.ui.AudioSettingsDialog;
 import com.kimbopulus.weird.progression.ProgressionProfile;
+import com.kimbopulus.weird.settings.GameSettings;
 
 import javax.imageio.ImageIO;
 import javax.swing.JDialog;
@@ -56,12 +58,30 @@ public final class WindowVisualCheck {
         ImageIO.write(shopImage, "png", shopOutput);
         SwingUtilities.invokeAndWait(shop::dispose);
 
+        File audioOutput = new File(output.getParentFile(), "audio-settings-check.png");
+        AtomicReference<JDialog> audioRef = new AtomicReference<>();
+        SwingUtilities.invokeLater(() -> {
+            JDialog audioDialog = AudioSettingsDialog.createForVisualCheck(frame, GameSettings.inMemory());
+            audioDialog.setAlwaysOnTop(true);
+            audioRef.set(audioDialog);
+            audioDialog.setVisible(true);
+        });
+        Thread.sleep(500);
+        JDialog audioDialog = audioRef.get();
+        if (audioDialog == null) {
+            throw new IllegalStateException("Audio settings window did not open.");
+        }
+        BufferedImage audioImage = new Robot().createScreenCapture(audioDialog.getBounds());
+        ImageIO.write(audioImage, "png", audioOutput);
+        SwingUtilities.invokeAndWait(audioDialog::dispose);
+
         SwingUtilities.invokeAndWait(() -> {
             frame.setAlwaysOnTop(false);
             frame.dispose();
         });
         System.out.println("Window check saved " + output.getAbsolutePath());
         System.out.println("Shop check saved " + shopOutput.getAbsolutePath());
+        System.out.println("Audio settings check saved " + audioOutput.getAbsolutePath());
         System.exit(0);
     }
 }

@@ -6,6 +6,7 @@ import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.progression.ShopItem;
+import com.kimbopulus.weird.settings.GameSettings;
 import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
@@ -45,6 +46,7 @@ public final class TerrariumFrame extends JFrame {
     private final JLabel toolHintLabel;
     private final Timer timer;
     private final AudioEngine audio;
+    private final GameSettings settings;
     private final Map<ToolMode, JToggleButton> toolButtons = new EnumMap<>(ToolMode.class);
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
@@ -54,7 +56,9 @@ public final class TerrariumFrame extends JFrame {
 
         simulation = Simulation.createDefault();
         training = new TrainingSession();
+        settings = GameSettings.loadDefault();
         audio = new AudioEngine();
+        audio.applySettings(settings);
         terrariumPanel = new TerrariumPanel(simulation);
         trainingPanel = new TrainingPanel(
                 simulation,
@@ -193,11 +197,11 @@ public final class TerrariumFrame extends JFrame {
         restartButton.addActionListener(event -> restart());
         toolbar.add(restartButton);
 
-        JToggleButton soundButton = new JToggleButton("Sound", true);
-        soundButton.setFocusable(false);
-        soundButton.setToolTipText("Toggle music and sound effects.");
-        soundButton.addActionListener(event -> audio.setEnabled(soundButton.isSelected()));
-        toolbar.add(soundButton);
+        JButton audioButton = new JButton("Audio");
+        audioButton.setFocusable(false);
+        audioButton.setToolTipText("Set music and effect volume.");
+        audioButton.addActionListener(event -> AudioSettingsDialog.show(this, settings, this::applyAudioSettings));
+        toolbar.add(audioButton);
 
         return toolbar;
     }
@@ -218,6 +222,7 @@ public final class TerrariumFrame extends JFrame {
         boolean hadWarning = training.dangerWarning() != null;
         simulation.tick();
         training.update(simulation);
+        updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
             audio.play(SoundCue.COMPLETE);
@@ -255,6 +260,7 @@ public final class TerrariumFrame extends JFrame {
         }
         simulation.restart();
         training.reset();
+        updateAudioTension();
         audio.play(SoundCue.RESTART);
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -359,6 +365,7 @@ public final class TerrariumFrame extends JFrame {
             return;
         }
         simulation.restart();
+        updateAudioTension();
         audio.play(SoundCue.RESTART);
         terrariumPanel.showBanner("Level restarted");
         terrariumPanel.repaint();
@@ -375,5 +382,19 @@ public final class TerrariumFrame extends JFrame {
             case RABBIT, WOLF -> SoundCue.PLACE;
         };
         audio.play(cue);
+    }
+
+    private void applyAudioSettings() {
+        audio.applySettings(settings);
+    }
+
+    private void updateAudioTension() {
+        if (training.levelFailed()) {
+            audio.setTension(1.0);
+        } else if (training.dangerWarning() != null) {
+            audio.setTension(0.7);
+        } else {
+            audio.setTension(0.0);
+        }
     }
 }

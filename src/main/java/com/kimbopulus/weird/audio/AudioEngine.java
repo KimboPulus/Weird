@@ -1,5 +1,7 @@
 package com.kimbopulus.weird.audio;
 
+import com.kimbopulus.weird.settings.GameSettings;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -15,6 +17,9 @@ public final class AudioEngine implements AutoCloseable {
     private volatile boolean enabled = true;
     private volatile boolean running = true;
     private volatile SourceDataLine musicLine;
+    private volatile double musicVolume = 0.35;
+    private volatile double effectsVolume = 0.70;
+    private volatile double tension;
 
     public AudioEngine() {
         Thread musicThread = new Thread(this::runMusic, "weird-ambient-music");
@@ -31,6 +36,16 @@ public final class AudioEngine implements AutoCloseable {
         if (!enabled && musicLine != null) {
             musicLine.flush();
         }
+    }
+
+    public void applySettings(GameSettings settings) {
+        musicVolume = settings.musicVolume() / 100.0;
+        effectsVolume = settings.effectsVolume() / 100.0;
+        setEnabled(settings.audioEnabled());
+    }
+
+    public void setTension(double tension) {
+        this.tension = Math.max(0.0, Math.min(1.0, tension));
     }
 
     public void play(SoundCue cue) {
@@ -65,7 +80,11 @@ public final class AudioEngine implements AutoCloseable {
                     Thread.sleep(80);
                     continue;
                 }
-                byte[] note = tone(MUSIC_NOTES[noteIndex], 0.55, 0.035, true);
+                double currentTension = tension;
+                double frequency = MUSIC_NOTES[noteIndex] * (currentTension > 0.5 ? 0.75 : 1.0);
+                double duration = 0.55 - currentTension * 0.20;
+                double volume = (0.025 + currentTension * 0.018) * musicVolume;
+                byte[] note = tone(frequency, duration, volume, true);
                 line.write(note, 0, note.length);
                 noteIndex = (noteIndex + 1) % MUSIC_NOTES.length;
             }
@@ -77,7 +96,7 @@ public final class AudioEngine implements AutoCloseable {
     private void playClip(SoundCue cue) {
         try {
             Clip clip = AudioSystem.getClip();
-            byte[] data = tone(cue.frequency(), cue.duration(), cue.volume(), false);
+            byte[] data = tone(cue.frequency(), cue.duration(), cue.volume() * effectsVolume, false);
             clip.open(FORMAT, data, 0, data.length);
             clip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
