@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 public final class ModelRegressionCheck {
     private ModelRegressionCheck() {
@@ -37,6 +39,7 @@ public final class ModelRegressionCheck {
         checkProgressionPersistence();
         checkSettingsPersistence();
         checkSpriteResources();
+        checkSpriteContent();
         checkRabbitStarvationDeath();
         checkRabbitReproductionCostsEnergy();
         System.out.println("Model regression check passed.");
@@ -259,6 +262,32 @@ public final class ModelRegressionCheck {
     private static boolean resourceExists(String path) throws IOException {
         try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
             return input != null;
+        }
+    }
+
+    private static void checkSpriteContent() throws IOException {
+        require(hasOpaquePixel("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should contain visible pixels.");
+        require(hasOpaquePixel("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should contain visible pixels.");
+    }
+
+    private static boolean hasOpaquePixel(String path) throws IOException {
+        try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
+            if (input == null) {
+                return false;
+            }
+            BufferedImage image = ImageIO.read(input);
+            if (image == null) {
+                return false;
+            }
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    int alpha = (image.getRGB(x, y) >>> 24) & 0xff;
+                    if (alpha > 20) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 
