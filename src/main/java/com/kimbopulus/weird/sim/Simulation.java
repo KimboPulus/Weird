@@ -8,8 +8,8 @@ import java.util.Random;
 import java.util.Set;
 
 public final class Simulation {
-    public static final int DEFAULT_WIDTH = 48;
-    public static final int DEFAULT_HEIGHT = 32;
+    public static final int DEFAULT_WIDTH = 38;
+    public static final int DEFAULT_HEIGHT = 26;
 
     private final Random random;
     private final WorldGrid grid;
@@ -35,10 +35,10 @@ public final class Simulation {
 
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
-        simulation.seedPlants(220);
-        simulation.seedRabbits(48);
-        simulation.seedWolves(4);
-        simulation.seedHumans(6);
+        simulation.seedPlants(140);
+        simulation.seedRabbits(32);
+        simulation.seedWolves(3);
+        simulation.seedHumans(4);
         simulation.recordSnapshot();
         return simulation;
     }

@@ -1,6 +1,7 @@
 package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.Cell;
+import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Organism;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
@@ -29,9 +30,14 @@ public final class TerrariumPanel extends JPanel {
     private static final Color RABBIT = new Color(222, 204, 170);
     private static final Color RABBIT_LIGHT = new Color(244, 232, 205);
     private static final Color RABBIT_DARK = new Color(112, 82, 61);
+    private static final Color RABBIT_PINK = new Color(210, 145, 140);
     private static final Color WOLF = new Color(111, 119, 128);
     private static final Color WOLF_LIGHT = new Color(164, 172, 178);
     private static final Color WOLF_DARK = new Color(44, 48, 53);
+    private static final Color HUMAN = new Color(70, 112, 151);
+    private static final Color HUMAN_SKIN = new Color(229, 184, 142);
+    private static final Color BEAR = new Color(112, 72, 43);
+    private static final Color BEAR_LIGHT = new Color(169, 116, 69);
     private static final Color SHADOW = new Color(24, 25, 22, 85);
     private static final Color WET_SOIL_DETAIL = new Color(129, 169, 170, 75);
     private static final Color DRY_SOIL_DETAIL = new Color(74, 55, 35, 80);
@@ -45,6 +51,8 @@ public final class TerrariumPanel extends JPanel {
     private static final BasicStroke HOVER_STROKE = new BasicStroke(2f);
     private static final long EFFECT_DURATION_MS = 600;
     private static final long BANNER_DURATION_MS = 1800;
+    private static final long LEVEL_UP_DURATION_MS = 2600;
+    private static final long DEATH_DURATION_MS = 2800;
     private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
@@ -53,6 +61,8 @@ public final class TerrariumPanel extends JPanel {
     private Position hoverPosition;
     private String bannerText;
     private long bannerStartedAt;
+    private boolean levelUpBanner;
+    private long lastDeathId;
 
     public TerrariumPanel(Simulation simulation) {
         this.simulation = simulation;
@@ -84,10 +94,31 @@ public final class TerrariumPanel extends JPanel {
     public void showBanner(String text) {
         bannerText = text;
         bannerStartedAt = System.currentTimeMillis();
+        levelUpBanner = false;
         if (!effectTimer.isRunning()) {
             effectTimer.start();
         }
         repaint();
+    }
+
+    public void showLevelUp(String text) {
+        bannerText = text;
+        bannerStartedAt = System.currentTimeMillis();
+        levelUpBanner = true;
+        if (!effectTimer.isRunning()) {
+            effectTimer.start();
+        }
+        repaint();
+    }
+
+    public void syncDeathEffects() {
+        List<DeathEvent> deaths = simulation.recentDeathEvents();
+        if (!deaths.isEmpty() && deaths.get(deaths.size() - 1).id() > lastDeathId) {
+            lastDeathId = deaths.get(deaths.size() - 1).id();
+            if (!effectTimer.isRunning()) {
+                effectTimer.start();
+            }
+        }
     }
 
     public Position positionAtPoint(int x, int y) {
@@ -119,6 +150,8 @@ public final class TerrariumPanel extends JPanel {
                 case PLANT -> "plant";
                 case RABBIT -> "rabbit";
                 case WOLF -> "wolf";
+                case HUMAN -> "human";
+                case BEAR -> "bear";
             };
             occupant += String.format(
                     "%s, age %d, energy %d",
@@ -152,6 +185,7 @@ public final class TerrariumPanel extends JPanel {
 
         drawCells(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawOrganisms(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
+        drawDeathEffects(g, metrics);
         drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawToolEffects(g, metrics);
         drawHover(g, metrics);
@@ -195,6 +229,10 @@ public final class TerrariumPanel extends JPanel {
                     drawRabbit(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
                 } else if (organism.kind() == OrganismKind.WOLF) {
                     drawWolf(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
+                } else if (organism.kind() == OrganismKind.HUMAN) {
+                    drawHuman(g, px, py, cellSize);
+                } else if (organism.kind() == OrganismKind.BEAR) {
+                    drawBear(g, px, py, cellSize, (x + y) % 2 == 0);
                 }
             }
         }
@@ -238,24 +276,25 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
-        int direction = facesRight ? 1 : -1;
-        int headX = facesRight ? x + size - 7 : x + 2;
+        int headX = facesRight ? x + size - 8 : x + 1;
         drawVeteranMark(g, x, y, size, veteran);
         g.setColor(SHADOW);
-        g.fillOval(x + 3, y + size - 5, size - 5, 4);
-        g.setColor(RABBIT_DARK);
-        g.fillOval(headX + (facesRight ? 1 : 3), y + 1, 2, size / 2);
-        g.fillOval(headX + (facesRight ? 4 : 0), y + 2, 2, size / 2);
+        g.fillOval(x + 2, y + size - 5, size - 3, 4);
         g.setColor(RABBIT);
-        g.fillOval(x + 3, y + size / 2 - 1, size - 7, size / 2);
-        g.fillOval(headX, y + size / 3, 7, 7);
+        g.fillOval(x + 2, y + size / 2 - 2, size - 8, size / 2 + 1);
+        g.fillOval(headX, y + size / 3, 8, 8);
+        g.fillOval(headX + (facesRight ? 1 : 5), y, 3, size / 2 + 1);
+        g.fillOval(headX + (facesRight ? 4 : 2), y + 1, 3, size / 2);
+        g.setColor(RABBIT_PINK);
+        g.fillOval(headX + (facesRight ? 2 : 5), y + 1, 1, size / 2 - 2);
+        g.fillOval(headX + (facesRight ? 5 : 3), y + 2, 1, size / 2 - 3);
         g.setColor(RABBIT_LIGHT);
-        g.fillOval(x + (facesRight ? 2 : size - 6), y + size / 2, 5, 5);
-        g.fillOval(headX + (facesRight ? 4 : 1), y + size / 3 + 1, 2, 2);
+        g.fillOval(x + (facesRight ? 1 : size - 6), y + size / 2 - 1, 5, 5);
+        g.fillOval(x + (facesRight ? 7 : 3), y + size - 6, 7, 4);
         g.setColor(RABBIT_DARK);
-        g.fillOval(headX + (facesRight ? 5 : 1), y + size / 3 + 2, 2, 2);
-        g.drawLine(headX + (facesRight ? 6 : 0), y + size / 3 + 5,
-                headX + (facesRight ? 6 + direction * 2 : -2), y + size / 3 + 5);
+        g.fillOval(headX + (facesRight ? 6 : 1), y + size / 3 + 2, 2, 2);
+        g.setColor(RABBIT_PINK);
+        g.fillOval(headX + (facesRight ? 7 : 0), y + size / 3 + 5, 2, 2);
     }
 
     private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
@@ -291,6 +330,36 @@ public final class TerrariumPanel extends JPanel {
         g.fillOval(headX + (facesRight ? 6 : 1), y + size / 3 + 2, 2, 2);
         g.fillRect(x + 5, y + size - 5, 2, 4);
         g.fillRect(x + size - 6, y + size - 5, 2, 4);
+    }
+
+    private void drawHuman(Graphics2D g, int x, int y, int size) {
+        int center = x + size / 2;
+        g.setColor(SHADOW);
+        g.fillOval(x + 3, y + size - 4, size - 6, 3);
+        g.setColor(HUMAN_SKIN);
+        g.fillOval(center - 3, y + 2, 6, 6);
+        g.setColor(HUMAN);
+        g.fillRoundRect(center - 3, y + 8, 6, 7, 2, 2);
+        g.setStroke(GRID_STROKE);
+        g.drawLine(center - 2, y + 14, center - 4, y + size - 2);
+        g.drawLine(center + 2, y + 14, center + 4, y + size - 2);
+        g.drawLine(center - 3, y + 9, center - 6, y + 13);
+        g.drawLine(center + 3, y + 9, center + 6, y + 13);
+    }
+
+    private void drawBear(Graphics2D g, int x, int y, int size, boolean facesRight) {
+        int headX = facesRight ? x + size - 9 : x + 1;
+        g.setColor(SHADOW);
+        g.fillOval(x + 1, y + size - 5, size - 2, 4);
+        g.setColor(BEAR);
+        g.fillOval(x + 2, y + size / 3, size - 7, size / 2 + 2);
+        g.fillOval(headX, y + size / 3 - 2, 9, 9);
+        g.fillOval(headX + 1, y + 2, 4, 4);
+        g.fillOval(headX + 5, y + 2, 4, 4);
+        g.setColor(BEAR_LIGHT);
+        g.fillOval(headX + (facesRight ? 5 : 0), y + size / 3 + 3, 5, 4);
+        g.setColor(Color.BLACK);
+        g.fillOval(headX + (facesRight ? 6 : 2), y + size / 3 + 1, 2, 2);
     }
 
     private void drawVeteranMark(Graphics2D g, int x, int y, int size, boolean veteran) {
@@ -379,6 +448,9 @@ public final class TerrariumPanel extends JPanel {
         } else if (simulation.count(OrganismKind.PLANT) > 1100) {
             crisis = "PLANTS HIGH";
             color = new Color(212, 153, 67, 210);
+        } else if (simulation.count(OrganismKind.HUMAN) < 3) {
+            crisis = "HUMANS LOW";
+            color = new Color(194, 83, 66, 210);
         }
         if (crisis == null) {
             return;
@@ -395,26 +467,92 @@ public final class TerrariumPanel extends JPanel {
         g.drawString(crisis, metrics.offsetX + 16, metrics.offsetY + 25);
     }
 
+    private void drawDeathEffects(Graphics2D g, BoardMetrics metrics) {
+        long now = System.currentTimeMillis();
+        for (DeathEvent death : simulation.recentDeathEvents()) {
+            double progress = (now - death.createdAtMillis()) / (double) DEATH_DURATION_MS;
+            if (progress < 0.0 || progress >= 1.0) {
+                continue;
+            }
+            int alpha = (int) (210 * (1.0 - progress));
+            int size = Math.max(5, (int) (metrics.cellSize * (1.0 - progress * 0.35)));
+            int x = metrics.offsetX + death.position().x() * metrics.cellSize
+                    + (metrics.cellSize - size) / 2;
+            int y = metrics.offsetY + death.position().y() * metrics.cellSize
+                    + (metrics.cellSize - size) / 2 - (int) (progress * metrics.cellSize * 0.6);
+            drawDeathShape(g, death.kind(), x, y, size, alpha);
+        }
+    }
+
+    private void drawDeathShape(Graphics2D g, OrganismKind kind, int x, int y, int size, int alpha) {
+        Color color = switch (kind) {
+            case RABBIT -> new Color(238, 220, 188, alpha);
+            case WOLF -> new Color(145, 153, 164, alpha);
+            case HUMAN -> new Color(87, 143, 191, alpha);
+            case BEAR -> new Color(151, 96, 58, alpha);
+            case PLANT -> new Color(96, 175, 91, alpha);
+        };
+        g.setColor(color);
+        if (kind == OrganismKind.HUMAN) {
+            int center = x + size / 2;
+            g.fillOval(center - 2, y, 4, 4);
+            g.setStroke(new BasicStroke(2f));
+            g.drawLine(center, y + 4, center, y + size - 2);
+            g.drawLine(center, y + size / 2, x + 1, y + size - 1);
+            g.drawLine(center, y + size / 2, x + size - 1, y + size - 1);
+        } else if (kind == OrganismKind.WOLF) {
+            g.fillPolygon(
+                    new int[]{x + size / 2, x + size, x},
+                    new int[]{y, y + size, y + size},
+                    3
+            );
+        } else {
+            g.fillOval(x, y + size / 3, size, size * 2 / 3);
+            g.fillOval(x + size / 2, y, size / 2, size / 2);
+        }
+    }
+
     private void drawBanner(Graphics2D g, BoardMetrics metrics) {
         if (bannerText == null) {
             return;
         }
-        double progress = (System.currentTimeMillis() - bannerStartedAt) / (double) BANNER_DURATION_MS;
+        double progress = (System.currentTimeMillis() - bannerStartedAt) / (double) bannerDuration();
         if (progress >= 1.0) {
             return;
         }
 
-        int alpha = progress < 0.75 ? 225 : (int) (225 * (1.0 - progress) / 0.25);
-        g.setFont(g.getFont().deriveFont(Font.BOLD, 22f));
+        int alpha = progress < 0.72 ? 225 : (int) (225 * (1.0 - progress) / 0.28);
+        if (levelUpBanner) {
+            drawCelebration(g, metrics, progress, alpha);
+        }
+        g.setFont(g.getFont().deriveFont(Font.BOLD, levelUpBanner ? 30f : 22f));
         FontMetrics fontMetrics = g.getFontMetrics();
         int width = fontMetrics.stringWidth(bannerText) + 42;
-        int height = 54;
+        int height = levelUpBanner ? 72 : 54;
         int x = metrics.offsetX + (metrics.width - width) / 2;
-        int y = metrics.offsetY + 28;
-        g.setColor(new Color(32, 38, 32, alpha));
+        int y = metrics.offsetY + (levelUpBanner ? metrics.height / 3 : 28);
+        g.setColor(new Color(levelUpBanner ? 46 : 32, levelUpBanner ? 66 : 38, 32, alpha));
         g.fillRoundRect(x, y, width, height, 8, 8);
         g.setColor(new Color(239, 235, 211, alpha));
-        g.drawString(bannerText, x + 21, y + 35);
+        g.drawString(bannerText, x + 21, y + (levelUpBanner ? 47 : 35));
+    }
+
+    private void drawCelebration(Graphics2D g, BoardMetrics metrics, double progress, int alpha) {
+        g.setColor(new Color(236, 211, 88, Math.max(0, alpha / 4)));
+        g.fillRect(metrics.offsetX, metrics.offsetY, metrics.width, metrics.height);
+        Color[] colors = {
+                new Color(240, 200, 72, alpha),
+                new Color(91, 177, 103, alpha),
+                new Color(89, 145, 204, alpha),
+                new Color(220, 106, 90, alpha)
+        };
+        for (int i = 0; i < 42; i++) {
+            int startX = Math.floorMod(i * 97, metrics.width);
+            int x = metrics.offsetX + startX + (int) (Math.sin(progress * 8 + i) * 12);
+            int y = metrics.offsetY + (int) ((progress * (metrics.height + 100) + i * 43) % (metrics.height + 100)) - 40;
+            g.setColor(colors[i % colors.length]);
+            g.fillRect(x, y, 5 + i % 4, 9 + i % 5);
+        }
     }
 
     private Color effectColor(ToolMode mode, int alpha) {
@@ -422,7 +560,6 @@ public final class TerrariumPanel extends JPanel {
             case RAIN -> new Color(78, 151, 214, alpha);
             case DROUGHT -> new Color(218, 135, 65, alpha);
             case COMPOST -> new Color(104, 157, 78, alpha);
-            case CLEAR -> new Color(231, 220, 179, alpha);
             case PLANT -> new Color(73, 184, 89, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
@@ -440,11 +577,12 @@ public final class TerrariumPanel extends JPanel {
         }
         repaint();
         boolean bannerActive = bannerText != null
-                && now - bannerStartedAt <= BANNER_DURATION_MS;
+                && now - bannerStartedAt <= bannerDuration();
         if (!bannerActive) {
             bannerText = null;
         }
-        if (toolEffects.isEmpty() && !bannerActive) {
+        boolean deathsActive = hasActiveDeaths(now);
+        if (toolEffects.isEmpty() && !bannerActive && !deathsActive) {
             effectTimer.stop();
         }
     }
@@ -455,6 +593,19 @@ public final class TerrariumPanel extends JPanel {
 
     private int clampLevel(int value) {
         return Math.max(0, Math.min(7, value));
+    }
+
+    private boolean hasActiveDeaths(long now) {
+        for (DeathEvent death : simulation.recentDeathEvents()) {
+            if (now - death.createdAtMillis() <= DEATH_DURATION_MS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private long bannerDuration() {
+        return levelUpBanner ? LEVEL_UP_DURATION_MS : BANNER_DURATION_MS;
     }
 
     private boolean positionsEqual(Position first, Position second) {

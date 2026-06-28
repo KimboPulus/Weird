@@ -96,7 +96,9 @@ public final class AudioEngine implements AutoCloseable {
     private void playClip(SoundCue cue) {
         try {
             Clip clip = AudioSystem.getClip();
-            byte[] data = tone(cue.frequency(), cue.duration(), cue.volume() * effectsVolume, false);
+            byte[] data = cue == SoundCue.HUMAN_DEATH
+                    ? harshDeathTone(cue.duration(), cue.volume() * effectsVolume)
+                    : tone(cue.frequency(), cue.duration(), cue.volume() * effectsVolume, false);
             clip.open(FORMAT, data, 0, data.length);
             clip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
@@ -122,6 +124,23 @@ public final class AudioEngine implements AutoCloseable {
                 wave += Math.sin(2.0 * Math.PI * frequency * 0.5 * i / SAMPLE_RATE) * 0.25;
             }
             short value = (short) (wave * envelope * volume * Short.MAX_VALUE);
+            data[i * 2] = (byte) (value & 0xff);
+            data[i * 2 + 1] = (byte) ((value >>> 8) & 0xff);
+        }
+        return data;
+    }
+
+    private byte[] harshDeathTone(double seconds, double volume) {
+        int samples = Math.max(1, (int) (SAMPLE_RATE * seconds));
+        byte[] data = new byte[samples * 2];
+        for (int i = 0; i < samples; i++) {
+            double progress = i / (double) samples;
+            double envelope = Math.sin(Math.PI * progress) * (1.0 - progress * 0.35);
+            double fall = 1.0 - progress * 0.45;
+            double wave = Math.sin(2.0 * Math.PI * 92.0 * fall * i / SAMPLE_RATE)
+                    + Math.sin(2.0 * Math.PI * 137.0 * fall * i / SAMPLE_RATE) * 0.72
+                    + Math.sin(2.0 * Math.PI * 211.0 * i / SAMPLE_RATE) * 0.38;
+            short value = (short) (wave / 2.1 * envelope * volume * Short.MAX_VALUE);
             data[i * 2] = (byte) (value & 0xff);
             data[i * 2 + 1] = (byte) ((value >>> 8) & 0xff);
         }

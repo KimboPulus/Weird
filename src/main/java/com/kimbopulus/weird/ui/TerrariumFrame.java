@@ -3,6 +3,7 @@ package com.kimbopulus.weird.ui;
 import com.kimbopulus.weird.audio.AudioEngine;
 import com.kimbopulus.weird.audio.SoundCue;
 import com.kimbopulus.weird.sim.OrganismKind;
+import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.progression.ShopItem;
@@ -50,6 +51,7 @@ public final class TerrariumFrame extends JFrame {
     private final Map<ToolMode, JToggleButton> toolButtons = new EnumMap<>(ToolMode.class);
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
+    private long lastDeathSoundId;
 
     public TerrariumFrame() {
         super("Weird");
@@ -64,7 +66,8 @@ public final class TerrariumFrame extends JFrame {
                 simulation,
                 training,
                 this::updateToolAvailability,
-                this::restartFailedLevel
+                this::restartFailedLevel,
+                this::celebrateLevel
         );
         toolHintLabel = new JLabel();
         toolHintLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
@@ -222,6 +225,8 @@ public final class TerrariumFrame extends JFrame {
         boolean hadWarning = training.dangerWarning() != null;
         simulation.tick();
         training.update(simulation);
+        terrariumPanel.syncDeathEffects();
+        playDeathSounds();
         updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
@@ -271,13 +276,15 @@ public final class TerrariumFrame extends JFrame {
 
     private void updateStatus() {
         statusLabel.setText(String.format(
-                "Tick %d   Season: %s   Event: %s   Plants: %d   Rabbits: %d   Wolves: %d",
+                "Tick %d   Season: %s   Event: %s   Plants: %d   Rabbits: %d   Wolves: %d   Humans: %d   Bears: %d",
                 simulation.tickCount(),
                 simulation.season(),
                 simulation.currentEvent().title(),
                 simulation.count(OrganismKind.PLANT),
                 simulation.count(OrganismKind.RABBIT),
-                simulation.count(OrganismKind.WOLF)
+                simulation.count(OrganismKind.WOLF),
+                simulation.count(OrganismKind.HUMAN),
+                simulation.count(OrganismKind.BEAR)
         ));
     }
 
@@ -307,7 +314,7 @@ public final class TerrariumFrame extends JFrame {
                 updateToolHint(null);
             }
         } else {
-            sanctuaryButton.setToolTipText("8: " + ToolMode.SANCTUARY.description());
+            sanctuaryButton.setToolTipText("7: " + ToolMode.SANCTUARY.description());
         }
     }
 
@@ -377,11 +384,36 @@ public final class TerrariumFrame extends JFrame {
     private void playToolSound() {
         SoundCue cue = switch (toolMode) {
             case RAIN -> SoundCue.WATER;
-            case DROUGHT, CLEAR -> SoundCue.DRY;
+            case DROUGHT -> SoundCue.DRY;
             case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
             case RABBIT, WOLF -> SoundCue.PLACE;
         };
         audio.play(cue);
+    }
+
+    private void celebrateLevel() {
+        terrariumPanel.showLevelUp("LEVEL " + training.levelNumber() + "  " + training.levelTitle());
+        audio.play(SoundCue.LEVEL_UP);
+    }
+
+    private void playDeathSounds() {
+        boolean animalDeath = false;
+        boolean humanDeath = false;
+        long newest = lastDeathSoundId;
+        for (DeathEvent death : simulation.recentDeathEvents()) {
+            if (death.id() <= lastDeathSoundId) {
+                continue;
+            }
+            newest = Math.max(newest, death.id());
+            humanDeath |= death.kind() == OrganismKind.HUMAN;
+            animalDeath = true;
+        }
+        lastDeathSoundId = newest;
+        if (humanDeath) {
+            audio.play(SoundCue.HUMAN_DEATH);
+        } else if (animalDeath) {
+            audio.play(SoundCue.ANIMAL_DEATH);
+        }
     }
 
     private void applyAudioSettings() {
