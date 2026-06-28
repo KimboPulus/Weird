@@ -77,7 +77,7 @@ public final class Rabbit extends Animal {
 
     @Override
     protected Animal createOffspring() {
-        return new Rabbit();
+        return new Rabbit(RabbitSex.FEMALE);
     }
 
     private boolean tryMate(Simulation simulation, Position position) {
@@ -98,7 +98,7 @@ public final class Rabbit extends Animal {
             List<Position> spots = simulation.emptyNeighbors(position);
             int births = Math.min(3, spots.size());
             for (int i = 0; i < births; i++) {
-                simulation.placeOrganism(spots.get(i), new Rabbit());
+                simulation.placeOrganism(spots.get(i), new Rabbit(RabbitSex.FEMALE));
             }
             if (births > 0) {
                 simulation.recordBirth(OrganismKind.RABBIT, position);

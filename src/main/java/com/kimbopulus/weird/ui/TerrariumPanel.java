@@ -298,13 +298,17 @@ public final class TerrariumPanel extends JPanel {
         drawVeteranMark(g, x, y, size, veteran);
         g.setColor(SHADOW);
         g.fillOval(x + 2, y + size - 5, size - 3, 4);
-        g.setColor(rabbit != null && rabbit.sex() == RabbitSex.FEMALE ? new Color(236, 209, 198) : RABBIT);
+        boolean female = rabbit != null && rabbit.sex() == RabbitSex.FEMALE;
+        g.setColor(female ? new Color(236, 209, 198) : new Color(196, 186, 166));
         g.fillOval(x + 2, y + size / 2 - 2, size - 8, size / 2 + 1);
         g.fillOval(headX, y + size / 3, 8, 8);
         g.fillOval(headX + (facesRight ? 1 : 5), y, 3, size / 2 + 1);
         g.fillOval(headX + (facesRight ? 4 : 2), y + 1, 3, size / 2);
-        if (rabbit != null && rabbit.sex() == RabbitSex.FEMALE) {
+        if (female) {
             g.setColor(new Color(212, 125, 154));
+            g.fillOval(x + size / 2 - 2, y + 2, 4, 3);
+        } else {
+            g.setColor(new Color(132, 110, 92));
             g.fillOval(x + size / 2 - 2, y + 2, 4, 3);
         }
         g.setColor(RABBIT_PINK);

@@ -470,7 +470,7 @@ public final class Simulation {
 
         int rabbitFloor = Math.max(8, cells / 80);
         if (plants > cells / 7 && rabbits < rabbitFloor && random.nextDouble() < 0.42) {
-            placeRandomly(new Rabbit(), 60);
+            placeRandomly(new Rabbit(RabbitSex.FEMALE), 60);
         }
 
         if (rabbits > cells / 26 && wolves < 2 && random.nextDouble() < 0.04) {

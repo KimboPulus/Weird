@@ -127,16 +127,14 @@ public final class SimulationSmokeCheck {
 
     private static void checkRabbitPairingAndWolfDeparture() {
         Simulation rabbits = new Simulation(10, 10, 21L);
-        rabbits.seedPlants(12);
         Position male = new Position(4, 4);
         Position female = new Position(5, 4);
         rabbits.placeOrganism(male, new Rabbit(RabbitSex.MALE));
         rabbits.placeOrganism(female, new Rabbit(RabbitSex.FEMALE));
-        for (int i = 0; i < 30 && rabbits.count(OrganismKind.RABBIT) < 5; i++) {
-            rabbits.tick();
-        }
+        ((Rabbit) rabbits.organismAt(male)).tick(rabbits, male);
         require(rabbits.count(OrganismKind.RABBIT) >= 5,
                 "A first male/female meeting should create a litter of three.");
+        require(countMaleRabbits(rabbits) <= 1, "New rabbit litters should not create extra males.");
 
         Simulation wolves = new Simulation(10, 10, 22L);
         Position wolf = new Position(4, 4);
@@ -169,5 +167,17 @@ public final class SimulationSmokeCheck {
             }
         }
         return true;
+    }
+
+    private static int countMaleRabbits(Simulation simulation) {
+        int count = 0;
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) instanceof Rabbit rabbit && rabbit.male()) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 }
