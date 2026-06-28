@@ -5,6 +5,8 @@ import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.Bear;
 import com.kimbopulus.weird.sim.DeathEvent;
+import com.kimbopulus.weird.sim.Rabbit;
+import com.kimbopulus.weird.sim.RabbitSex;
 
 public final class SimulationSmokeCheck {
     private SimulationSmokeCheck() {
@@ -39,6 +41,7 @@ public final class SimulationSmokeCheck {
         simulation.rainBoost(upgradeTarget);
         require(simulation.grid().cellAt(upgradeTarget).moisture() > moistureBefore,
                 "The rain upgrade should increase moisture.");
+        simulation.drought(upgradeTarget);
         double fertilityBefore = simulation.grid().cellAt(upgradeTarget).fertility();
         simulation.compost(upgradeTarget);
         simulation.compostBoost(upgradeTarget);
@@ -58,6 +61,7 @@ public final class SimulationSmokeCheck {
 
         System.out.printf("Smoke check passed: plants=%d rabbits=%d wolves=%d%n", plants, rabbits, wolves);
         checkHumanPlantingAndBearVisits();
+        checkRabbitPairingAndWolfDeparture();
         checkDeathEvents();
     }
 
@@ -106,5 +110,40 @@ public final class SimulationSmokeCheck {
         require(simulation.recentDeathEvents().stream().map(DeathEvent::kind).toList()
                         .containsAll(java.util.List.of(OrganismKind.RABBIT, OrganismKind.BEAR)),
                 "Animal removals should create death events.");
+    }
+
+    private static void checkRabbitPairingAndWolfDeparture() {
+        Simulation rabbits = new Simulation(10, 10, 21L);
+        rabbits.seedPlants(12);
+        Position male = new Position(4, 4);
+        Position female = new Position(5, 4);
+        rabbits.placeOrganism(male, new Rabbit(RabbitSex.MALE));
+        rabbits.placeOrganism(female, new Rabbit(RabbitSex.FEMALE));
+        for (int i = 0; i < 30 && rabbits.count(OrganismKind.RABBIT) < 5; i++) {
+            rabbits.tick();
+        }
+        require(rabbits.count(OrganismKind.RABBIT) >= 5,
+                "A first male/female meeting should create a litter of three.");
+
+        Simulation wolves = new Simulation(10, 10, 22L);
+        Position wolf = new Position(4, 4);
+        com.kimbopulus.weird.sim.Wolf wolfOrganism = new com.kimbopulus.weird.sim.Wolf();
+        wolves.placeOrganism(wolf, wolfOrganism);
+        setKillCount(wolfOrganism, 2);
+        wolves.placeOrganism(new Position(5, 4), new Rabbit(RabbitSex.FEMALE));
+        for (int i = 0; i < 4 && wolves.count(OrganismKind.WOLF) > 0; i++) {
+            wolves.tick();
+        }
+        require(wolves.count(OrganismKind.WOLF) == 0, "A wolf should leave after killing three rabbits.");
+    }
+
+    private static void setKillCount(com.kimbopulus.weird.sim.Wolf wolf, int value) {
+        try {
+            var field = com.kimbopulus.weird.sim.Wolf.class.getDeclaredField("rabbitsEaten");
+            field.setAccessible(true);
+            field.setInt(wolf, value);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 }

@@ -78,10 +78,14 @@ public final class VisualSmokeCheck {
                     }
                 }
             }
+            removeSpecies(simulation, OrganismKind.PLANT);
+            removeSpecies(simulation, OrganismKind.RABBIT);
+            removeSpecies(simulation, OrganismKind.HUMAN);
 
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             for (int i = 0; i < 14; i++) {
                 simulation.tick();
+                removeSpecies(simulation, OrganismKind.PLANT);
                 training.update(simulation);
             }
             require(training.levelFailed(), "Failure scenario did not lose the level.");
@@ -140,6 +144,16 @@ public final class VisualSmokeCheck {
 
         output.getParentFile().mkdirs();
         ImageIO.write(image, "png", output);
+    }
+
+    private static void removeSpecies(Simulation simulation, OrganismKind kind) {
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) != null && simulation.organismAt(x, y).kind() == kind) {
+                    simulation.removeOrganism(new Position(x, y));
+                }
+            }
+        }
     }
 
     private static boolean hasEnoughColorVariation(BufferedImage image) {

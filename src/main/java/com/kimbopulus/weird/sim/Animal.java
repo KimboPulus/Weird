@@ -36,47 +36,98 @@ public abstract class Animal extends Organism {
 
     @Override
     protected void update(Simulation simulation, Position position) {
-        spendEnergy(moveCost);
+        spendEnergy(moveCost());
         if (energy() <= 0) {
             die();
             return;
         }
 
         Position current = position;
-        Position food = first(simulation.neighborsWithKind(position, foodKind));
+        Position food = first(simulation.neighborsWithKind(position, foodKind()));
         if (food != null) {
             simulation.removeOrganism(food);
             if (simulation.moveOrganism(position, food)) {
                 current = food;
             }
-            gainEnergy(foodEnergy);
-            if (energy() > maxEnergy) {
-                setEnergy(maxEnergy);
+            gainEnergy(foodEnergy());
+            if (energy() > maxEnergy()) {
+                setEnergy(maxEnergy());
+            }
+            onFoodConsumed(simulation, current, food);
+            if (shouldDepartAfterFood(simulation, current, food)) {
+                simulation.removeOrganismQuietly(current);
+                return;
             }
         } else {
-            Position target = first(simulation.visibleWithKind(position, foodKind, sightRange));
-            Position next = target == null ? first(simulation.passableNeighbors(position, foodKind)) : stepToward(simulation, position, target);
-            if (next != null && simulation.moveAnimal(position, next, foodKind)) {
+            Position target = first(simulation.visibleWithKind(position, foodKind(), sightRange()));
+            Position next = target == null ? first(simulation.passableNeighbors(position, foodKind())) : stepToward(simulation, position, target);
+            if (next != null && simulation.moveAnimal(position, next, foodKind())) {
                 current = next;
             }
         }
 
-        if (age() > 8 && energy() >= reproductionEnergy && simulation.random().nextDouble() < reproductionChance) {
+        if (age() > 8 && energy() >= reproductionEnergy() && simulation.random().nextDouble() < reproductionChance()) {
             List<Position> emptyNeighbors = simulation.emptyNeighbors(current);
             if (!emptyNeighbors.isEmpty()) {
                 simulation.placeOrganism(emptyNeighbors.get(0), createOffspring());
-                spendEnergy(reproductionCost);
+                spendEnergy(reproductionCost());
             }
         }
     }
 
     protected abstract Animal createOffspring();
 
-    private Position stepToward(Simulation simulation, Position position, Position target) {
+    protected void onFoodConsumed(Simulation simulation, Position position, Position food) {
+    }
+
+    protected boolean shouldDepartAfterFood(Simulation simulation, Position position, Position food) {
+        return false;
+    }
+
+    protected int moveCost() {
+        return moveCost;
+    }
+
+    protected int maxEnergy() {
+        return maxEnergy;
+    }
+
+    protected int foodEnergy() {
+        return foodEnergy;
+    }
+
+    protected int reproductionEnergy() {
+        return reproductionEnergy;
+    }
+
+    protected int reproductionCost() {
+        return reproductionCost;
+    }
+
+    protected int sightRange() {
+        return sightRange;
+    }
+
+    protected double reproductionChance() {
+        return reproductionChance;
+    }
+
+    protected OrganismKind foodKind() {
+        return foodKind;
+    }
+
+    protected Position first(List<Position> positions) {
+        if (positions.isEmpty()) {
+            return null;
+        }
+        return positions.get(0);
+    }
+
+    protected Position stepToward(Simulation simulation, Position position, Position target) {
         Position best = null;
         int bestDistance = Integer.MAX_VALUE;
 
-        for (Position neighbor : simulation.passableNeighbors(position, foodKind)) {
+        for (Position neighbor : simulation.passableNeighbors(position, foodKind())) {
             int distance = Math.abs(neighbor.x() - target.x()) + Math.abs(neighbor.y() - target.y());
             if (distance < bestDistance) {
                 best = neighbor;
@@ -85,12 +136,5 @@ public abstract class Animal extends Organism {
         }
 
         return best;
-    }
-
-    private Position first(List<Position> positions) {
-        if (positions.isEmpty()) {
-            return null;
-        }
-        return positions.get(0);
     }
 }

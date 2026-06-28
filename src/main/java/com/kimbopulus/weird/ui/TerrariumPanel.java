@@ -6,6 +6,8 @@ import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Organism;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
+import com.kimbopulus.weird.sim.Rabbit;
+import com.kimbopulus.weird.sim.RabbitSex;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldGrid;
 
@@ -149,7 +151,7 @@ public final class TerrariumPanel extends JPanel {
         if (organism != null) {
             occupant = switch (organism.kind()) {
                 case PLANT -> "plant";
-                case RABBIT -> "rabbit";
+                case RABBIT -> organism instanceof Rabbit rabbit ? "rabbit " + rabbit.sex().name().toLowerCase() : "rabbit";
                 case WOLF -> "wolf";
                 case HUMAN -> "human";
                 case BEAR -> "bear";
@@ -227,7 +229,8 @@ public final class TerrariumPanel extends JPanel {
                 if (organism.kind() == OrganismKind.PLANT) {
                     drawPlant(g, px, py, cellSize, x + y);
                 } else if (organism.kind() == OrganismKind.RABBIT) {
-                    drawRabbit(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
+                    Rabbit rabbit = organism instanceof Rabbit value ? value : null;
+                    drawRabbit(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0, rabbit);
                 } else if (organism.kind() == OrganismKind.WOLF) {
                     drawWolf(g, px, py, cellSize, organism.veteran(), (x + y) % 2 == 0);
                 } else if (organism.kind() == OrganismKind.HUMAN) {
@@ -276,16 +279,20 @@ public final class TerrariumPanel extends JPanel {
         g.drawLine(stemX, y + size / 2, x + pad + size / 4, y + size / 2);
     }
 
-    private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
+    private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight, Rabbit rabbit) {
         int headX = facesRight ? x + size - 8 : x + 1;
         drawVeteranMark(g, x, y, size, veteran);
         g.setColor(SHADOW);
         g.fillOval(x + 2, y + size - 5, size - 3, 4);
-        g.setColor(RABBIT);
+        g.setColor(rabbit != null && rabbit.sex() == RabbitSex.FEMALE ? new Color(236, 209, 198) : RABBIT);
         g.fillOval(x + 2, y + size / 2 - 2, size - 8, size / 2 + 1);
         g.fillOval(headX, y + size / 3, 8, 8);
         g.fillOval(headX + (facesRight ? 1 : 5), y, 3, size / 2 + 1);
         g.fillOval(headX + (facesRight ? 4 : 2), y + 1, 3, size / 2);
+        if (rabbit != null && rabbit.sex() == RabbitSex.FEMALE) {
+            g.setColor(new Color(212, 125, 154));
+            g.fillOval(x + size / 2 - 2, y + 2, 4, 3);
+        }
         g.setColor(RABBIT_PINK);
         g.fillOval(headX + (facesRight ? 2 : 5), y + 1, 1, size / 2 - 2);
         g.fillOval(headX + (facesRight ? 5 : 3), y + 2, 1, size / 2 - 3);

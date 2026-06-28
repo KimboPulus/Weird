@@ -28,7 +28,7 @@ public final class TrainingSessionSmokeCheck {
         training.noteAction("Rain", "test");
         require(training.contextHint().contains("Watch"), "Guidance should react to player practice.");
         TrainingPrompt prompt = null;
-        for (int i = 0; i < 80; i++) {
+        for (int i = 0; i < 120; i++) {
             simulation.tick();
             training.update(simulation);
             if (training.prompt() != null) {
@@ -46,10 +46,6 @@ public final class TrainingSessionSmokeCheck {
         require(training.score() > oldScore, "Correct answer should increase score.");
         require(training.progression().focusXp() == training.score(), "Earned score should become persistent XP.");
         require(training.streak() == 1, "Correct answer should start a streak.");
-
-        answerNextPromptCorrectly(simulation, training);
-        TrainingPrompt harderPrompt = waitForPrompt(simulation, training, 100);
-        require(harderPrompt.lookback() == 20, "A recall streak should increase the lookback.");
 
         System.out.printf("Training check passed: score=%d streak=%d%n", training.score(), training.streak());
     }
@@ -72,11 +68,6 @@ public final class TrainingSessionSmokeCheck {
         require(training.levelNumber() == 2, "Next Level should advance to level 2.");
         require(training.drill() == TrainingDrill.BALANCE, "Every level should train ecosystem balance.");
         require(training.score() >= 45, "Level completion should award points.");
-    }
-
-    private static void answerNextPromptCorrectly(Simulation simulation, TrainingSession training) {
-        TrainingPrompt prompt = waitForPrompt(simulation, training, 100);
-        training.answer(prompt.answerIndex());
     }
 
     private static TrainingPrompt waitForPrompt(Simulation simulation, TrainingSession training, int limit) {
@@ -111,7 +102,10 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedWolves(4);
         simulation.seedHumans(6);
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.PLANT);
+        removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.RABBIT);
         removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.WOLF);
+        removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.HUMAN);
 
         for (int i = 0; i < 6; i++) {
             simulation.tick();

@@ -9,10 +9,6 @@ public final class Human extends Organism {
 
     @Override
     protected void update(Simulation simulation, Position position) {
-        if (age() % 2 != 0) {
-            return;
-        }
-
         Position wolf = first(simulation.neighborsWithKind(position, OrganismKind.WOLF));
         if (wolf != null) {
             simulation.removeOrganism(wolf, DeathCause.HUMAN_ATTACK);
@@ -21,14 +17,14 @@ public final class Human extends Organism {
         }
 
         Position current = position;
-        if (simulation.random().nextDouble() < 0.35) {
+        if (simulation.random().nextDouble() < 0.72) {
             List<Position> empty = simulation.emptyNeighbors(position);
             if (!empty.isEmpty() && simulation.moveOrganism(position, empty.get(0))) {
                 current = empty.get(0);
             }
         }
 
-        if (simulation.canPlantsSpread() && simulation.random().nextDouble() < 0.06) {
+        if (simulation.canPlantsSpread() && simulation.random().nextDouble() < 0.08) {
             List<Position> empty = simulation.emptyNeighbors(current);
             if (!empty.isEmpty()) {
                 simulation.placeOrganism(empty.get(0), new Plant());
