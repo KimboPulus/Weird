@@ -60,7 +60,7 @@ It writes `out/window-check.png`.
 - `Step` advances one tick.
 - `Speed` changes the simulation pace.
 - `Restart` starts a fresh terrarium and training session.
-- `Sound` toggles ambient music and action cues.
+- `Audio` opens persistent music and effect-volume settings.
 
 Keyboard controls:
 
@@ -90,6 +90,8 @@ Rain, Drought, and Compost have strong local effects. Repeated use can flood the
 A crisis warning appears after five consecutive dangerous ticks. If extinction, runaway rabbits, flooding, lethal dryness, or lethal temperature continues for 14 ticks, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
 
 Ambient music and sound effects are generated through built-in Java Sound. Audio failure never prevents the simulation from running.
+
+Design decisions and their supporting studies are recorded in `docs/research-backed-production.md`. These sources guide the interface but do not make the game a clinically validated treatment.
 
 ## Shop
 
