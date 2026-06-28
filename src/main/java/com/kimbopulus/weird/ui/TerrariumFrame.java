@@ -314,7 +314,7 @@ public final class TerrariumFrame extends JFrame {
                 updateToolHint(null);
             }
         } else {
-            sanctuaryButton.setToolTipText("7: " + ToolMode.SANCTUARY.description());
+            sanctuaryButton.setToolTipText("9: " + ToolMode.SANCTUARY.description());
         }
     }
 
@@ -386,7 +386,8 @@ public final class TerrariumFrame extends JFrame {
             case RAIN -> SoundCue.WATER;
             case DROUGHT -> SoundCue.DRY;
             case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
-            case RABBIT, WOLF -> SoundCue.PLACE;
+            case HUMAN -> SoundCue.GROW;
+            case BEAR, RABBIT, WOLF -> SoundCue.PLACE;
         };
         audio.play(cue);
     }

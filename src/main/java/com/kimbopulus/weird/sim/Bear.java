@@ -3,12 +3,18 @@ package com.kimbopulus.weird.sim;
 import java.util.List;
 
 public final class Bear extends Organism {
+    private int humansEaten;
+
     public Bear() {
         super(140);
     }
 
     @Override
     protected void update(Simulation simulation, Position position) {
+        if (humansEaten >= 2) {
+            simulation.removeOrganismQuietly(position);
+            return;
+        }
         if (age() > 70 && simulation.random().nextDouble() < 0.08) {
             simulation.removeOrganismQuietly(position);
             return;
@@ -21,6 +27,11 @@ public final class Bear extends Organism {
         Position human = first(simulation.neighborsWithKind(position, OrganismKind.HUMAN));
         if (human != null) {
             simulation.removeOrganism(human);
+            humansEaten++;
+            if (humansEaten >= 2) {
+                simulation.removeOrganismQuietly(position);
+                return;
+            }
             simulation.moveOrganism(position, human);
             return;
         }

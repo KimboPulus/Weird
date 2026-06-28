@@ -312,25 +312,25 @@ public final class TrainingSession {
     }
 
     private String dangerReason(PopulationSnapshot snapshot) {
-        if (snapshot.plants() < 70) {
+        if (snapshot.plants() < 100) {
             return "plants are near extinction";
         }
-        if (snapshot.rabbits() < 6) {
+        if (snapshot.rabbits() < 10) {
             return "rabbits are near extinction";
         }
         if (snapshot.wolves() < 1) {
             return "wolves are extinct";
         }
-        if (snapshot.humans() < 2) {
+        if (snapshot.humans() < 3) {
             return "humans are near extinction";
         }
-        if (snapshot.rabbits() > 180) {
+        if (snapshot.rabbits() > 150) {
             return "rabbits are out of control";
         }
-        if (snapshot.averageMoisture() < 0.14) {
+        if (snapshot.averageMoisture() < 0.18) {
             return "the soil is critically dry";
         }
-        if (snapshot.averageMoisture() > 0.90) {
+        if (snapshot.averageMoisture() > 0.85) {
             return "the terrarium is flooded";
         }
         if (snapshot.averageTemperature() < 0.0 || snapshot.averageTemperature() > 40.0) {
@@ -421,41 +421,41 @@ public final class TrainingSession {
     }
 
     private boolean isBalanced(PopulationSnapshot snapshot) {
-        return snapshot.plants() >= 160
-                && snapshot.plants() <= 1100
-                && snapshot.rabbits() >= 12
-                && snapshot.rabbits() <= 105
+        return snapshot.plants() >= 190
+                && snapshot.plants() <= 950
+                && snapshot.rabbits() >= 14
+                && snapshot.rabbits() <= 90
                 && snapshot.wolves() >= 2
-                && snapshot.wolves() <= 16
+                && snapshot.wolves() <= 12
                 && snapshot.humans() >= 3
-                && snapshot.humans() <= 16;
+                && snapshot.humans() <= 12;
     }
 
     private boolean levelOnTrack(PopulationSnapshot snapshot) {
         return switch (level) {
             case STEADY_START -> isBalanced(snapshot);
-            case MEMORY_SCAN -> snapshot.plants() >= 180 && snapshot.plants() <= 850
-                    && snapshot.rabbits() >= 16 && snapshot.rabbits() <= 85
+            case MEMORY_SCAN -> snapshot.plants() >= 200 && snapshot.plants() <= 780
+                    && snapshot.rabbits() >= 18 && snapshot.rabbits() <= 72
                     && snapshot.wolves() >= 2 && snapshot.humans() >= 3;
-            case PREDATOR_CHECK -> snapshot.plants() >= 180 && snapshot.plants() <= 900
-                    && snapshot.rabbits() >= 18 && snapshot.rabbits() <= 90
-                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 12
-                    && snapshot.humans() >= 3;
-            case CANOPY_CONTROL -> snapshot.plants() >= 200 && snapshot.plants() <= 820
-                    && snapshot.rabbits() >= 18 && snapshot.rabbits() <= 85
-                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 12
-                    && snapshot.humans() >= 4 && snapshot.humans() <= 12;
-            case CLIMATE_CONTROL -> snapshot.plants() >= 200 && snapshot.plants() <= 800
-                    && snapshot.rabbits() >= 20 && snapshot.rabbits() <= 80
+            case PREDATOR_CHECK -> snapshot.plants() >= 200 && snapshot.plants() <= 820
+                    && snapshot.rabbits() >= 20 && snapshot.rabbits() <= 78
                     && snapshot.wolves() >= 3 && snapshot.wolves() <= 10
-                    && snapshot.humans() >= 4 && snapshot.humans() <= 12
-                    && snapshot.averageMoisture() >= 0.32 && snapshot.averageMoisture() <= 0.72
-                    && snapshot.averageTemperature() >= 12.0 && snapshot.averageTemperature() <= 30.0;
-            case FLEX_SHIFT -> snapshot.plants() >= 220 && snapshot.plants() <= 760
-                    && snapshot.rabbits() >= 22 && snapshot.rabbits() <= 72
+                    && snapshot.humans() >= 3;
+            case CANOPY_CONTROL -> snapshot.plants() >= 210 && snapshot.plants() <= 760
+                    && snapshot.rabbits() >= 20 && snapshot.rabbits() <= 76
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 10
+                    && snapshot.humans() >= 4 && snapshot.humans() <= 10;
+            case CLIMATE_CONTROL -> snapshot.plants() >= 220 && snapshot.plants() <= 740
+                    && snapshot.rabbits() >= 20 && snapshot.rabbits() <= 72
                     && snapshot.wolves() >= 3 && snapshot.wolves() <= 9
                     && snapshot.humans() >= 4 && snapshot.humans() <= 10
-                    && snapshot.averageMoisture() >= 0.36 && snapshot.averageMoisture() <= 0.68;
+                    && snapshot.averageMoisture() >= 0.36 && snapshot.averageMoisture() <= 0.68
+                    && snapshot.averageTemperature() >= 12.0 && snapshot.averageTemperature() <= 30.0;
+            case FLEX_SHIFT -> snapshot.plants() >= 240 && snapshot.plants() <= 700
+                    && snapshot.rabbits() >= 24 && snapshot.rabbits() <= 68
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 8
+                    && snapshot.humans() >= 4 && snapshot.humans() <= 9
+                    && snapshot.averageMoisture() >= 0.40 && snapshot.averageMoisture() <= 0.64;
         };
     }
 

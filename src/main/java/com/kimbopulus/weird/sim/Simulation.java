@@ -323,19 +323,19 @@ public final class Simulation {
 
     public void rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.28);
+            grid.rainAround(center, 2, 0.36);
         }
     }
 
     public void rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.14);
+            grid.rainAround(center, 2, 0.18);
         }
     }
 
     public void drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 2, 0.28);
+            grid.dryAround(center, 2, 0.36);
         }
     }
 
@@ -387,6 +387,14 @@ public final class Simulation {
 
     public boolean addPlant(Position position) {
         return placeOrganism(position, new Plant());
+    }
+
+    public boolean addHuman(Position position) {
+        return placeOrganism(position, new Human());
+    }
+
+    public boolean addBear(Position position) {
+        return placeOrganism(position, new Bear());
     }
 
     public boolean addRabbit(Position position) {
@@ -450,7 +458,7 @@ public final class Simulation {
         if (bearCount > 0 || humanCount == 0) {
             return;
         }
-        double arrivalChance = Math.min(0.08, humanCount * 0.0015);
+        double arrivalChance = Math.min(0.14, humanCount * 0.0025);
         if (random.nextDouble() >= arrivalChance) {
             return;
         }

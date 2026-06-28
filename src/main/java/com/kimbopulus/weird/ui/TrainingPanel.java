@@ -284,7 +284,7 @@ public final class TrainingPanel extends JPanel {
         panel.add(help("Low plants: Rain or Compost"));
         panel.add(help("Too many plants: Rabbit"));
         panel.add(help("Too many rabbits: Wolf"));
-        panel.add(help("Humans plant; visiting bears hunt them"));
+        panel.add(help("Humans plant; bears hunt humans"));
         return panel;
     }
 

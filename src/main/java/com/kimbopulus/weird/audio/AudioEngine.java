@@ -135,12 +135,14 @@ public final class AudioEngine implements AutoCloseable {
         byte[] data = new byte[samples * 2];
         for (int i = 0; i < samples; i++) {
             double progress = i / (double) samples;
-            double envelope = Math.sin(Math.PI * progress) * (1.0 - progress * 0.35);
-            double fall = 1.0 - progress * 0.45;
-            double wave = Math.sin(2.0 * Math.PI * 92.0 * fall * i / SAMPLE_RATE)
-                    + Math.sin(2.0 * Math.PI * 137.0 * fall * i / SAMPLE_RATE) * 0.72
-                    + Math.sin(2.0 * Math.PI * 211.0 * i / SAMPLE_RATE) * 0.38;
-            short value = (short) (wave / 2.1 * envelope * volume * Short.MAX_VALUE);
+            double envelope = Math.sin(Math.PI * progress) * (1.0 - progress * 0.18);
+            double fall = 1.15 - progress * 0.70;
+            double wave = Math.sin(2.0 * Math.PI * 220.0 * fall * i / SAMPLE_RATE)
+                    + Math.sin(2.0 * Math.PI * 337.0 * fall * i / SAMPLE_RATE) * 0.85
+                    + Math.sin(2.0 * Math.PI * 610.0 * i / SAMPLE_RATE) * 0.35;
+            double noise = (((i * 1103515245L + 12345) >>> 16) & 0x7fff) / 16384.0 - 1.0;
+            wave += noise * 0.6;
+            short value = (short) (wave / 2.7 * envelope * volume * Short.MAX_VALUE);
             data[i * 2] = (byte) (value & 0xff);
             data[i * 2 + 1] = (byte) ((value >>> 8) & 0xff);
         }

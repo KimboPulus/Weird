@@ -334,17 +334,20 @@ public final class TerrariumPanel extends JPanel {
 
     private void drawHuman(Graphics2D g, int x, int y, int size) {
         int center = x + size / 2;
+        int width = Math.min(size - 1, Math.max(9, (int) (size * 0.9)));
+        int left = x + (size - width) / 2;
+        int right = left + width;
         g.setColor(SHADOW);
         g.fillOval(x + 3, y + size - 4, size - 6, 3);
         g.setColor(HUMAN_SKIN);
-        g.fillOval(center - 3, y + 2, 6, 6);
+        g.fillOval(center - 4, y + 1, 8, 8);
         g.setColor(HUMAN);
-        g.fillRoundRect(center - 3, y + 8, 6, 7, 2, 2);
+        g.fillRoundRect(center - 4, y + 9, 8, 8, 3, 3);
         g.setStroke(GRID_STROKE);
-        g.drawLine(center - 2, y + 14, center - 4, y + size - 2);
-        g.drawLine(center + 2, y + 14, center + 4, y + size - 2);
-        g.drawLine(center - 3, y + 9, center - 6, y + 13);
-        g.drawLine(center + 3, y + 9, center + 6, y + 13);
+        g.drawLine(center - 2, y + 16, left + 1, y + size - 2);
+        g.drawLine(center + 2, y + 16, right - 1, y + size - 2);
+        g.drawLine(center - 4, y + 10, left - 1, y + 14);
+        g.drawLine(center + 4, y + 10, right + 1, y + 14);
     }
 
     private void drawBear(Graphics2D g, int x, int y, int size, boolean facesRight) {
@@ -488,18 +491,22 @@ public final class TerrariumPanel extends JPanel {
         Color color = switch (kind) {
             case RABBIT -> new Color(238, 220, 188, alpha);
             case WOLF -> new Color(145, 153, 164, alpha);
-            case HUMAN -> new Color(87, 143, 191, alpha);
+            case HUMAN -> new Color(176, 48, 56, alpha);
             case BEAR -> new Color(151, 96, 58, alpha);
             case PLANT -> new Color(96, 175, 91, alpha);
         };
         g.setColor(color);
         if (kind == OrganismKind.HUMAN) {
             int center = x + size / 2;
-            g.fillOval(center - 2, y, 4, 4);
-            g.setStroke(new BasicStroke(2f));
-            g.drawLine(center, y + 4, center, y + size - 2);
-            g.drawLine(center, y + size / 2, x + 1, y + size - 1);
+            g.fillOval(center - 3, y, 6, 6);
+            g.fillOval(x + 1, y + size / 2, 4, 4);
+            g.fillOval(x + size - 5, y + size / 2, 4, 4);
+            g.setStroke(new BasicStroke(3f));
+            g.drawLine(center, y + 5, center, y + size - 1);
+            g.drawLine(center, y + size / 2, x, y + size - 1);
             g.drawLine(center, y + size / 2, x + size - 1, y + size - 1);
+            g.setColor(new Color(120, 10, 18, alpha));
+            g.fillOval(center - 1, y + size / 2, 2, 2);
         } else if (kind == OrganismKind.WOLF) {
             g.fillPolygon(
                     new int[]{x + size / 2, x + size, x},
@@ -561,6 +568,8 @@ public final class TerrariumPanel extends JPanel {
             case DROUGHT -> new Color(218, 135, 65, alpha);
             case COMPOST -> new Color(104, 157, 78, alpha);
             case PLANT -> new Color(73, 184, 89, alpha);
+            case HUMAN -> new Color(183, 73, 84, alpha);
+            case BEAR -> new Color(157, 106, 73, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
             case SANCTUARY -> new Color(232, 218, 112, alpha);

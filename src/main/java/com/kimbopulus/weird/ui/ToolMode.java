@@ -28,6 +28,18 @@ public enum ToolMode {
             simulation.addPlant(position);
         }
     },
+    HUMAN("Human", "Place one human on an empty cell.") {
+        @Override
+        public void apply(Simulation simulation, Position position) {
+            simulation.addHuman(position);
+        }
+    },
+    BEAR("Bear", "Place one bear on an empty cell.") {
+        @Override
+        public void apply(Simulation simulation, Position position) {
+            simulation.addBear(position);
+        }
+    },
     RABBIT("Rabbit", "Place one grazer on an empty cell.") {
         @Override
         public void apply(Simulation simulation, Position position) {
