@@ -1,6 +1,7 @@
 package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.Cell;
+import com.kimbopulus.weird.sim.BirthEvent;
 import com.kimbopulus.weird.sim.DeathCause;
 import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Organism;
@@ -56,6 +57,7 @@ public final class TerrariumPanel extends JPanel {
     private static final long BANNER_DURATION_MS = 1800;
     private static final long LEVEL_UP_DURATION_MS = 2600;
     private static final long DEATH_DURATION_MS = 2800;
+    private static final long BIRTH_DURATION_MS = 1500;
     private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
@@ -66,6 +68,7 @@ public final class TerrariumPanel extends JPanel {
     private long bannerStartedAt;
     private boolean levelUpBanner;
     private long lastDeathId;
+    private long lastBirthId;
 
     public TerrariumPanel(Simulation simulation) {
         this.simulation = simulation;
@@ -118,6 +121,16 @@ public final class TerrariumPanel extends JPanel {
         List<DeathEvent> deaths = simulation.recentDeathEvents();
         if (!deaths.isEmpty() && deaths.get(deaths.size() - 1).id() > lastDeathId) {
             lastDeathId = deaths.get(deaths.size() - 1).id();
+            if (!effectTimer.isRunning()) {
+                effectTimer.start();
+            }
+        }
+    }
+
+    public void syncBirthEffects() {
+        List<BirthEvent> births = simulation.recentBirthEvents();
+        if (!births.isEmpty() && births.get(births.size() - 1).id() > lastBirthId) {
+            lastBirthId = births.get(births.size() - 1).id();
             if (!effectTimer.isRunning()) {
                 effectTimer.start();
             }
@@ -191,6 +204,7 @@ public final class TerrariumPanel extends JPanel {
         drawDeathEffects(g, metrics);
         drawGridLines(g, grid, metrics.cellSize, metrics.offsetX, metrics.offsetY);
         drawToolEffects(g, metrics);
+        drawBirthEffects(g, metrics);
         drawHover(g, metrics);
         drawCrisisEdge(g, metrics);
         drawBanner(g, metrics);
@@ -495,6 +509,23 @@ public final class TerrariumPanel extends JPanel {
         }
     }
 
+    private void drawBirthEffects(Graphics2D g, BoardMetrics metrics) {
+        long now = System.currentTimeMillis();
+        for (BirthEvent birth : simulation.recentBirthEvents()) {
+            double progress = (now - birth.createdAtMillis()) / (double) BIRTH_DURATION_MS;
+            if (progress < 0.0 || progress >= 1.0) {
+                continue;
+            }
+            int alpha = (int) (220 * (1.0 - progress));
+            int size = Math.max(6, (int) (metrics.cellSize * (0.75 + progress * 0.8)));
+            int x = metrics.offsetX + birth.position().x() * metrics.cellSize
+                    + (metrics.cellSize - size) / 2;
+            int y = metrics.offsetY + birth.position().y() * metrics.cellSize
+                    + (metrics.cellSize - size) / 2 - (int) (progress * metrics.cellSize * 0.1);
+            drawBirthShape(g, birth.kind(), x, y, size, alpha, progress);
+        }
+    }
+
     private void drawDeathShape(Graphics2D g, OrganismKind kind, DeathCause cause, int x, int y, int size, int alpha, double progress) {
         Color color = switch (kind) {
             case RABBIT -> new Color(188, 48, 52, alpha);
@@ -554,6 +585,29 @@ public final class TerrariumPanel extends JPanel {
         g.drawLine(bladeX - 1, bladeTop + 14, bladeX - 4, bladeTop + 6);
     }
 
+    private void drawBirthShape(Graphics2D g, OrganismKind kind, int x, int y, int size, int alpha, double progress) {
+        Color glow = switch (kind) {
+            case RABBIT -> new Color(171, 210, 129, alpha);
+            case HUMAN -> new Color(152, 196, 234, alpha);
+            case WOLF -> new Color(198, 205, 214, alpha);
+            case BEAR -> new Color(204, 171, 128, alpha);
+            case PLANT -> new Color(124, 196, 109, alpha);
+        };
+        int ring = Math.max(4, (int) (size * (0.95 + progress * 0.7)));
+        int center = x + size / 2;
+        int centerY = y + size / 2;
+        g.setColor(glow);
+        g.fillOval(center - size / 4, centerY - size / 4, Math.max(4, size / 2), Math.max(4, size / 2));
+        g.setStroke(new BasicStroke(Math.max(2f, size / 8f)));
+        g.drawOval(center - ring / 2, centerY - ring / 2, ring, ring);
+        g.setColor(new Color(248, 244, 222, alpha));
+        g.fillOval(center - 3, centerY - 3, 6, 6);
+        g.fillOval(center - ring / 3, centerY - 2, 4, 4);
+        g.fillOval(center + ring / 3 - 4, centerY - 2, 4, 4);
+        g.fillOval(center - 2, centerY - ring / 3, 4, 4);
+        g.fillOval(center - 2, centerY + ring / 3 - 4, 4, 4);
+    }
+
     private void drawBanner(Graphics2D g, BoardMetrics metrics) {
         if (bannerText == null) {
             return;
@@ -605,7 +659,7 @@ public final class TerrariumPanel extends JPanel {
             case PLANT -> new Color(73, 184, 89, alpha);
             case HUMAN -> new Color(183, 73, 84, alpha);
             case BEAR -> new Color(157, 106, 73, alpha);
-            case RABBIT -> new Color(235, 211, 171, alpha);
+            case RABBIT_FEMALE, RABBIT_MALE -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
             case SANCTUARY -> new Color(232, 218, 112, alpha);
         };
@@ -625,8 +679,9 @@ public final class TerrariumPanel extends JPanel {
         if (!bannerActive) {
             bannerText = null;
         }
+        boolean birthsActive = hasActiveBirths(now);
         boolean deathsActive = hasActiveDeaths(now);
-        if (toolEffects.isEmpty() && !bannerActive && !deathsActive) {
+        if (toolEffects.isEmpty() && !bannerActive && !birthsActive && !deathsActive) {
             effectTimer.stop();
         }
     }
@@ -642,6 +697,15 @@ public final class TerrariumPanel extends JPanel {
     private boolean hasActiveDeaths(long now) {
         for (DeathEvent death : simulation.recentDeathEvents()) {
             if (now - death.createdAtMillis() <= DEATH_DURATION_MS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasActiveBirths(long now) {
+        for (BirthEvent birth : simulation.recentBirthEvents()) {
+            if (now - birth.createdAtMillis() <= BIRTH_DURATION_MS) {
                 return true;
             }
         }

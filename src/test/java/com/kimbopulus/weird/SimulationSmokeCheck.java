@@ -18,6 +18,7 @@ public final class SimulationSmokeCheck {
         simulation.seedRabbits(15);
         simulation.seedWolves(2);
         simulation.seedHumans(6);
+        require(allRabbitsFemale(simulation), "Fresh rabbit seeds should start female only.");
 
         for (int i = 0; i < 240; i++) {
             simulation.tick();
@@ -52,6 +53,7 @@ public final class SimulationSmokeCheck {
         require(simulation.grid().cellAt(new Position(2, 2)).sanctuary(), "Sanctuary soil should be marked.");
 
         simulation.restart();
+        require(allRabbitsFemale(simulation), "Restart should restore female-only rabbit seeds.");
         require(simulation.tickCount() == 0, "Restart should reset the tick count.");
         require(simulation.count(OrganismKind.PLANT) > 0, "Restart should restore plants.");
         require(simulation.count(OrganismKind.RABBIT) > 0, "Restart should restore rabbits.");
@@ -62,6 +64,7 @@ public final class SimulationSmokeCheck {
         System.out.printf("Smoke check passed: plants=%d rabbits=%d wolves=%d%n", plants, rabbits, wolves);
         checkHumanPlantingAndBearVisits();
         checkRabbitPairingAndWolfDeparture();
+        checkRabbitPlacementSexes();
         checkDeathEvents();
     }
 
@@ -103,13 +106,23 @@ public final class SimulationSmokeCheck {
         Simulation simulation = new Simulation(12, 10, 9L);
         Position rabbit = new Position(2, 2);
         Position bear = new Position(3, 3);
-        simulation.addRabbit(rabbit);
+        simulation.addRabbit(rabbit, RabbitSex.FEMALE);
         simulation.placeOrganism(bear, new Bear());
         simulation.removeOrganism(rabbit);
         simulation.removeOrganism(bear);
         require(simulation.recentDeathEvents().stream().map(DeathEvent::kind).toList()
                         .containsAll(java.util.List.of(OrganismKind.RABBIT, OrganismKind.BEAR)),
                 "Animal removals should create death events.");
+    }
+
+    private static void checkRabbitPlacementSexes() {
+        Simulation simulation = new Simulation(8, 8, 31L);
+        require(simulation.addRabbit(new Position(1, 1), RabbitSex.FEMALE), "Female rabbit should place.");
+        require(simulation.addRabbit(new Position(2, 1), RabbitSex.MALE), "Male rabbit should place.");
+        require(simulation.organismAt(1, 1) instanceof Rabbit female && female.female(),
+                "Female rabbit placement should stay female.");
+        require(simulation.organismAt(2, 1) instanceof Rabbit male && male.male(),
+                "Male rabbit placement should stay male.");
     }
 
     private static void checkRabbitPairingAndWolfDeparture() {
@@ -145,5 +158,16 @@ public final class SimulationSmokeCheck {
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException(exception);
         }
+    }
+
+    private static boolean allRabbitsFemale(Simulation simulation) {
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) instanceof Rabbit rabbit && rabbit.male()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

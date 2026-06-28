@@ -16,6 +16,7 @@ public final class Simulation {
     private final Organism[][] organisms;
     private final List<PopulationSnapshot> history = new ArrayList<>();
     private final List<DeathEvent> deathEvents = new ArrayList<>();
+    private final List<BirthEvent> birthEvents = new ArrayList<>();
     private final List<AreaEffect> areaEffects = new ArrayList<>();
     private int tick;
     private Season season = Season.SPRING;
@@ -27,6 +28,7 @@ public final class Simulation {
     private int humanCount;
     private int bearCount;
     private long deathSequence;
+    private long birthSequence;
 
     public Simulation(int width, int height, long seed) {
         this.random = new Random(seed);
@@ -115,6 +117,7 @@ public final class Simulation {
         currentEvent = WorldEvent.CALM;
         sanctuaryPlaced = false;
         deathEvents.clear();
+        birthEvents.clear();
         areaEffects.clear();
         seedPlants(160);
         seedRabbits(24);
@@ -299,8 +302,12 @@ public final class Simulation {
     }
 
     public void seedRabbits(int amount) {
+        seedRabbits(amount, RabbitSex.FEMALE);
+    }
+
+    public void seedRabbits(int amount, RabbitSex sex) {
         for (int i = 0; i < amount; i++) {
-            placeRandomly(new Rabbit(), 150);
+            placeRandomly(new Rabbit(sex), 150);
         }
     }
 
@@ -318,6 +325,10 @@ public final class Simulation {
 
     public List<DeathEvent> recentDeathEvents() {
         return List.copyOf(deathEvents);
+    }
+
+    public List<BirthEvent> recentBirthEvents() {
+        return List.copyOf(birthEvents);
     }
 
     public void clearDeathEvents() {
@@ -407,7 +418,11 @@ public final class Simulation {
     }
 
     public boolean addRabbit(Position position) {
-        return placeOrganism(position, new Rabbit());
+        return addRabbit(position, RabbitSex.FEMALE);
+    }
+
+    public boolean addRabbit(Position position, RabbitSex sex) {
+        return placeOrganism(position, new Rabbit(sex));
     }
 
     public boolean addWolf(Position position) {
@@ -613,6 +628,13 @@ public final class Simulation {
         deathEvents.add(new DeathEvent(++deathSequence, kind, DeathCause.NATURAL, position, System.currentTimeMillis()));
         if (deathEvents.size() > 80) {
             deathEvents.remove(0);
+        }
+    }
+
+    public void recordBirth(OrganismKind kind, Position position) {
+        birthEvents.add(new BirthEvent(++birthSequence, kind, position, System.currentTimeMillis()));
+        if (birthEvents.size() > 80) {
+            birthEvents.remove(0);
         }
     }
 

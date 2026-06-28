@@ -69,8 +69,11 @@ public abstract class Animal extends Organism {
         if (age() > 8 && energy() >= reproductionEnergy() && simulation.random().nextDouble() < reproductionChance()) {
             List<Position> emptyNeighbors = simulation.emptyNeighbors(current);
             if (!emptyNeighbors.isEmpty()) {
-                simulation.placeOrganism(emptyNeighbors.get(0), createOffspring());
-                spendEnergy(reproductionCost());
+                Animal offspring = createOffspring();
+                if (simulation.placeOrganism(emptyNeighbors.get(0), offspring)) {
+                    simulation.recordBirth(offspring.kind(), current);
+                    spendEnergy(reproductionCost());
+                }
             }
         }
     }

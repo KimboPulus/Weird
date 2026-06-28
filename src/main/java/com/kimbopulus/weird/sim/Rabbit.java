@@ -100,6 +100,9 @@ public final class Rabbit extends Animal {
             for (int i = 0; i < births; i++) {
                 simulation.placeOrganism(spots.get(i), new Rabbit());
             }
+            if (births > 0) {
+                simulation.recordBirth(OrganismKind.RABBIT, position);
+            }
             return true;
         }
         return false;

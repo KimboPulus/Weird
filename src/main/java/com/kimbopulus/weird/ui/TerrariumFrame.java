@@ -161,7 +161,7 @@ public final class TerrariumFrame extends JFrame {
         for (ToolMode mode : ToolMode.values()) {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
-            button.setToolTipText(shortcut + ": " + mode.description());
+            button.setToolTipText(shortcutLabel(shortcut) + ": " + mode.description());
             button.addActionListener(event -> {
                 toolMode = mode;
                 updateToolHint(null);
@@ -226,6 +226,7 @@ public final class TerrariumFrame extends JFrame {
         simulation.tick();
         training.update(simulation);
         terrariumPanel.syncDeathEffects();
+        terrariumPanel.syncBirthEffects();
         playDeathSounds();
         updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
@@ -325,7 +326,7 @@ public final class TerrariumFrame extends JFrame {
             ToolMode mode = modes[i];
             String actionName = "tool-" + mode.name();
             root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-                    .put(KeyStroke.getKeyStroke(Character.forDigit(i + 1, 10)), actionName);
+                    .put(KeyStroke.getKeyStroke(shortcutKey(i + 1)), actionName);
             root.getActionMap().put(actionName, new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
@@ -387,9 +388,17 @@ public final class TerrariumFrame extends JFrame {
             case DROUGHT -> SoundCue.DRY;
             case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
             case HUMAN -> SoundCue.GROW;
-            case BEAR, RABBIT, WOLF -> SoundCue.PLACE;
+            case BEAR, RABBIT_FEMALE, RABBIT_MALE, WOLF -> SoundCue.PLACE;
         };
         audio.play(cue);
+    }
+
+    private String shortcutLabel(int index) {
+        return index == 10 ? "0" : Integer.toString(index);
+    }
+
+    private char shortcutKey(int index) {
+        return index == 10 ? '0' : Character.forDigit(index, 10);
     }
 
     private void celebrateLevel() {
