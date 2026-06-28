@@ -35,7 +35,7 @@ public final class Simulation {
 
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
-        simulation.seedPlants(140);
+        simulation.seedPlants(110);
         simulation.seedRabbits(18);
         simulation.seedWolves(3);
         simulation.seedHumans(4);
@@ -113,7 +113,7 @@ public final class Simulation {
         currentEvent = WorldEvent.CALM;
         sanctuaryPlaced = false;
         deathEvents.clear();
-        seedPlants(220);
+        seedPlants(160);
         seedRabbits(24);
         seedWolves(4);
         seedHumans(6);
@@ -488,7 +488,7 @@ public final class Simulation {
         switch (currentEvent) {
             case RAIN_FRONT -> grid.rainAll(0.12);
             case HEAT_WAVE -> grid.dryAndWarmAll(0.1, 2.5);
-            case WILD_BLOOM -> seedPlants(Math.max(18, grid.width() * grid.height() / 45));
+            case WILD_BLOOM -> seedPlants(Math.max(12, grid.width() * grid.height() / 70));
             case RABBIT_ARRIVAL -> seedRabbits(Math.max(3, grid.width() * grid.height() / 380));
             case WOLF_ARRIVAL -> seedWolves(Math.max(1, grid.width() * grid.height() / 900));
             case CALM -> {
@@ -497,7 +497,7 @@ public final class Simulation {
     }
 
     private int plantLimit() {
-        return (int) (grid.width() * grid.height() * 0.72);
+        return (int) (grid.width() * grid.height() * 0.58);
     }
 
     private void recordSnapshot() {
