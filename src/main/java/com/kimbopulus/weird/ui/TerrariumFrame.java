@@ -1,5 +1,7 @@
 package com.kimbopulus.weird.ui;
 
+import com.kimbopulus.weird.audio.AudioEngine;
+import com.kimbopulus.weird.audio.SoundCue;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
@@ -16,6 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -28,6 +31,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -39,6 +44,7 @@ public final class TerrariumFrame extends JFrame {
     private final JLabel statusLabel;
     private final JLabel toolHintLabel;
     private final Timer timer;
+    private final AudioEngine audio;
     private final Map<ToolMode, JToggleButton> toolButtons = new EnumMap<>(ToolMode.class);
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
@@ -48,8 +54,14 @@ public final class TerrariumFrame extends JFrame {
 
         simulation = Simulation.createDefault();
         training = new TrainingSession();
+        audio = new AudioEngine();
         terrariumPanel = new TerrariumPanel(simulation);
-        trainingPanel = new TrainingPanel(simulation, training, this::updateToolAvailability);
+        trainingPanel = new TrainingPanel(
+                simulation,
+                training,
+                this::updateToolAvailability,
+                this::restartFailedLevel
+        );
         toolHintLabel = new JLabel();
         toolHintLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         toolHintLabel.setFont(toolHintLabel.getFont().deriveFont(Font.PLAIN, 13f));
@@ -77,6 +89,7 @@ public final class TerrariumFrame extends JFrame {
                 }
                 toolMode.apply(simulation, position);
                 applyPurchasedUpgrade(position);
+                playToolSound();
                 terrariumPanel.showToolEffect(position, toolMode);
                 training.noteAction(toolMode.label(), terrariumPanel.describe(position));
                 terrariumPanel.repaint();
@@ -105,6 +118,12 @@ public final class TerrariumFrame extends JFrame {
         updateToolHint(null);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent event) {
+                audio.close();
+            }
+        });
         setMinimumSize(new java.awt.Dimension(1100, 720));
         setSize(1240, 820);
         setLocationRelativeTo(null);
@@ -174,6 +193,12 @@ public final class TerrariumFrame extends JFrame {
         restartButton.addActionListener(event -> restart());
         toolbar.add(restartButton);
 
+        JToggleButton soundButton = new JToggleButton("Sound", true);
+        soundButton.setFocusable(false);
+        soundButton.setToolTipText("Toggle music and sound effects.");
+        soundButton.addActionListener(event -> audio.setEnabled(soundButton.isSelected()));
+        toolbar.add(soundButton);
+
         return toolbar;
     }
 
@@ -189,10 +214,18 @@ public final class TerrariumFrame extends JFrame {
 
     private void stepSimulation() {
         boolean wasComplete = training.levelComplete();
+        boolean wasFailed = training.levelFailed();
+        boolean hadWarning = training.dangerWarning() != null;
         simulation.tick();
         training.update(simulation);
         if (!wasComplete && training.levelComplete()) {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
+            audio.play(SoundCue.COMPLETE);
+        } else if (!wasFailed && training.levelFailed()) {
+            terrariumPanel.showBanner("LEVEL LOST");
+            audio.play(SoundCue.FAILURE);
+        } else if (!hadWarning && training.dangerWarning() != null) {
+            audio.play(SoundCue.WARNING);
         }
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -210,8 +243,19 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void restart() {
+        int answer = JOptionPane.showConfirmDialog(
+                this,
+                "Restart the whole run? Current level progress and run score will be lost.",
+                "Restart run",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (answer != JOptionPane.YES_OPTION) {
+            return;
+        }
         simulation.restart();
         training.reset();
+        audio.play(SoundCue.RESTART);
         terrariumPanel.repaint();
         trainingPanel.refresh();
         updateToolAvailability();
@@ -308,5 +352,28 @@ public final class TerrariumFrame extends JFrame {
         } else if (toolMode == ToolMode.COMPOST && training.progression().owns(ShopItem.RICH_COMPOST)) {
             simulation.compostBoost(position);
         }
+    }
+
+    private void restartFailedLevel() {
+        if (!training.restartLevel()) {
+            return;
+        }
+        simulation.restart();
+        audio.play(SoundCue.RESTART);
+        terrariumPanel.showBanner("Level restarted");
+        terrariumPanel.repaint();
+        trainingPanel.refresh();
+        updateStatus();
+        updateToolAvailability();
+    }
+
+    private void playToolSound() {
+        SoundCue cue = switch (toolMode) {
+            case RAIN -> SoundCue.WATER;
+            case DROUGHT, CLEAR -> SoundCue.DRY;
+            case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
+            case RABBIT, WOLF -> SoundCue.PLACE;
+        };
+        audio.play(cue);
     }
 }

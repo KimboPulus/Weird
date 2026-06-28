@@ -36,6 +36,7 @@ public final class TrainingPanel extends JPanel {
     private final Simulation simulation;
     private final TrainingSession training;
     private final Runnable onProgressionChanged;
+    private final Runnable onRestartLevel;
     private final JLabel titleLabel = new JLabel("Focus Path");
     private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
@@ -49,17 +50,31 @@ public final class TrainingPanel extends JPanel {
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton[] answerButtons = new JButton[3];
     private final JButton nextLevelButton = new JButton("Next Level");
+    private final JButton restartLevelButton = new JButton("Restart Level");
+    private final JPanel levelActionsPanel = new JPanel(new GridLayout(0, 1, 0, 5));
     private final TrendPanel trendPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
         this(simulation, training, () -> {
+        }, () -> {
         });
     }
 
     public TrainingPanel(Simulation simulation, TrainingSession training, Runnable onProgressionChanged) {
+        this(simulation, training, onProgressionChanged, () -> {
+        });
+    }
+
+    public TrainingPanel(
+            Simulation simulation,
+            TrainingSession training,
+            Runnable onProgressionChanged,
+            Runnable onRestartLevel
+    ) {
         this.simulation = simulation;
         this.training = training;
         this.onProgressionChanged = onProgressionChanged;
+        this.onRestartLevel = onRestartLevel;
         this.trendPanel = new TrendPanel(simulation);
 
         setBackground(BACKGROUND);
@@ -141,7 +156,10 @@ public final class TrainingPanel extends JPanel {
                 : RULE_NORMAL);
 
         TrainingPrompt prompt = training.prompt();
-        if (training.levelComplete()) {
+        if (training.levelFailed()) {
+            promptLabel.setText("Level lost: " + training.failureReason());
+            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
+        } else if (training.levelComplete()) {
             promptLabel.setText("Level complete. +" + training.lastLevelReward() + " tokens");
             setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
         } else if (prompt == null) {
@@ -153,6 +171,15 @@ public final class TrainingPanel extends JPanel {
         }
         feedbackLabel.setText(html(training.feedback()));
         nextLevelButton.setVisible(training.levelComplete());
+        restartLevelButton.setVisible(training.levelFailed());
+        levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
+        String warning = training.dangerWarning();
+        if (warning != null) {
+            feedbackLabel.setText(html(warning));
+            feedbackLabel.setForeground(RULE_OPPOSITE);
+        } else {
+            feedbackLabel.setForeground(MUTED);
+        }
         trendPanel.repaint();
     }
 
@@ -183,7 +210,13 @@ public final class TrainingPanel extends JPanel {
                 refresh();
             }
         });
-        panel.add(nextLevelButton, BorderLayout.SOUTH);
+        restartLevelButton.setFocusable(false);
+        restartLevelButton.setPreferredSize(new Dimension(280, 38));
+        restartLevelButton.addActionListener(event -> onRestartLevel.run());
+        levelActionsPanel.setOpaque(false);
+        levelActionsPanel.add(nextLevelButton);
+        levelActionsPanel.add(restartLevelButton);
+        panel.add(levelActionsPanel, BorderLayout.SOUTH);
         return panel;
     }
 
