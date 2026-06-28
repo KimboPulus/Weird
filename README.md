@@ -60,6 +60,7 @@ It writes `out/window-check.png`.
 - `Step` advances one tick.
 - `Speed` changes the simulation pace.
 - `Restart` starts a fresh terrarium and training session.
+- `Sound` toggles ambient music and action cues.
 
 Keyboard controls:
 
@@ -81,6 +82,14 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 - Level changes appear briefly over the board, and ecosystem crises add a labeled border.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
 - Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
+
+## Risk and failure
+
+Rain, Drought, and Compost have strong local effects. Repeated use can flood the terrarium, create lethal dry soil, or trigger uncontrolled plant growth.
+
+A crisis warning appears after five consecutive dangerous ticks. If extinction, runaway rabbits, flooding, lethal dryness, or lethal temperature continues for 14 ticks, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
+
+Ambient music and sound effects are generated through built-in Java Sound. Audio failure never prevents the simulation from running.
 
 ## Shop
 

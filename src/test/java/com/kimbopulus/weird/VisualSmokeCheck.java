@@ -1,6 +1,8 @@
 package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.sim.OrganismKind;
+import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
@@ -27,8 +29,13 @@ public final class VisualSmokeCheck {
         System.setProperty("java.awt.headless", "true");
 
         File output = new File(args.length == 0 ? "out/visual-check.png" : args[0]);
-        SwingUtilities.invokeAndWait(() -> render(output));
+        File failureOutput = new File(output.getParentFile(), "failure-check.png");
+        SwingUtilities.invokeAndWait(() -> {
+            render(output);
+            renderFailure(failureOutput);
+        });
         System.out.println("Visual check saved " + output.getAbsolutePath());
+        System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
     }
 
     private static void render(File output) {
@@ -44,27 +51,58 @@ public final class VisualSmokeCheck {
                 training.update(simulation);
             }
 
-            JPanel root = new JPanel(new BorderLayout());
-            TerrariumPanel board = new TerrariumPanel(simulation);
-            TrainingPanel panel = new TrainingPanel(simulation, training);
-            root.add(board, BorderLayout.CENTER);
-            root.add(panel, BorderLayout.EAST);
-            root.setSize(1280, 720);
-            layoutTree(root);
-
-            BufferedImage image = new BufferedImage(1280, 720, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = image.createGraphics();
-            root.paint(g);
-            g.dispose();
-
-            require(hasEnoughColorVariation(image), "Rendered image looks blank.");
-            require(hasReadableBoardArea(image), "Board area did not render expected dark background.");
-
-            output.getParentFile().mkdirs();
-            ImageIO.write(image, "png", output);
+            renderPanels(simulation, training, output);
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
         }
+    }
+
+    private static void renderFailure(File output) {
+        try {
+            Simulation simulation = new Simulation(48, 32, 17L);
+            simulation.seedPlants(220);
+            simulation.seedRabbits(48);
+            simulation.seedWolves(4);
+            for (int y = 0; y < simulation.grid().height(); y++) {
+                for (int x = 0; x < simulation.grid().width(); x++) {
+                    if (simulation.organismAt(x, y) != null
+                            && simulation.organismAt(x, y).kind() == OrganismKind.WOLF) {
+                        simulation.removeOrganism(new Position(x, y));
+                    }
+                }
+            }
+
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            for (int i = 0; i < 14; i++) {
+                simulation.tick();
+                training.update(simulation);
+            }
+            require(training.levelFailed(), "Failure scenario did not lose the level.");
+            renderPanels(simulation, training, output);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderPanels(Simulation simulation, TrainingSession training, File output) throws Exception {
+        JPanel root = new JPanel(new BorderLayout());
+        TerrariumPanel board = new TerrariumPanel(simulation);
+        TrainingPanel panel = new TrainingPanel(simulation, training);
+        root.add(board, BorderLayout.CENTER);
+        root.add(panel, BorderLayout.EAST);
+        root.setSize(1280, 720);
+        layoutTree(root);
+
+        BufferedImage image = new BufferedImage(1280, 720, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        root.paint(g);
+        g.dispose();
+
+        require(hasEnoughColorVariation(image), "Rendered image looks blank.");
+        require(hasReadableBoardArea(image), "Board area did not render expected dark background.");
+
+        output.getParentFile().mkdirs();
+        ImageIO.write(image, "png", output);
     }
 
     private static boolean hasEnoughColorVariation(BufferedImage image) {
