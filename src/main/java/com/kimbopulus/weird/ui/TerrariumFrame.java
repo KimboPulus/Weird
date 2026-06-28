@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.KeyStroke;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -123,6 +124,7 @@ public final class TerrariumFrame extends JFrame {
         updateToolAvailability();
         updateStatus();
         updateToolHint(null);
+        SwingUtilities.invokeLater(this::showIntroIfNeeded);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -206,6 +208,12 @@ public final class TerrariumFrame extends JFrame {
         audioButton.setToolTipText("Set music and effect volume.");
         audioButton.addActionListener(event -> AudioSettingsDialog.show(this, settings, this::applyAudioSettings));
         toolbar.add(audioButton);
+
+        JButton infoButton = new JButton("Info");
+        infoButton.setFocusable(false);
+        infoButton.setToolTipText("Show the short game guide again.");
+        infoButton.addActionListener(event -> IntroDialog.show(this));
+        toolbar.add(infoButton);
 
         return toolbar;
     }
@@ -429,6 +437,14 @@ public final class TerrariumFrame extends JFrame {
 
     private void applyAudioSettings() {
         audio.applySettings(settings);
+    }
+
+    private void showIntroIfNeeded() {
+        if (settings.introSeen()) {
+            return;
+        }
+        settings.setIntroSeen(true);
+        IntroDialog.show(this);
     }
 
     private void updateAudioTension() {

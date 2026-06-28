@@ -12,12 +12,14 @@ public final class GameSettings {
     private boolean audioEnabled;
     private int musicVolume;
     private int effectsVolume;
+    private boolean introSeen;
 
-    private GameSettings(Path savePath, boolean audioEnabled, int musicVolume, int effectsVolume) {
+    private GameSettings(Path savePath, boolean audioEnabled, int musicVolume, int effectsVolume, boolean introSeen) {
         this.savePath = savePath;
         this.audioEnabled = audioEnabled;
         this.musicVolume = clamp(musicVolume);
         this.effectsVolume = clamp(effectsVolume);
+        this.introSeen = introSeen;
     }
 
     public static GameSettings loadDefault() {
@@ -34,7 +36,8 @@ public final class GameSettings {
                 path,
                 Boolean.parseBoolean(properties.getProperty("audioEnabled", "true")),
                 parse(properties.getProperty("musicVolume"), 35),
-                parse(properties.getProperty("effectsVolume"), 70)
+                parse(properties.getProperty("effectsVolume"), 70),
+                Boolean.parseBoolean(properties.getProperty("introSeen", "false"))
         );
     }
 
@@ -54,6 +57,10 @@ public final class GameSettings {
         return effectsVolume;
     }
 
+    public boolean introSeen() {
+        return introSeen;
+    }
+
     public void setAudioEnabled(boolean audioEnabled) {
         this.audioEnabled = audioEnabled;
         save();
@@ -69,6 +76,11 @@ public final class GameSettings {
         save();
     }
 
+    public void setIntroSeen(boolean introSeen) {
+        this.introSeen = introSeen;
+        save();
+    }
+
     private void save() {
         if (savePath == null) {
             return;
@@ -77,6 +89,7 @@ public final class GameSettings {
         properties.setProperty("audioEnabled", Boolean.toString(audioEnabled));
         properties.setProperty("musicVolume", Integer.toString(musicVolume));
         properties.setProperty("effectsVolume", Integer.toString(effectsVolume));
+        properties.setProperty("introSeen", Boolean.toString(introSeen));
         try {
             Files.createDirectories(savePath.getParent());
             try (OutputStream output = Files.newOutputStream(savePath)) {
@@ -88,7 +101,7 @@ public final class GameSettings {
     }
 
     private static GameSettings defaults(Path path) {
-        return new GameSettings(path, true, 35, 70);
+        return new GameSettings(path, true, 35, 70, false);
     }
 
     private static int parse(String value, int fallback) {

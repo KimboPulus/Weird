@@ -1,0 +1,63 @@
+package com.kimbopulus.weird.ui;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.WindowConstants;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Window;
+
+public final class IntroDialog extends JDialog {
+    private IntroDialog(Window owner) {
+        super(owner, "How to play", ModalityType.APPLICATION_MODAL);
+
+        JPanel content = new JPanel(new BorderLayout(0, 14));
+        content.setBackground(new Color(247, 243, 232));
+        content.setBorder(BorderFactory.createEmptyBorder(18, 18, 16, 18));
+
+        JLabel title = new JLabel("Weird");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 24f));
+        content.add(title, BorderLayout.NORTH);
+
+        JTextArea body = new JTextArea("""
+Keep the board balanced.
+
+Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure humans.
+
+If any group gets too low or too high for too long, the level fails.
+Use the tools on the top bar to change rain, drought, compost, or place species.
+Finish each objective to move on, earn score, and unlock more options.
+
+Click the Info button again anytime to reopen this guide.
+""");
+        body.setEditable(false);
+        body.setLineWrap(true);
+        body.setWrapStyleWord(true);
+        body.setOpaque(false);
+        body.setFont(body.getFont().deriveFont(Font.PLAIN, 15f));
+        content.add(body, BorderLayout.CENTER);
+
+        JButton close = new JButton("Got it");
+        close.addActionListener(event -> dispose());
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.add(close, BorderLayout.EAST);
+        content.add(footer, BorderLayout.SOUTH);
+
+        setContentPane(content);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setMinimumSize(new Dimension(430, 320));
+        pack();
+        setLocationRelativeTo(owner);
+    }
+
+    public static void show(Window owner) {
+        new IntroDialog(owner).setVisible(true);
+    }
+}
