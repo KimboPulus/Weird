@@ -16,6 +16,7 @@ import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldGrid;
 import com.kimbopulus.weird.training.FocusRule;
 import com.kimbopulus.weird.training.TrainingSession;
+import com.kimbopulus.weird.ui.TerrariumPanel;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,6 +36,7 @@ public final class ModelRegressionCheck {
         checkTrainingLabelsAndReset();
         checkProgressionPersistence();
         checkSettingsPersistence();
+        checkSpriteResources();
         System.out.println("Model regression check passed.");
     }
 
@@ -242,6 +244,19 @@ public final class ModelRegressionCheck {
             require(reloaded.introSeen(), "Intro flag should persist.");
         } finally {
             Files.deleteIfExists(file);
+        }
+    }
+
+    private static void checkSpriteResources() throws IOException {
+        require(resourceExists("/com/kimbopulus/weird/sprites/rabbit.png"), "Rabbit sprite should be on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/sprites/wolf.png"), "Wolf sprite should be on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should be on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should be on the classpath.");
+    }
+
+    private static boolean resourceExists(String path) throws IOException {
+        try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
+            return input != null;
         }
     }
 

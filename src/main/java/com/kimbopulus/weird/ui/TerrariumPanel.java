@@ -54,6 +54,8 @@ public final class TerrariumPanel extends JPanel {
     private static final Color HOVER = new Color(255, 246, 172, 180);
     private static final BufferedImage RABBIT_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/rabbit.png");
     private static final BufferedImage WOLF_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/wolf.png");
+    private static final BufferedImage HUMAN_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/human.png");
+    private static final BufferedImage BEAR_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/bear.png");
     private static final BasicStroke GRID_STROKE = new BasicStroke(1f);
     private static final BasicStroke PLANT_STROKE = new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     private static final BasicStroke VETERAN_STROKE = new BasicStroke(1.5f);
@@ -440,6 +442,13 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawHuman(Graphics2D g, int x, int y, int size) {
+        if (HUMAN_SPRITE != null) {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g.setColor(SHADOW);
+            g.fillOval(x + 3, y + size - 4, size - 6, 3);
+            g.drawImage(HUMAN_SPRITE, x, y, size, size, null);
+            return;
+        }
         int center = x + size / 2;
         g.setColor(SHADOW);
         g.fillOval(x + 3, y + size - 4, size - 6, 3);
@@ -450,6 +459,23 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawBear(Graphics2D g, int x, int y, int size, boolean facesRight) {
+        if (BEAR_SPRITE != null) {
+            Graphics2D sprite = (Graphics2D) g.create();
+            try {
+                sprite.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                sprite.translate(x, y);
+                if (!facesRight) {
+                    sprite.translate(size, 0);
+                    sprite.scale(-1.0, 1.0);
+                }
+                sprite.setColor(SHADOW);
+                sprite.fillOval(1, size - 5, size - 2, 4);
+                sprite.drawImage(BEAR_SPRITE, 0, 0, size, size, null);
+            } finally {
+                sprite.dispose();
+            }
+            return;
+        }
         int headX = facesRight ? x + size - 9 : x + 1;
         g.setColor(SHADOW);
         g.fillOval(x + 1, y + size - 5, size - 2, 4);

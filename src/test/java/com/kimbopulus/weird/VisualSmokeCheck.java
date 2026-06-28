@@ -35,18 +35,21 @@ public final class VisualSmokeCheck {
         File levelOutput = new File(output.getParentFile(), "level-up-check.png");
         File birthOutput = new File(output.getParentFile(), "birth-check.png");
         File sexOutput = new File(output.getParentFile(), "rabbit-sex-check.png");
+        File animalPackOutput = new File(output.getParentFile(), "animal-pack-check.png");
         SwingUtilities.invokeAndWait(() -> {
             render(output);
             renderFailure(failureOutput);
             renderLevelUp(levelOutput);
             renderBirth(birthOutput);
             renderRabbitSexes(sexOutput);
+            renderAnimalPack(animalPackOutput);
         });
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
         System.out.println("Level-up check saved " + levelOutput.getAbsolutePath());
         System.out.println("Birth check saved " + birthOutput.getAbsolutePath());
         System.out.println("Rabbit sex check saved " + sexOutput.getAbsolutePath());
+        System.out.println("Animal pack check saved " + animalPackOutput.getAbsolutePath());
     }
 
     private static void render(File output) {
@@ -146,6 +149,22 @@ public final class VisualSmokeCheck {
             simulation.seedPlants(100);
             simulation.placeOrganism(new Position(12, 12), new Rabbit(RabbitSex.FEMALE));
             simulation.placeOrganism(new Position(16, 12), new Rabbit(RabbitSex.MALE));
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            renderPanels(simulation, training, output);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderAnimalPack(File output) {
+        try {
+            Simulation simulation = new Simulation(38, 26, 57L);
+            simulation.seedPlants(70);
+            simulation.placeOrganism(new Position(10, 10), new com.kimbopulus.weird.sim.Human());
+            simulation.placeOrganism(new Position(24, 12), new com.kimbopulus.weird.sim.Bear());
+            simulation.placeOrganism(new Position(16, 8), new Rabbit(RabbitSex.FEMALE));
+            simulation.placeOrganism(new Position(18, 8), new Rabbit(RabbitSex.MALE));
+            simulation.placeOrganism(new Position(21, 15), new com.kimbopulus.weird.sim.Wolf());
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             renderPanels(simulation, training, output);
         } catch (Exception exception) {
