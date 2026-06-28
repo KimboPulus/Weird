@@ -37,6 +37,8 @@ public final class ModelRegressionCheck {
         checkProgressionPersistence();
         checkSettingsPersistence();
         checkSpriteResources();
+        checkRabbitStarvationDeath();
+        checkRabbitReproductionCostsEnergy();
         System.out.println("Model regression check passed.");
     }
 
@@ -257,6 +259,45 @@ public final class ModelRegressionCheck {
     private static boolean resourceExists(String path) throws IOException {
         try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
             return input != null;
+        }
+    }
+
+    private static void checkRabbitStarvationDeath() {
+        Simulation simulation = new Simulation(6, 6, 99L);
+        Position position = new Position(2, 2);
+        require(simulation.addRabbit(position, RabbitSex.FEMALE), "Rabbit should place for starvation test.");
+        Rabbit rabbit = (Rabbit) simulation.organismAt(position);
+        setEnergy(rabbit, 1);
+
+        simulation.tick();
+
+        require(simulation.count(OrganismKind.RABBIT) == 0, "A rabbit with no energy should die on its own.");
+        require(simulation.recentDeathEvents().stream().anyMatch(death -> death.kind() == OrganismKind.RABBIT),
+                "Starvation should record a rabbit death event.");
+    }
+
+    private static void checkRabbitReproductionCostsEnergy() {
+        Simulation simulation = new Simulation(8, 8, 101L);
+        Position male = new Position(3, 3);
+        Position female = new Position(4, 3);
+        require(simulation.addRabbit(male, RabbitSex.MALE), "Male rabbit should place.");
+        require(simulation.addRabbit(female, RabbitSex.FEMALE), "Female rabbit should place.");
+
+        Rabbit maleRabbit = (Rabbit) simulation.organismAt(male);
+        int before = maleRabbit.energy();
+        maleRabbit.tick(simulation, male);
+
+        require(maleRabbit.energy() < before, "Mating should spend rabbit energy.");
+        require(simulation.count(OrganismKind.RABBIT) >= 3, "A mating pair should create offspring.");
+    }
+
+    private static void setEnergy(Rabbit rabbit, int value) {
+        try {
+            var field = com.kimbopulus.weird.sim.Organism.class.getDeclaredField("energy");
+            field.setAccessible(true);
+            field.setInt(rabbit, value);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
         }
     }
 
