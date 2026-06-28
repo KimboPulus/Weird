@@ -6,12 +6,14 @@ public record PopulationSnapshot(
         int plants,
         int rabbits,
         int wolves,
+        int humans,
+        int bears,
         double averageMoisture,
         double averageFertility,
         double averageTemperature
 ) {
     public int totalOrganisms() {
-        return plants + rabbits + wolves;
+        return plants + rabbits + wolves + humans + bears;
     }
 
     public OrganismKind mostCommonKind() {
@@ -24,4 +26,3 @@ public record PopulationSnapshot(
         return OrganismKind.WOLF;
     }
 }
-

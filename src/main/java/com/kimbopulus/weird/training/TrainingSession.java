@@ -176,6 +176,9 @@ public final class TrainingSession {
         if (snapshot.rabbits() > 105) {
             return "Too many rabbits";
         }
+        if (snapshot.humans() < 3) {
+            return "Need humans";
+        }
         return "Balance: changing";
     }
 
@@ -190,12 +193,6 @@ public final class TrainingSession {
             streak++;
             awardPoints(10 + Math.min(10, streak));
             feedback = "Correct. Streak " + streak + ".";
-            if (level.drill() == TrainingDrill.RECALL) {
-                levelProgress++;
-                if (levelProgress >= level.target()) {
-                    completeLevel();
-                }
-            }
         } else {
             streak = 0;
             feedback = "Answer: " + prompt.answerLabel() + ".";
@@ -271,20 +268,7 @@ public final class TrainingSession {
     }
 
     private void updateLevel(PopulationSnapshot snapshot) {
-        if (level.drill() == TrainingDrill.RECALL) {
-            return;
-        }
-
-        boolean onTrack = switch (level.drill()) {
-            case BALANCE -> isBalanced(snapshot);
-            case PREDATORS -> snapshot.wolves() >= 3;
-            case OVERGROWTH -> snapshot.plants() < 900;
-            case CLIMATE_ALERT -> snapshot.averageMoisture() >= 0.34
-                    && snapshot.averageMoisture() <= 0.72
-                    && snapshot.averageTemperature() >= 12.0
-                    && snapshot.averageTemperature() <= 30.0;
-            case RECALL -> false;
-        };
+        boolean onTrack = levelOnTrack(snapshot);
 
         if (!onTrack) {
             levelProgress = 0;
@@ -336,6 +320,9 @@ public final class TrainingSession {
         }
         if (snapshot.wolves() < 1) {
             return "wolves are extinct";
+        }
+        if (snapshot.humans() < 2) {
+            return "humans are near extinction";
         }
         if (snapshot.rabbits() > 180) {
             return "rabbits are out of control";
@@ -434,12 +421,42 @@ public final class TrainingSession {
     }
 
     private boolean isBalanced(PopulationSnapshot snapshot) {
-        return snapshot.plants() >= 180
+        return snapshot.plants() >= 160
                 && snapshot.plants() <= 1100
                 && snapshot.rabbits() >= 12
                 && snapshot.rabbits() <= 105
                 && snapshot.wolves() >= 2
-                && snapshot.wolves() <= 16;
+                && snapshot.wolves() <= 16
+                && snapshot.humans() >= 3
+                && snapshot.humans() <= 16;
+    }
+
+    private boolean levelOnTrack(PopulationSnapshot snapshot) {
+        return switch (level) {
+            case STEADY_START -> isBalanced(snapshot);
+            case MEMORY_SCAN -> snapshot.plants() >= 180 && snapshot.plants() <= 850
+                    && snapshot.rabbits() >= 16 && snapshot.rabbits() <= 85
+                    && snapshot.wolves() >= 2 && snapshot.humans() >= 3;
+            case PREDATOR_CHECK -> snapshot.plants() >= 180 && snapshot.plants() <= 900
+                    && snapshot.rabbits() >= 18 && snapshot.rabbits() <= 90
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 12
+                    && snapshot.humans() >= 3;
+            case CANOPY_CONTROL -> snapshot.plants() >= 200 && snapshot.plants() <= 820
+                    && snapshot.rabbits() >= 18 && snapshot.rabbits() <= 85
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 12
+                    && snapshot.humans() >= 4 && snapshot.humans() <= 12;
+            case CLIMATE_CONTROL -> snapshot.plants() >= 200 && snapshot.plants() <= 800
+                    && snapshot.rabbits() >= 20 && snapshot.rabbits() <= 80
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 10
+                    && snapshot.humans() >= 4 && snapshot.humans() <= 12
+                    && snapshot.averageMoisture() >= 0.32 && snapshot.averageMoisture() <= 0.72
+                    && snapshot.averageTemperature() >= 12.0 && snapshot.averageTemperature() <= 30.0;
+            case FLEX_SHIFT -> snapshot.plants() >= 220 && snapshot.plants() <= 760
+                    && snapshot.rabbits() >= 22 && snapshot.rabbits() <= 72
+                    && snapshot.wolves() >= 3 && snapshot.wolves() <= 9
+                    && snapshot.humans() >= 4 && snapshot.humans() <= 10
+                    && snapshot.averageMoisture() >= 0.36 && snapshot.averageMoisture() <= 0.68;
+        };
     }
 
     private enum PopulationMetric {
@@ -459,6 +476,12 @@ public final class TrainingSession {
             @Override
             int value(PopulationSnapshot snapshot) {
                 return snapshot.wolves();
+            }
+        },
+        HUMANS("humans") {
+            @Override
+            int value(PopulationSnapshot snapshot) {
+                return snapshot.humans();
             }
         };
 

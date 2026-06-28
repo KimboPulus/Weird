@@ -20,6 +20,7 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedPlants(130);
         simulation.seedRabbits(24);
         simulation.seedWolves(3);
+        simulation.seedHumans(6);
 
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
         require(training.drill() == TrainingDrill.BALANCE, "Training should start with the balance drill.");
@@ -58,10 +59,10 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedPlants(220);
         simulation.seedRabbits(48);
         simulation.seedWolves(4);
+        simulation.seedHumans(6);
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
 
-        for (int i = 0; i < 24; i++) {
-            simulation.tick();
+        for (int i = 0; i < 20; i++) {
             training.update(simulation);
         }
 
@@ -69,7 +70,7 @@ public final class TrainingSessionSmokeCheck {
         require(training.levelComplete(), "The first objective should enter the complete state.");
         require(training.advanceLevel(), "The player should be able to continue after completion.");
         require(training.levelNumber() == 2, "Next Level should advance to level 2.");
-        require(training.drill() == TrainingDrill.RECALL, "Level 2 should train recall.");
+        require(training.drill() == TrainingDrill.BALANCE, "Every level should train ecosystem balance.");
         require(training.score() >= 45, "Level completion should award points.");
     }
 
@@ -108,6 +109,7 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedPlants(220);
         simulation.seedRabbits(48);
         simulation.seedWolves(4);
+        simulation.seedHumans(6);
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
         removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.WOLF);
 

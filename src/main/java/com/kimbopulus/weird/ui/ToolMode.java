@@ -22,12 +22,6 @@ public enum ToolMode {
             simulation.compost(position);
         }
     },
-    CLEAR("Trim", "Clear nearby plants to open paths for animals.") {
-        @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.clearPatch(position);
-        }
-    },
     PLANT("Plant", "Place one plant on an empty cell.") {
         @Override
         public void apply(Simulation simulation, Position position) {

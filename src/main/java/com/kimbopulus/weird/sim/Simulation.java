@@ -15,6 +15,7 @@ public final class Simulation {
     private final WorldGrid grid;
     private final Organism[][] organisms;
     private final List<PopulationSnapshot> history = new ArrayList<>();
+    private final List<DeathEvent> deathEvents = new ArrayList<>();
     private int tick;
     private Season season = Season.SPRING;
     private WorldEvent currentEvent = WorldEvent.CALM;
@@ -22,6 +23,9 @@ public final class Simulation {
     private int plantCount;
     private int rabbitCount;
     private int wolfCount;
+    private int humanCount;
+    private int bearCount;
+    private long deathSequence;
 
     public Simulation(int width, int height, long seed) {
         this.random = new Random(seed);
@@ -34,6 +38,7 @@ public final class Simulation {
         simulation.seedPlants(220);
         simulation.seedRabbits(48);
         simulation.seedWolves(4);
+        simulation.seedHumans(6);
         simulation.recordSnapshot();
         return simulation;
     }
@@ -50,6 +55,7 @@ public final class Simulation {
         grid.applySeason(season);
         sproutWildPlants();
         migrateWildlife();
+        visitBears();
 
         List<Position> positions = occupiedPositions();
         Collections.shuffle(positions, random);
@@ -98,15 +104,19 @@ public final class Simulation {
         plantCount = 0;
         rabbitCount = 0;
         wolfCount = 0;
+        humanCount = 0;
+        bearCount = 0;
         grid.reset(random);
         history.clear();
         tick = 0;
         season = Season.SPRING;
         currentEvent = WorldEvent.CALM;
         sanctuaryPlaced = false;
+        deathEvents.clear();
         seedPlants(220);
         seedRabbits(48);
         seedWolves(4);
+        seedHumans(6);
         recordSnapshot();
     }
 
@@ -147,6 +157,21 @@ public final class Simulation {
     }
 
     public Organism removeOrganism(Position position) {
+        if (!grid.contains(position)) {
+            return null;
+        }
+        Organism organism = organismAt(position);
+        organisms[position.y()][position.x()] = null;
+        if (organism != null) {
+            adjustCount(organism.kind(), -1);
+            if (organism.kind() != OrganismKind.PLANT) {
+                recordDeath(organism.kind(), position);
+            }
+        }
+        return organism;
+    }
+
+    public Organism removeOrganismQuietly(Position position) {
         if (!grid.contains(position)) {
             return null;
         }
@@ -238,6 +263,8 @@ public final class Simulation {
             case PLANT -> plantCount;
             case RABBIT -> rabbitCount;
             case WOLF -> wolfCount;
+            case HUMAN -> humanCount;
+            case BEAR -> bearCount;
         };
     }
 
@@ -278,6 +305,20 @@ public final class Simulation {
         for (int i = 0; i < amount; i++) {
             placeRandomly(new Wolf(), 150);
         }
+    }
+
+    public void seedHumans(int amount) {
+        for (int i = 0; i < amount; i++) {
+            placeRandomly(new Human(), 150);
+        }
+    }
+
+    public List<DeathEvent> recentDeathEvents() {
+        return List.copyOf(deathEvents);
+    }
+
+    public void clearDeathEvents() {
+        deathEvents.clear();
     }
 
     public void rain(Position center) {
@@ -382,7 +423,7 @@ public final class Simulation {
             }
 
             Cell cell = grid.cellAt(position);
-            if (random.nextDouble() < cell.plantGrowthFactor() * 0.08) {
+            if (random.nextDouble() < cell.plantGrowthFactor() * 0.056) {
                 placeOrganism(position, new Plant());
                 cell.spendFertility(0.02);
             }
@@ -395,13 +436,34 @@ public final class Simulation {
         int rabbits = count(OrganismKind.RABBIT);
         int wolves = count(OrganismKind.WOLF);
 
-        int rabbitFloor = Math.max(6, cells / 96);
-        if (plants > cells / 5 && rabbits < rabbitFloor && random.nextDouble() < 0.2) {
+        int rabbitFloor = Math.max(8, cells / 80);
+        if (plants > cells / 7 && rabbits < rabbitFloor && random.nextDouble() < 0.42) {
             placeRandomly(new Rabbit(), 60);
         }
 
         if (rabbits > cells / 26 && wolves < 2 && random.nextDouble() < 0.04) {
             placeRandomly(new Wolf(), 60);
+        }
+    }
+
+    private void visitBears() {
+        if (bearCount > 0 || humanCount == 0) {
+            return;
+        }
+        double arrivalChance = Math.min(0.08, humanCount * 0.0015);
+        if (random.nextDouble() >= arrivalChance) {
+            return;
+        }
+
+        int side = random.nextInt(4);
+        Position edge = switch (side) {
+            case 0 -> new Position(random.nextInt(grid.width()), 0);
+            case 1 -> new Position(grid.width() - 1, random.nextInt(grid.height()));
+            case 2 -> new Position(random.nextInt(grid.width()), grid.height() - 1);
+            default -> new Position(0, random.nextInt(grid.height()));
+        };
+        if (!placeOrganism(edge, new Bear())) {
+            placeRandomly(new Bear(), 40);
         }
     }
 
@@ -451,6 +513,8 @@ public final class Simulation {
                 plantCount,
                 rabbitCount,
                 wolfCount,
+                humanCount,
+                bearCount,
                 moisture / cells,
                 fertility / cells,
                 temperature / cells
@@ -463,7 +527,7 @@ public final class Simulation {
     }
 
     private List<Position> occupiedPositions() {
-        List<Position> positions = new ArrayList<>(plantCount + rabbitCount + wolfCount);
+        List<Position> positions = new ArrayList<>(plantCount + rabbitCount + wolfCount + humanCount + bearCount);
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
                 if (organisms[y][x] != null) {
@@ -479,6 +543,15 @@ public final class Simulation {
             case PLANT -> plantCount += amount;
             case RABBIT -> rabbitCount += amount;
             case WOLF -> wolfCount += amount;
+            case HUMAN -> humanCount += amount;
+            case BEAR -> bearCount += amount;
+        }
+    }
+
+    private void recordDeath(OrganismKind kind, Position position) {
+        deathEvents.add(new DeathEvent(++deathSequence, kind, position, System.currentTimeMillis()));
+        if (deathEvents.size() > 80) {
+            deathEvents.remove(0);
         }
     }
 }

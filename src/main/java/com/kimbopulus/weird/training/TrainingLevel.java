@@ -1,12 +1,12 @@
 package com.kimbopulus.weird.training;
 
 public enum TrainingLevel {
-    STEADY_START("Steady Start", "Hold balance", TrainingDrill.BALANCE, 20),
-    MEMORY_SCAN("Memory Scan", "Answer 2 recalls", TrainingDrill.RECALL, 2),
-    PREDATOR_CHECK("Predator Check", "Keep 3 wolves", TrainingDrill.PREDATORS, 25),
-    CANOPY_CONTROL("Canopy Control", "Keep plants below 900", TrainingDrill.OVERGROWTH, 25),
-    CLIMATE_CONTROL("Climate Control", "Keep climate safe", TrainingDrill.CLIMATE_ALERT, 25),
-    FLEX_SHIFT("Flex Shift", "Hold balance under changing recall rules", TrainingDrill.BALANCE, 40);
+    STEADY_START("Steady Start", "Hold broad balance", TrainingDrill.BALANCE, 20),
+    MEMORY_SCAN("Green Rhythm", "Balance plants and rabbits", TrainingDrill.BALANCE, 30),
+    PREDATOR_CHECK("Predator Line", "Balance wolves with prey", TrainingDrill.BALANCE, 35),
+    CANOPY_CONTROL("Human Footprint", "Balance people and plant growth", TrainingDrill.BALANCE, 40),
+    CLIMATE_CONTROL("Climate Balance", "Balance climate and residents", TrainingDrill.BALANCE, 45),
+    FLEX_SHIFT("Full Harmony", "Hold strict balance", TrainingDrill.BALANCE, 55);
 
     private final String title;
     private final String objective;
