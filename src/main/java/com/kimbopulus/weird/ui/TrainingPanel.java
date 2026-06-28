@@ -282,7 +282,7 @@ public final class TrainingPanel extends JPanel {
         configureLabel(title, Font.BOLD, 14f, TEXT);
         panel.add(title);
         panel.add(help("Low plants: Rain or Compost"));
-        panel.add(help("Too many plants: Rabbit"));
+        panel.add(help("Too many plants: Rabbit or drought"));
         panel.add(help("Too many rabbits: Wolf"));
         panel.add(help("Humans plant; bears hunt humans"));
         return panel;

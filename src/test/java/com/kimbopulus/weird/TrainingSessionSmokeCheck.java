@@ -14,6 +14,7 @@ public final class TrainingSessionSmokeCheck {
     public static void main(String[] args) {
         checkLevelAdvance();
         checkLevelFailure();
+        checkPlantOvergrowthFailure();
         checkShopPurchases();
 
         Simulation simulation = new Simulation(32, 22, 12L);
@@ -123,6 +124,25 @@ public final class TrainingSessionSmokeCheck {
         require(training.levelNumber() == 1, "Restart should keep the current level.");
     }
 
+    private static void checkPlantOvergrowthFailure() {
+        Simulation simulation = new Simulation(48, 32, 123L);
+        fillPlantsExcept(simulation, 1200);
+        placeSupportAnimals(simulation);
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+
+        for (int i = 0; i < 6; i++) {
+            simulation.tick();
+            training.update(simulation);
+        }
+        require(training.dangerWarning() != null, "Excess plants should trigger a warning.");
+
+        for (int i = 6; i < 14; i++) {
+            simulation.tick();
+            training.update(simulation);
+        }
+        require(training.levelFailed(), "Excess plants should lose the level.");
+    }
+
     private static void removeSpecies(
             Simulation simulation,
             com.kimbopulus.weird.sim.OrganismKind kind
@@ -134,6 +154,37 @@ public final class TrainingSessionSmokeCheck {
                 }
             }
         }
+    }
+
+    private static void fillPlantsExcept(Simulation simulation, int targetPlants) {
+        int placed = 0;
+        for (int y = 0; y < simulation.grid().height() && placed < targetPlants; y++) {
+            for (int x = 0; x < simulation.grid().width() && placed < targetPlants; x++) {
+                if (x < 4 && y < 4) {
+                    continue;
+                }
+                if (simulation.addPlant(new com.kimbopulus.weird.sim.Position(x, y))) {
+                    placed++;
+                }
+            }
+        }
+    }
+
+    private static void placeSupportAnimals(Simulation simulation) {
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(0, 0), com.kimbopulus.weird.sim.RabbitSex.MALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(1, 0), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(2, 0), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(3, 0), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(0, 1), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(1, 1), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(2, 1), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addRabbit(new com.kimbopulus.weird.sim.Position(3, 1), com.kimbopulus.weird.sim.RabbitSex.FEMALE);
+        simulation.addWolf(new com.kimbopulus.weird.sim.Position(0, 2));
+        simulation.addWolf(new com.kimbopulus.weird.sim.Position(1, 2));
+        simulation.addWolf(new com.kimbopulus.weird.sim.Position(2, 2));
+        simulation.addHuman(new com.kimbopulus.weird.sim.Position(0, 3));
+        simulation.addHuman(new com.kimbopulus.weird.sim.Position(1, 3));
+        simulation.addHuman(new com.kimbopulus.weird.sim.Position(2, 3));
     }
 
     private static void require(boolean condition, String message) {

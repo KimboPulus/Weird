@@ -7,6 +7,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.SourceDataLine;
 import java.io.IOException;
@@ -50,6 +51,7 @@ public final class AudioEngine implements AutoCloseable {
         musicVolume = settings.musicVolume() / 100.0;
         effectsVolume = settings.effectsVolume() / 100.0;
         setEnabled(settings.audioEnabled());
+        applyMusicGain(musicLine, musicVolume);
     }
 
     public void setTension(double tension) {
@@ -130,6 +132,7 @@ public final class AudioEngine implements AutoCloseable {
                 line.open(format, 4096);
                 line.start();
                 musicLine = line;
+                applyMusicGain(line, musicVolume);
 
                 byte[] buffer = new byte[4096];
                 int read;
@@ -209,6 +212,18 @@ public final class AudioEngine implements AutoCloseable {
         } catch (Exception ignored) {
             // Sound effects are optional for the same reason as music.
         }
+    }
+
+    private void applyMusicGain(SourceDataLine line, double volume) {
+        if (line == null || !line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            return;
+        }
+        FloatControl control = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
+        double clamped = Math.max(0.0, Math.min(1.0, volume));
+        float gain = clamped <= 0.0
+                ? control.getMinimum()
+                : (float) (20.0 * Math.log10(clamped));
+        control.setValue(Math.max(control.getMinimum(), Math.min(control.getMaximum(), gain)));
     }
 
     private byte[] tone(double frequency, double seconds, double volume, boolean soft) {

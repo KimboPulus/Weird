@@ -294,86 +294,111 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight, Rabbit rabbit) {
-        int headX = facesRight ? x + size - 8 : x + 1;
-        drawVeteranMark(g, x, y, size, veteran);
-        g.setColor(SHADOW);
-        g.fillOval(x + 2, y + size - 5, size - 3, 4);
-        boolean female = rabbit != null && rabbit.sex() == RabbitSex.FEMALE;
-        g.setColor(female ? new Color(236, 209, 198) : new Color(196, 186, 166));
-        g.fillOval(x + 2, y + size / 2 - 2, size - 8, size / 2 + 1);
-        g.fillOval(headX, y + size / 3, 8, 8);
-        g.fillOval(headX + (facesRight ? 1 : 5), y, 3, size / 2 + 1);
-        g.fillOval(headX + (facesRight ? 4 : 2), y + 1, 3, size / 2);
-        if (female) {
-            g.setColor(new Color(212, 125, 154));
-            g.fillOval(x + size / 2 - 2, y + 2, 4, 3);
-        } else {
-            g.setColor(new Color(132, 110, 92));
-            g.fillOval(x + size / 2 - 2, y + 2, 4, 3);
+        Graphics2D sprite = (Graphics2D) g.create();
+        try {
+            if (!facesRight) {
+                sprite.translate(x + size, y);
+                sprite.scale(-1.0, 1.0);
+                x = 0;
+                y = 0;
+            } else {
+                sprite.translate(x, y);
+                x = 0;
+                y = 0;
+            }
+            int headX = size - 9;
+            drawVeteranMark(sprite, x, y, size, veteran);
+            sprite.setColor(SHADOW);
+            sprite.fillOval(2, size - 5, size - 3, 4);
+            boolean female = rabbit != null && rabbit.sex() == RabbitSex.FEMALE;
+            sprite.setColor(female ? new Color(236, 209, 198) : new Color(196, 186, 166));
+            sprite.fillOval(2, size / 2 - 2, size - 8, size / 2 + 1);
+            sprite.fillOval(headX, size / 3, 8, 8);
+            sprite.fillOval(headX + 1, 0, 3, size / 2 + 1);
+            sprite.fillOval(headX + 4, 1, 3, size / 2);
+            if (female) {
+                sprite.setColor(new Color(212, 125, 154));
+                sprite.fillOval(size / 2 - 2, 2, 4, 3);
+            } else {
+                sprite.setColor(new Color(132, 110, 92));
+                sprite.fillOval(size / 2 - 2, 2, 4, 3);
+            }
+            sprite.setColor(RABBIT_PINK);
+            sprite.fillOval(headX + 2, 1, 1, size / 2 - 2);
+            sprite.fillOval(headX + 5, 2, 1, size / 2 - 3);
+            sprite.setColor(RABBIT_LIGHT);
+            sprite.fillOval(1, size / 2 - 1, 5, 5);
+            sprite.fillOval(7, size - 6, 7, 4);
+            sprite.setColor(RABBIT_DARK);
+            sprite.fillOval(headX + 6, size / 3 + 2, 2, 2);
+            sprite.setColor(RABBIT_PINK);
+            sprite.fillOval(headX + 7, size / 3 + 5, 2, 2);
+        } finally {
+            sprite.dispose();
         }
-        g.setColor(RABBIT_PINK);
-        g.fillOval(headX + (facesRight ? 2 : 5), y + 1, 1, size / 2 - 2);
-        g.fillOval(headX + (facesRight ? 5 : 3), y + 2, 1, size / 2 - 3);
-        g.setColor(RABBIT_LIGHT);
-        g.fillOval(x + (facesRight ? 1 : size - 6), y + size / 2 - 1, 5, 5);
-        g.fillOval(x + (facesRight ? 7 : 3), y + size - 6, 7, 4);
-        g.setColor(RABBIT_DARK);
-        g.fillOval(headX + (facesRight ? 6 : 1), y + size / 3 + 2, 2, 2);
-        g.setColor(RABBIT_PINK);
-        g.fillOval(headX + (facesRight ? 7 : 0), y + size / 3 + 5, 2, 2);
     }
 
     private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
-        int headX = facesRight ? x + size - 8 : x + 1;
-        drawVeteranMark(g, x, y, size, veteran);
-        g.setColor(SHADOW);
-        g.fillOval(x + 2, y + size - 5, size - 3, 4);
-        g.setColor(WOLF_DARK);
-        int tailBase = facesRight ? x + 4 : x + size - 4;
-        int tailTip = facesRight ? x : x + size;
-        g.fillPolygon(
-                new int[]{tailBase, tailTip, tailBase + (facesRight ? 2 : -2)},
-                new int[]{y + size / 2, y + size / 3, y + size - 4},
-                3
-        );
-        g.setColor(WOLF);
-        g.fillRoundRect(x + 3, y + size / 2 - 2, size - 7, size / 2, 5, 5);
-        g.fillOval(headX, y + size / 3 - 1, 8, 8);
-        g.setColor(WOLF_DARK);
-        g.fillPolygon(
-                new int[]{headX + 1, headX + 3, headX + 4},
-                new int[]{y + size / 3, y + 1, y + size / 3 + 1},
-                3
-        );
-        g.fillPolygon(
-                new int[]{headX + 4, headX + 6, headX + 7},
-                new int[]{y + size / 3, y + 2, y + size / 3 + 2},
-                3
-        );
-        g.setColor(WOLF_LIGHT);
-        g.fillOval(headX + (facesRight ? 4 : 1), y + size / 3 + 1, 3, 3);
-        g.setColor(WOLF_DARK);
-        g.fillOval(headX + (facesRight ? 6 : 1), y + size / 3 + 2, 2, 2);
-        g.fillRect(x + 5, y + size - 5, 2, 4);
-        g.fillRect(x + size - 6, y + size - 5, 2, 4);
+        Graphics2D sprite = (Graphics2D) g.create();
+        try {
+            if (!facesRight) {
+                sprite.translate(x + size, y);
+                sprite.scale(-1.0, 1.0);
+                x = 0;
+                y = 0;
+            } else {
+                sprite.translate(x, y);
+                x = 0;
+                y = 0;
+            }
+            int headX = size - 9;
+            drawVeteranMark(sprite, x, y, size, veteran);
+            sprite.setColor(SHADOW);
+            sprite.fillOval(1, size - 5, size - 2, 4);
+            sprite.setColor(WOLF);
+            sprite.fillRoundRect(3, size / 3 + 2, size - 7, size / 2, 8, 8);
+            sprite.fillOval(headX, size / 3 - 1, 9, 9);
+            sprite.fillOval(size / 2 - 1, size / 3 + 4, 6, 7);
+            sprite.setColor(WOLF_DARK);
+            sprite.fillPolygon(
+                    new int[]{4, 1, 7, 10, 12, 16, 21},
+                    new int[]{size / 2, size / 3, size / 3 + 1, size / 4, size / 3, size / 4 + 1, size / 3},
+                    7
+            );
+            sprite.setColor(WOLF_LIGHT);
+            sprite.fillOval(headX + 4, size / 3 + 1, 3, 3);
+            sprite.setColor(WOLF_DARK);
+            sprite.fillPolygon(new int[]{headX + 1, headX + 3, headX + 5}, new int[]{size / 3, 1, size / 3 + 1}, 3);
+            sprite.fillPolygon(new int[]{headX + 4, headX + 6, headX + 8}, new int[]{size / 3, 2, size / 3 + 2}, 3);
+            sprite.fillPolygon(
+                    new int[]{headX + 1, headX + 4, headX + 6, headX + 5},
+                    new int[]{size / 3 + 5, size / 3 + 4, size / 3 + 6, size / 3 + 8},
+                    4
+            );
+            sprite.fillRect(5, size - 5, 2, 4);
+            sprite.fillRect(size - 6, size - 5, 2, 4);
+            sprite.fillPolygon(
+                    new int[]{size - 3, size, size - 5, size - 7},
+                    new int[]{size / 2, size / 3, size / 2 + 2, size - 4},
+                    4
+            );
+            sprite.setColor(WOLF_LIGHT);
+            sprite.fillOval(0, size / 3 - 1, 4, 4);
+            sprite.fillOval(5, 0, 5, 4);
+            sprite.fillOval(headX + 2, 0, 5, 4);
+        } finally {
+            sprite.dispose();
+        }
     }
 
     private void drawHuman(Graphics2D g, int x, int y, int size) {
         int center = x + size / 2;
-        int width = Math.min(size - 1, Math.max(9, (int) (size * 0.9)));
-        int left = x + (size - width) / 2;
-        int right = left + width;
         g.setColor(SHADOW);
         g.fillOval(x + 3, y + size - 4, size - 6, 3);
         g.setColor(HUMAN_SKIN);
         g.fillOval(center - 4, y + 1, 8, 8);
         g.setColor(HUMAN);
-        g.fillRoundRect(center - 4, y + 9, 8, 8, 3, 3);
-        g.setStroke(GRID_STROKE);
-        g.drawLine(center - 2, y + 16, left + 1, y + size - 2);
-        g.drawLine(center + 2, y + 16, right - 1, y + size - 2);
-        g.drawLine(center - 4, y + 10, left - 1, y + 14);
-        g.drawLine(center + 4, y + 10, right + 1, y + 14);
+        g.fillRoundRect(center - 4, y + 9, 8, 12, 3, 3);
     }
 
     private void drawBear(Graphics2D g, int x, int y, int size, boolean facesRight) {
@@ -385,6 +410,7 @@ public final class TerrariumPanel extends JPanel {
         g.fillOval(headX, y + size / 3 - 2, 9, 9);
         g.fillOval(headX + 1, y + 2, 4, 4);
         g.fillOval(headX + 5, y + 2, 4, 4);
+        g.fillOval(headX + 3, y - 1, 4, 4);
         g.setColor(BEAR_LIGHT);
         g.fillOval(headX + (facesRight ? 5 : 0), y + size / 3 + 3, 5, 4);
         g.setColor(Color.BLACK);

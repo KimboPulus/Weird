@@ -315,6 +315,9 @@ public final class TrainingSession {
         if (snapshot.plants() < 100) {
             return "plants are near extinction";
         }
+        if (snapshot.plants() > 1100) {
+            return "plants are out of control";
+        }
         if (snapshot.rabbits() < 3) {
             return "rabbits are near extinction";
         }
@@ -323,9 +326,6 @@ public final class TrainingSession {
         }
         if (snapshot.humans() < 3) {
             return "humans are near extinction";
-        }
-        if (snapshot.rabbits() > 150) {
-            return "rabbits are out of control";
         }
         if (snapshot.averageMoisture() < 0.18) {
             return "the soil is critically dry";
