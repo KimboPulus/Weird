@@ -268,6 +268,8 @@ public final class ModelRegressionCheck {
     private static void checkSpriteContent() throws IOException {
         require(hasOpaquePixel("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should contain visible pixels.");
         require(hasOpaquePixel("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should contain visible pixels.");
+        require(hasWhiteCorners("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should keep a white square background.");
+        require(hasWhiteCorners("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should keep a white square background.");
     }
 
     private static boolean hasOpaquePixel(String path) throws IOException {
@@ -288,6 +290,35 @@ public final class ModelRegressionCheck {
                 }
             }
             return false;
+        }
+    }
+
+    private static boolean hasWhiteCorners(String path) throws IOException {
+        try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
+            if (input == null) {
+                return false;
+            }
+            BufferedImage image = ImageIO.read(input);
+            if (image == null) {
+                return false;
+            }
+            int[][] corners = {
+                    {0, 0},
+                    {image.getWidth() - 1, 0},
+                    {0, image.getHeight() - 1},
+                    {image.getWidth() - 1, image.getHeight() - 1}
+            };
+            for (int[] corner : corners) {
+                int argb = image.getRGB(corner[0], corner[1]);
+                int alpha = (argb >>> 24) & 0xff;
+                int red = (argb >>> 16) & 0xff;
+                int green = (argb >>> 8) & 0xff;
+                int blue = argb & 0xff;
+                if (alpha < 250 || red < 245 || green < 245 || blue < 245) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
