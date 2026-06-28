@@ -23,6 +23,9 @@ public final class TrainingSession {
     private FocusRule focusRule = FocusRule.NORMAL;
     private boolean levelComplete;
     private int lastLevelReward;
+    private boolean levelFailed;
+    private int dangerTicks;
+    private String dangerReason;
 
     public TrainingSession() {
         this(ProgressionProfile.loadDefault());
@@ -34,7 +37,11 @@ public final class TrainingSession {
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
-        if (levelComplete) {
+        if (levelComplete || levelFailed) {
+            return;
+        }
+        updateDanger(current);
+        if (levelFailed) {
             return;
         }
         updateStability(current);
@@ -96,6 +103,21 @@ public final class TrainingSession {
 
     public int lastLevelReward() {
         return lastLevelReward;
+    }
+
+    public boolean levelFailed() {
+        return levelFailed;
+    }
+
+    public String dangerWarning() {
+        if (levelFailed || dangerTicks < 5 || dangerReason == null) {
+            return null;
+        }
+        return "Warning: " + dangerReason + " (" + dangerTicks + "/14)";
+    }
+
+    public String failureReason() {
+        return dangerReason == null ? "The ecosystem collapsed." : dangerReason + ".";
     }
 
     public String feedback() {
@@ -161,7 +183,7 @@ public final class TrainingSession {
     }
 
     public boolean advanceLevel() {
-        if (!levelComplete) {
+        if (!levelComplete || levelFailed) {
             return false;
         }
         level = level.next();
@@ -170,6 +192,24 @@ public final class TrainingSession {
         prompt = null;
         focusRule = chooseFocusRule();
         feedback = "Level " + levelNumber() + " started.";
+        return true;
+    }
+
+    public boolean restartLevel() {
+        if (!levelFailed) {
+            return false;
+        }
+        score = Math.max(0, score - 15);
+        streak = 0;
+        stableTicks = 0;
+        levelProgress = 0;
+        lastPromptTick = -BASE_RECALL_INTERVAL;
+        prompt = null;
+        levelComplete = false;
+        levelFailed = false;
+        dangerTicks = 0;
+        dangerReason = null;
+        feedback = "Level restarted. -15 run score.";
         return true;
     }
 
@@ -185,6 +225,9 @@ public final class TrainingSession {
         focusRule = FocusRule.NORMAL;
         levelComplete = false;
         lastLevelReward = 0;
+        levelFailed = false;
+        dangerTicks = 0;
+        dangerReason = null;
     }
 
     private void updateStability(PopulationSnapshot snapshot) {
@@ -233,6 +276,52 @@ public final class TrainingSession {
         levelComplete = true;
         prompt = null;
         feedback = "Level complete. +" + lastLevelReward + " tokens.";
+    }
+
+    private void updateDanger(PopulationSnapshot snapshot) {
+        String currentDanger = dangerReason(snapshot);
+        if (currentDanger == null) {
+            dangerTicks = 0;
+            dangerReason = null;
+            return;
+        }
+
+        if (currentDanger.equals(dangerReason)) {
+            dangerTicks++;
+        } else {
+            dangerReason = currentDanger;
+            dangerTicks = 1;
+        }
+        if (dangerTicks >= 14) {
+            levelFailed = true;
+            prompt = null;
+            feedback = "Level lost. Restart to try again.";
+        }
+    }
+
+    private String dangerReason(PopulationSnapshot snapshot) {
+        if (snapshot.plants() < 70) {
+            return "plants are near extinction";
+        }
+        if (snapshot.rabbits() < 6) {
+            return "rabbits are near extinction";
+        }
+        if (snapshot.wolves() < 1) {
+            return "wolves are extinct";
+        }
+        if (snapshot.rabbits() > 180) {
+            return "rabbits are out of control";
+        }
+        if (snapshot.averageMoisture() < 0.14) {
+            return "the soil is critically dry";
+        }
+        if (snapshot.averageMoisture() > 0.90) {
+            return "the terrarium is flooded";
+        }
+        if (snapshot.averageTemperature() < 0.0 || snapshot.averageTemperature() > 40.0) {
+            return "temperature is lethal";
+        }
+        return null;
     }
 
     private FocusRule chooseFocusRule() {

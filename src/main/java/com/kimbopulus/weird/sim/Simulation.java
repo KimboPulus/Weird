@@ -282,32 +282,32 @@ public final class Simulation {
 
     public void rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.18);
+            grid.rainAround(center, 2, 0.28);
         }
     }
 
     public void rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.09);
+            grid.rainAround(center, 2, 0.14);
         }
     }
 
     public void drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 2, 0.16);
+            grid.dryAround(center, 2, 0.28);
         }
     }
 
     public void compost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 1, 0.18);
-            grid.rainAround(center, 1, 0.04);
+            grid.fertilizeAround(center, 1, 0.30);
+            grid.rainAround(center, 1, 0.08);
         }
     }
 
     public void compostBoost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 1, 0.09);
+            grid.fertilizeAround(center, 1, 0.15);
         }
     }
 

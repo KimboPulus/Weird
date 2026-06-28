@@ -4,19 +4,19 @@ import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 
 public enum ToolMode {
-    RAIN("Rain", "Add moisture in a small area. Useful when plants are fading.") {
+    RAIN("Rain", "Strongly water a 5 x 5 area. Repeated use can flood the world.") {
         @Override
         public void apply(Simulation simulation, Position position) {
             simulation.rain(position);
         }
     },
-    DROUGHT("Drought", "Dry a crowded area. Useful when plants are taking over.") {
+    DROUGHT("Drought", "Strongly dry a 5 x 5 area. Repeated use can kill the soil.") {
         @Override
         public void apply(Simulation simulation, Position position) {
             simulation.drought(position);
         }
     },
-    COMPOST("Compost", "Boost fertility around the clicked cell.") {
+    COMPOST("Compost", "Strongly boost a 3 x 3 patch. Overuse can cause plant surges.") {
         @Override
         public void apply(Simulation simulation, Position position) {
             simulation.compost(position);

@@ -13,6 +13,7 @@ public final class TrainingSessionSmokeCheck {
 
     public static void main(String[] args) {
         checkLevelAdvance();
+        checkLevelFailure();
         checkShopPurchases();
 
         Simulation simulation = new Simulation(32, 22, 12L);
@@ -97,6 +98,43 @@ public final class TrainingSessionSmokeCheck {
         require(profile.tokens() == 40, "A purchase should deduct its token cost.");
         require(profile.totalScore() == 100, "Spending tokens must not reduce total score.");
         require(!profile.buy(ShopItem.RAIN_BARREL), "An upgrade cannot be purchased twice.");
+    }
+
+    private static void checkLevelFailure() {
+        Simulation simulation = new Simulation(48, 32, 91L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedWolves(4);
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        removeSpecies(simulation, com.kimbopulus.weird.sim.OrganismKind.WOLF);
+
+        for (int i = 0; i < 6; i++) {
+            simulation.tick();
+            training.update(simulation);
+        }
+        require(training.dangerWarning() != null, "A sustained crisis should show a warning.");
+
+        for (int i = 6; i < 14; i++) {
+            simulation.tick();
+            training.update(simulation);
+        }
+        require(training.levelFailed(), "An unresolved extinction should lose the level.");
+        require(training.restartLevel(), "A failed level should be restartable.");
+        require(!training.levelFailed(), "Restart should clear the failed state.");
+        require(training.levelNumber() == 1, "Restart should keep the current level.");
+    }
+
+    private static void removeSpecies(
+            Simulation simulation,
+            com.kimbopulus.weird.sim.OrganismKind kind
+    ) {
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) != null && simulation.organismAt(x, y).kind() == kind) {
+                    simulation.removeOrganism(new com.kimbopulus.weird.sim.Position(x, y));
+                }
+            }
+        }
     }
 
     private static void require(boolean condition, String message) {
