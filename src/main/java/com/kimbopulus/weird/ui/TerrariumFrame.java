@@ -131,8 +131,9 @@ public final class TerrariumFrame extends JFrame {
                 audio.close();
             }
         });
-        setMinimumSize(new java.awt.Dimension(1100, 720));
-        setSize(1240, 820);
+        setMinimumSize(new java.awt.Dimension(1360, 900));
+        setSize(1520, 980);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
     }
 
@@ -388,7 +389,7 @@ public final class TerrariumFrame extends JFrame {
             case DROUGHT -> SoundCue.DRY;
             case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
             case HUMAN -> SoundCue.GROW;
-            case BEAR, RABBIT_FEMALE, RABBIT_MALE, WOLF -> SoundCue.PLACE;
+            case BEAR, RABBIT, WOLF -> SoundCue.PLACE;
         };
         audio.play(cue);
     }

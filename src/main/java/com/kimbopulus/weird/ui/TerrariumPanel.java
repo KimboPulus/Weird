@@ -663,7 +663,7 @@ public final class TerrariumPanel extends JPanel {
             case PLANT -> new Color(73, 184, 89, alpha);
             case HUMAN -> new Color(183, 73, 84, alpha);
             case BEAR -> new Color(157, 106, 73, alpha);
-            case RABBIT_FEMALE, RABBIT_MALE -> new Color(235, 211, 171, alpha);
+            case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
             case SANCTUARY -> new Color(232, 218, 112, alpha);
         };

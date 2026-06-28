@@ -7,6 +7,7 @@ import com.kimbopulus.weird.sim.Bear;
 import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Rabbit;
 import com.kimbopulus.weird.sim.RabbitSex;
+import com.kimbopulus.weird.ui.ToolMode;
 
 public final class SimulationSmokeCheck {
     private SimulationSmokeCheck() {
@@ -60,6 +61,8 @@ public final class SimulationSmokeCheck {
         require(simulation.count(OrganismKind.WOLF) > 0, "Restart should restore wolves.");
         require(simulation.count(OrganismKind.HUMAN) > 0, "Restart should restore humans.");
         require(!simulation.sanctuaryPlaced(), "Restart should allow a new sanctuary.");
+        require(java.util.Arrays.stream(ToolMode.values()).noneMatch(mode -> mode.name().equals("RABBIT_FEMALE")),
+                "The external female rabbit tool should stay removed.");
 
         System.out.printf("Smoke check passed: plants=%d rabbits=%d wolves=%d%n", plants, rabbits, wolves);
         checkHumanPlantingAndBearVisits();

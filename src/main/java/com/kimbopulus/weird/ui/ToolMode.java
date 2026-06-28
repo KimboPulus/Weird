@@ -40,13 +40,7 @@ public enum ToolMode {
             simulation.addBear(position);
         }
     },
-    RABBIT_FEMALE("Rabbit F", "Place one female rabbit on an empty cell.") {
-        @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addRabbit(position, com.kimbopulus.weird.sim.RabbitSex.FEMALE);
-        }
-    },
-    RABBIT_MALE("Rabbit M", "Place one male rabbit on an empty cell.") {
+    RABBIT("Rabbit", "Place one male rabbit on an empty cell.") {
         @Override
         public void apply(Simulation simulation, Position position) {
             simulation.addRabbit(position, com.kimbopulus.weird.sim.RabbitSex.MALE);
