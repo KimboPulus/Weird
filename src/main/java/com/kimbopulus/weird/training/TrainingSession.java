@@ -26,6 +26,8 @@ public final class TrainingSession {
     private boolean levelFailed;
     private int dangerTicks;
     private String dangerReason;
+    private int gardenerActions;
+    private int recallAnswers;
 
     public TrainingSession() {
         this(ProgressionProfile.loadDefault());
@@ -120,6 +122,28 @@ public final class TrainingSession {
         return dangerReason == null ? "The ecosystem collapsed." : dangerReason + ".";
     }
 
+    public String contextHint() {
+        if (levelFailed) {
+            return "Try a different tool strategy after restarting.";
+        }
+        if (dangerWarning() != null) {
+            return "Fix the warning before the level is lost.";
+        }
+        if (level == TrainingLevel.STEADY_START) {
+            if (gardenerActions == 0) {
+                return "Try one tool on the board.";
+            }
+            if (gardenerActions < 3) {
+                return "Watch what changes after each tool.";
+            }
+            return "Hold balance until the bar fills.";
+        }
+        if (level == TrainingLevel.MEMORY_SCAN && recallAnswers == 0) {
+            return "Watch the trend lines before recall appears.";
+        }
+        return null;
+    }
+
     public String feedback() {
         return feedback;
     }
@@ -161,6 +185,7 @@ public final class TrainingSession {
             return;
         }
 
+        recallAnswers++;
         if (selectedIndex == prompt.answerIndex()) {
             streak++;
             awardPoints(10 + Math.min(10, streak));
@@ -179,6 +204,7 @@ public final class TrainingSession {
     }
 
     public void noteAction(String tool, String target) {
+        gardenerActions++;
         feedback = tool + " used.";
     }
 
@@ -209,6 +235,8 @@ public final class TrainingSession {
         levelFailed = false;
         dangerTicks = 0;
         dangerReason = null;
+        gardenerActions = 0;
+        recallAnswers = 0;
         feedback = "Level restarted. -15 run score.";
         return true;
     }

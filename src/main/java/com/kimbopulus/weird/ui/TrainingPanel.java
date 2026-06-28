@@ -45,6 +45,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
     private final JLabel ruleLabel = new JLabel();
+    private final JLabel hintLabel = new JLabel();
     private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
@@ -53,6 +54,7 @@ public final class TrainingPanel extends JPanel {
     private final JButton restartLevelButton = new JButton("Restart Level");
     private final JPanel levelActionsPanel = new JPanel(new GridLayout(0, 1, 0, 5));
     private final TrendPanel trendPanel;
+    private final JPanel helpPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
         this(simulation, training, () -> {
@@ -76,6 +78,7 @@ public final class TrainingPanel extends JPanel {
         this.onProgressionChanged = onProgressionChanged;
         this.onRestartLevel = onRestartLevel;
         this.trendPanel = new TrendPanel(simulation);
+        this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
         setPreferredSize(new Dimension(320, 640));
@@ -96,6 +99,7 @@ public final class TrainingPanel extends JPanel {
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
         configureLabel(ruleLabel, Font.BOLD, 13f, RULE_NORMAL);
+        configureLabel(hintLabel, Font.PLAIN, 12f, new Color(74, 105, 71));
         levelProgress.setStringPainted(true);
         levelProgress.setForeground(new Color(77, 143, 85));
         levelProgress.setBackground(new Color(222, 216, 199));
@@ -109,6 +113,7 @@ public final class TrainingPanel extends JPanel {
         top.add(climateLabel);
         top.add(eventLabel);
         top.add(ruleLabel);
+        top.add(hintLabel);
 
         add(top, BorderLayout.NORTH);
 
@@ -118,7 +123,7 @@ public final class TrainingPanel extends JPanel {
         JPanel stack = new JPanel(new BorderLayout(0, 8));
         stack.setOpaque(false);
         stack.add(createPromptPanel(), BorderLayout.NORTH);
-        stack.add(createControlsPanel(), BorderLayout.CENTER);
+        stack.add(helpPanel, BorderLayout.CENTER);
         center.add(stack, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
@@ -154,6 +159,9 @@ public final class TrainingPanel extends JPanel {
         ruleLabel.setForeground(training.focusRule() == FocusRule.OPPOSITE
                 ? RULE_OPPOSITE
                 : RULE_NORMAL);
+        String hint = training.contextHint();
+        hintLabel.setText(hint == null ? "" : "Tip: " + hint);
+        hintLabel.setVisible(hint != null);
 
         TrainingPrompt prompt = training.prompt();
         if (training.levelFailed()) {
@@ -173,6 +181,7 @@ public final class TrainingPanel extends JPanel {
         nextLevelButton.setVisible(training.levelComplete());
         restartLevelButton.setVisible(training.levelFailed());
         levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
+        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed());
         String warning = training.dangerWarning();
         if (warning != null) {
             feedbackLabel.setText(html(warning));

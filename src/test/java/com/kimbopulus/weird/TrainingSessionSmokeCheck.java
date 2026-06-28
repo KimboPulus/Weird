@@ -23,6 +23,9 @@ public final class TrainingSessionSmokeCheck {
 
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
         require(training.drill() == TrainingDrill.BALANCE, "Training should start with the balance drill.");
+        require(training.contextHint() != null, "The first level should offer contextual guidance.");
+        training.noteAction("Rain", "test");
+        require(training.contextHint().contains("Watch"), "Guidance should react to player practice.");
         TrainingPrompt prompt = null;
         for (int i = 0; i < 80; i++) {
             simulation.tick();
