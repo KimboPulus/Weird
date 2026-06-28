@@ -23,7 +23,10 @@ public final class GameSettings {
     }
 
     public static GameSettings loadDefault() {
-        Path path = Path.of("data", "settings.properties");
+        return load(Path.of("data", "settings.properties"));
+    }
+
+    public static GameSettings load(Path path) {
         Properties properties = new Properties();
         if (Files.exists(path)) {
             try (InputStream input = Files.newInputStream(path)) {
