@@ -20,8 +20,8 @@ public final class AudioEngine implements AutoCloseable {
     private static final float SAMPLE_RATE = 22_050f;
     private static final AudioFormat FORMAT = new AudioFormat(SAMPLE_RATE, 16, 1, true, false);
     private static final double[] MUSIC_NOTES = {220.0, 277.18, 329.63, 415.30, 329.63, 277.18};
-    private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOMÓWKA MIXTAPE CD.1.mp4");
     private static final Path MUSIC_WAV = Paths.get("data", "music", "domowka-theme.wav");
+    private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
@@ -157,19 +157,15 @@ public final class AudioEngine implements AutoCloseable {
     }
 
     private Path prepareMusicTrack() throws IOException, InterruptedException {
+        if (Files.exists(MUSIC_WAV)) {
+            return MUSIC_WAV;
+        }
+
         if (Files.notExists(MUSIC_SOURCE)) {
             return null;
         }
 
         Files.createDirectories(MUSIC_WAV.getParent());
-        if (Files.exists(MUSIC_WAV)) {
-            long sourceTime = Files.getLastModifiedTime(MUSIC_SOURCE).toMillis();
-            long wavTime = Files.getLastModifiedTime(MUSIC_WAV).toMillis();
-            if (wavTime >= sourceTime) {
-                return MUSIC_WAV;
-            }
-        }
-
         ProcessBuilder builder = new ProcessBuilder(
                 "ffmpeg",
                 "-y",
