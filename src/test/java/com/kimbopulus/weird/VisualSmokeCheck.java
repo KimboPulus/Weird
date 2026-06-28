@@ -30,26 +30,31 @@ public final class VisualSmokeCheck {
 
         File output = new File(args.length == 0 ? "out/visual-check.png" : args[0]);
         File failureOutput = new File(output.getParentFile(), "failure-check.png");
+        File levelOutput = new File(output.getParentFile(), "level-up-check.png");
         SwingUtilities.invokeAndWait(() -> {
             render(output);
             renderFailure(failureOutput);
+            renderLevelUp(levelOutput);
         });
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
+        System.out.println("Level-up check saved " + levelOutput.getAbsolutePath());
     }
 
     private static void render(File output) {
         try {
-            Simulation simulation = new Simulation(48, 32, 7L);
-            simulation.seedPlants(220);
-            simulation.seedRabbits(48);
-            simulation.seedWolves(4);
+            Simulation simulation = new Simulation(38, 26, 7L);
+            simulation.seedPlants(140);
+            simulation.seedRabbits(32);
+            simulation.seedWolves(3);
+            simulation.seedHumans(4);
 
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             for (int i = 0; i < 80; i++) {
                 simulation.tick();
                 training.update(simulation);
             }
+            simulation.clearDeathEvents();
 
             renderPanels(simulation, training, output);
         } catch (Exception exception) {
@@ -59,10 +64,12 @@ public final class VisualSmokeCheck {
 
     private static void renderFailure(File output) {
         try {
-            Simulation simulation = new Simulation(48, 32, 17L);
-            simulation.seedPlants(220);
-            simulation.seedRabbits(48);
-            simulation.seedWolves(4);
+            Simulation simulation = new Simulation(38, 26, 17L);
+            simulation.seedPlants(140);
+            simulation.seedRabbits(32);
+            simulation.seedWolves(3);
+            simulation.seedHumans(4);
+            simulation.clearDeathEvents();
             for (int y = 0; y < simulation.grid().height(); y++) {
                 for (int x = 0; x < simulation.grid().width(); x++) {
                     if (simulation.organismAt(x, y) != null
@@ -85,8 +92,38 @@ public final class VisualSmokeCheck {
     }
 
     private static void renderPanels(Simulation simulation, TrainingSession training, File output) throws Exception {
+        renderPanels(simulation, training, output, null);
+    }
+
+    private static void renderLevelUp(File output) {
+        try {
+            Simulation simulation = new Simulation(38, 26, 27L);
+            simulation.seedPlants(140);
+            simulation.seedRabbits(32);
+            simulation.seedWolves(3);
+            simulation.seedHumans(4);
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            for (int i = 0; i < 8; i++) {
+                simulation.tick();
+                training.update(simulation);
+            }
+            renderPanels(simulation, training, output, "LEVEL 2  GREEN RHYTHM");
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderPanels(
+            Simulation simulation,
+            TrainingSession training,
+            File output,
+            String levelBanner
+    ) throws Exception {
         JPanel root = new JPanel(new BorderLayout());
         TerrariumPanel board = new TerrariumPanel(simulation);
+        if (levelBanner != null) {
+            board.showLevelUp(levelBanner);
+        }
         TrainingPanel panel = new TrainingPanel(simulation, training);
         root.add(board, BorderLayout.CENTER);
         root.add(panel, BorderLayout.EAST);

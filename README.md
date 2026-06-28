@@ -1,8 +1,8 @@
 # Weird
 
-A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, and wolves hunt rabbits. The player acts as a gardener by changing the environment or adding species to the board.
+A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, humans plant new growth, and wolves and bears shape the balance. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes illustrated terrain and wildlife, six objective-based levels, adaptive recall prompts, changing weather events, a persistent score and upgrade shop, veteran animals, and ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, six balance-maintenance levels, adaptive recall prompts, changing weather events, a persistent score and upgrade shop, veteran animals, death animations, and ecosystem stability goals.
 
 ## Current build
 
@@ -53,8 +53,9 @@ It writes `out/window-check.png`.
 - `Rain` adds moisture around the clicked cell.
 - `Drought` dries the clicked area.
 - `Compost` raises fertility in a small area.
-- `Trim` clears nearby plants and opens movement paths.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
+- `Human` plants nearby soil.
+- `Bear` is a rare visitor that appears based on human population.
 - `Sanctuary` is purchased in the shop and protects one 2 x 2 soil patch per run.
 - `Pause` stops the timer.
 - `Step` advances one tick.
@@ -64,30 +65,32 @@ It writes `out/window-check.png`.
 
 Keyboard controls:
 
-- `1` to `8` select gardener tools.
+- `1` to `7` select gardener tools.
 - `Space` pauses or resumes.
 - `N` advances one tick.
 - `R` restarts the run.
 
 Move the pointer over the board to inspect moisture, fertility, temperature, and the current occupant.
 
-Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary cells have a gold border. Rabbits, wolves, plants, and veteran animals each have a distinct board silhouette.
+Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary cells have a gold border. Rabbits, wolves, humans, plants, bears, and veteran animals each have a distinct board silhouette.
 
 ## Focus training
 
-- Six levels give the run a clear objective. Fill the progress bar, collect the reward, then press `Next Level`.
+- Six levels give the run a clear objective. Each level asks you to keep the ecosystem inside a target balance band, then press `Next Level`.
 - Recall questions ask whether a selected population was rising, stable, or falling.
 - Recall lookback grows from 10 to 20 and then 32 ticks as the answer streak improves.
 - Later levels can reverse the recall rule and ask for the opposite trend.
-- Level changes appear briefly over the board, and ecosystem crises add a labeled border.
+- Level changes appear briefly over the board with a stronger celebration animation.
+- Ecosystem crises add a bold labeled border and an always-visible warning strip.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
+- Deaths fade out over about 2.8 seconds, and human deaths use a harsher sound cue.
 - Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
 
 ## Risk and failure
 
 Rain, Drought, and Compost have strong local effects. Repeated use can flood the terrarium, create lethal dry soil, or trigger uncontrolled plant growth.
 
-A crisis warning appears after five consecutive dangerous ticks. If extinction, runaway rabbits, flooding, lethal dryness, or lethal temperature continues for 14 ticks, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
+A crisis warning appears after five consecutive dangerous ticks. If extinction, runaway rabbits, flooding, lethal dryness, lethal temperature, or human collapse continues for 14 ticks, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
 
 Ambient music and sound effects are generated through built-in Java Sound. Audio failure never prevents the simulation from running.
 
