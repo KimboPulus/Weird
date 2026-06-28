@@ -24,6 +24,14 @@ The current version includes illustrated terrain and wildlife, six balance-maint
 
 The build output goes into `out/`, which is ignored by Git.
 
+## Build a release
+
+```powershell
+.\scripts\release.ps1
+```
+
+This creates `release\Weird-release.zip` with a runnable Windows app image and the bundled music file.
+
 ## Check
 
 ```powershell
