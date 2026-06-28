@@ -48,6 +48,16 @@ To briefly open and capture the real Swing window:
 
 It writes `out/window-check.png`.
 
+## Screenshots
+
+![Window capture](docs/screenshots/window-check.png)
+
+![Animal pack capture](docs/screenshots/animal-pack-check.png)
+
+![Level-up capture](docs/screenshots/level-up-check.png)
+
+The same gallery is published in `docs/index.md` for the GitHub Pages view.
+
 ## Controls
 
 - `Rain` adds moisture around the clicked cell.
