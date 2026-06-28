@@ -13,6 +13,13 @@ public final class Human extends Organism {
             return;
         }
 
+        Position wolf = first(simulation.neighborsWithKind(position, OrganismKind.WOLF));
+        if (wolf != null) {
+            simulation.removeOrganism(wolf, DeathCause.HUMAN_ATTACK);
+            spendEnergy(4);
+            return;
+        }
+
         Position current = position;
         if (simulation.random().nextDouble() < 0.35) {
             List<Position> empty = simulation.emptyNeighbors(position);
@@ -32,5 +39,9 @@ public final class Human extends Organism {
     @Override
     public OrganismKind kind() {
         return OrganismKind.HUMAN;
+    }
+
+    private Position first(List<Position> positions) {
+        return positions.isEmpty() ? null : positions.get(0);
     }
 }

@@ -16,6 +16,7 @@ public final class Simulation {
     private final Organism[][] organisms;
     private final List<PopulationSnapshot> history = new ArrayList<>();
     private final List<DeathEvent> deathEvents = new ArrayList<>();
+    private final List<AreaEffect> areaEffects = new ArrayList<>();
     private int tick;
     private Season season = Season.SPRING;
     private WorldEvent currentEvent = WorldEvent.CALM;
@@ -53,6 +54,7 @@ public final class Simulation {
         }
 
         grid.applySeason(season);
+        applyAreaEffects();
         sproutWildPlants();
         migrateWildlife();
         visitBears();
@@ -113,6 +115,7 @@ public final class Simulation {
         currentEvent = WorldEvent.CALM;
         sanctuaryPlaced = false;
         deathEvents.clear();
+        areaEffects.clear();
         seedPlants(160);
         seedRabbits(24);
         seedWolves(4);
@@ -323,19 +326,25 @@ public final class Simulation {
 
     public void rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.36);
+            grid.rainAround(center, 2, 0.48);
+            grid.fertilizeAround(center, 2, 0.16);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 2, 4, 0, 10, 0.18, 0.04, 8));
         }
     }
 
     public void rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.18);
+            grid.rainAround(center, 2, 0.28);
+            grid.fertilizeAround(center, 2, 0.22);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 2, 2, 0, 12, 0.24, 0.05, 12));
         }
     }
 
     public void drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 2, 0.36);
+            grid.dryAround(center, 2, 0.54);
+            grid.spendFertilityAround(center, 2, 0.18);
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 2, 0, 0, 24, 0.18, 0.10, 0));
         }
     }
 
@@ -500,6 +509,50 @@ public final class Simulation {
         return (int) (grid.width() * grid.height() * 0.58);
     }
 
+    private void applyAreaEffects() {
+        if (areaEffects.isEmpty()) {
+            return;
+        }
+
+        List<AreaEffect> remaining = new ArrayList<>(areaEffects.size());
+        for (AreaEffect effect : areaEffects) {
+            int age = effect.age() + 1;
+            if (age < effect.delayTicks()) {
+                remaining.add(effect.withAge(age));
+                continue;
+            }
+
+            if (effect.kind() == EffectKind.RAIN) {
+                grid.rainAround(effect.center(), effect.radius(), effect.magnitude());
+                grid.fertilizeAround(effect.center(), effect.radius(), effect.fertilityBoost());
+                if (age == effect.delayTicks()) {
+                    burstPlants(effect.center(), effect.radius(), effect.burstPlants());
+                }
+            } else {
+                grid.dryAround(effect.center(), effect.radius(), effect.magnitude());
+                grid.spendFertilityAround(effect.center(), effect.radius(), effect.fertilityBoost());
+            }
+
+            if (age < effect.delayTicks() + effect.durationTicks()) {
+                remaining.add(effect.withAge(age));
+            }
+        }
+        areaEffects.clear();
+        areaEffects.addAll(remaining);
+    }
+
+    private void burstPlants(Position center, int radius, int amount) {
+        for (int i = 0; i < amount; i++) {
+            int x = Math.max(0, Math.min(grid.width() - 1, center.x() + random.nextInt(radius * 2 + 1) - radius));
+            int y = Math.max(0, Math.min(grid.height() - 1, center.y() + random.nextInt(radius * 2 + 1) - radius));
+            Position position = new Position(x, y);
+            if (!isEmpty(position)) {
+                continue;
+            }
+            placeOrganism(position, new Plant());
+        }
+    }
+
     private void recordSnapshot() {
         double moisture = 0.0;
         double fertility = 0.0;
@@ -557,9 +610,37 @@ public final class Simulation {
     }
 
     private void recordDeath(OrganismKind kind, Position position) {
-        deathEvents.add(new DeathEvent(++deathSequence, kind, position, System.currentTimeMillis()));
+        deathEvents.add(new DeathEvent(++deathSequence, kind, DeathCause.NATURAL, position, System.currentTimeMillis()));
         if (deathEvents.size() > 80) {
             deathEvents.remove(0);
         }
+    }
+
+    public void removeOrganism(Position position, DeathCause cause) {
+        if (!grid.contains(position)) {
+            return;
+        }
+        Organism organism = organismAt(position);
+        organisms[position.y()][position.x()] = null;
+        if (organism != null) {
+            adjustCount(organism.kind(), -1);
+            if (organism.kind() != OrganismKind.PLANT) {
+                deathEvents.add(new DeathEvent(++deathSequence, organism.kind(), cause, position, System.currentTimeMillis()));
+                if (deathEvents.size() > 80) {
+                    deathEvents.remove(0);
+                }
+            }
+        }
+    }
+
+    private record AreaEffect(EffectKind kind, Position center, int radius, int delayTicks, int age, int durationTicks, double magnitude, double fertilityBoost, int burstPlants) {
+        private AreaEffect withAge(int age) {
+            return new AreaEffect(kind, center, radius, delayTicks, age, durationTicks, magnitude, fertilityBoost, burstPlants);
+        }
+    }
+
+    private enum EffectKind {
+        RAIN,
+        DROUGHT
     }
 }

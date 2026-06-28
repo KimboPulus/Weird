@@ -1,6 +1,7 @@
 package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.Cell;
+import com.kimbopulus.weird.sim.DeathCause;
 import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Organism;
 import com.kimbopulus.weird.sim.OrganismKind;
@@ -483,30 +484,36 @@ public final class TerrariumPanel extends JPanel {
                     + (metrics.cellSize - size) / 2;
             int y = metrics.offsetY + death.position().y() * metrics.cellSize
                     + (metrics.cellSize - size) / 2 - (int) (progress * metrics.cellSize * 0.6);
-            drawDeathShape(g, death.kind(), x, y, size, alpha);
+            drawDeathShape(g, death.kind(), death.cause(), x, y, size, alpha, progress);
         }
     }
 
-    private void drawDeathShape(Graphics2D g, OrganismKind kind, int x, int y, int size, int alpha) {
+    private void drawDeathShape(Graphics2D g, OrganismKind kind, DeathCause cause, int x, int y, int size, int alpha, double progress) {
         Color color = switch (kind) {
-            case RABBIT -> new Color(238, 220, 188, alpha);
+            case RABBIT -> new Color(188, 48, 52, alpha);
             case WOLF -> new Color(145, 153, 164, alpha);
             case HUMAN -> new Color(176, 48, 56, alpha);
             case BEAR -> new Color(151, 96, 58, alpha);
             case PLANT -> new Color(96, 175, 91, alpha);
         };
         g.setColor(color);
-        if (kind == OrganismKind.HUMAN) {
+        if (kind == OrganismKind.HUMAN || kind == OrganismKind.RABBIT) {
             int center = x + size / 2;
+            int splatter = Math.max(2, size / 5);
             g.fillOval(center - 3, y, 6, 6);
             g.fillOval(x + 1, y + size / 2, 4, 4);
             g.fillOval(x + size - 5, y + size / 2, 4, 4);
-            g.setStroke(new BasicStroke(3f));
+            g.setStroke(new BasicStroke(kind == OrganismKind.HUMAN ? 3f : 2.4f));
             g.drawLine(center, y + 5, center, y + size - 1);
             g.drawLine(center, y + size / 2, x, y + size - 1);
             g.drawLine(center, y + size / 2, x + size - 1, y + size - 1);
             g.setColor(new Color(120, 10, 18, alpha));
             g.fillOval(center - 1, y + size / 2, 2, 2);
+            g.fillOval(x + size / 3, y + size / 2, splatter, splatter);
+            g.fillOval(x + size / 2, y + size / 3, splatter, splatter);
+            g.fillOval(x + size / 4, y + size / 2 + 1, splatter + 1, splatter);
+        } else if (kind == OrganismKind.WOLF && cause == DeathCause.HUMAN_ATTACK) {
+            drawKnifeKill(g, x, y, size, alpha, progress);
         } else if (kind == OrganismKind.WOLF) {
             g.fillPolygon(
                     new int[]{x + size / 2, x + size, x},
@@ -517,6 +524,27 @@ public final class TerrariumPanel extends JPanel {
             g.fillOval(x, y + size / 3, size, size * 2 / 3);
             g.fillOval(x + size / 2, y, size / 2, size / 2);
         }
+    }
+
+    private void drawKnifeKill(Graphics2D g, int x, int y, int size, int alpha, double progress) {
+        int bladeX = x + size / 2 + (int) ((progress - 0.5) * size * 0.25);
+        int bladeTop = y - (int) (progress * size * 0.4);
+        int bladeBottom = y + size - (int) (progress * size * 0.08);
+
+        g.setColor(new Color(176, 58, 56, alpha));
+        g.fillOval(x + 1, y + size / 3, size - 2, size / 2);
+        g.fillOval(x + size / 3, y + 1, size / 3, size / 3);
+        g.setColor(new Color(72, 52, 43, alpha));
+        g.fillRect(bladeX - 1, bladeTop + 4, 2, Math.max(4, bladeBottom - bladeTop - 8));
+        g.setColor(new Color(220, 214, 196, alpha));
+        g.fillPolygon(
+                new int[]{bladeX - 4, bladeX + 4, bladeX - 1},
+                new int[]{bladeTop + 1, bladeTop + 1, bladeTop + 10},
+                3
+        );
+        g.setColor(new Color(120, 10, 18, alpha));
+        g.drawLine(bladeX, bladeTop + 10, bladeX, bladeBottom);
+        g.drawLine(bladeX - 1, bladeTop + 14, bladeX - 4, bladeTop + 6);
     }
 
     private void drawBanner(Graphics2D g, BoardMetrics metrics) {

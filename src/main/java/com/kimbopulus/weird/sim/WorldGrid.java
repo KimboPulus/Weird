@@ -99,6 +99,10 @@ public final class WorldGrid {
         affectAround(center, radius, cell -> cell.addFertility(amount));
     }
 
+    public void spendFertilityAround(Position center, int radius, double amount) {
+        affectAround(center, radius, cell -> cell.spendFertility(amount));
+    }
+
     public void rainAll(double amount) {
         forEachCell(cell -> {
             if (!cell.sanctuary()) {
