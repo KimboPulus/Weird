@@ -21,6 +21,9 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,6 +52,8 @@ public final class TerrariumPanel extends JPanel {
     private static final Color SANCTUARY_EDGE = new Color(221, 215, 128, 185);
     private static final Color VETERAN_EDGE = new Color(235, 240, 237, 220);
     private static final Color HOVER = new Color(255, 246, 172, 180);
+    private static final BufferedImage RABBIT_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/rabbit.png");
+    private static final BufferedImage WOLF_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/wolf.png");
     private static final BasicStroke GRID_STROKE = new BasicStroke(1f);
     private static final BasicStroke PLANT_STROKE = new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     private static final BasicStroke VETERAN_STROKE = new BasicStroke(1.5f);
@@ -294,6 +299,30 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawRabbit(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight, Rabbit rabbit) {
+        if (RABBIT_SPRITE != null) {
+            Graphics2D sprite = (Graphics2D) g.create();
+            try {
+                sprite.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                sprite.translate(x, y);
+                if (!facesRight) {
+                    sprite.translate(size, 0);
+                    sprite.scale(-1.0, 1.0);
+                }
+                sprite.setColor(SHADOW);
+                sprite.fillOval(2, size - 5, size - 3, 4);
+                sprite.drawImage(RABBIT_SPRITE, 0, 0, size, size, null);
+                drawVeteranMark(sprite, 0, 0, size, veteran);
+                boolean female = rabbit != null && rabbit.sex() == RabbitSex.FEMALE;
+                sprite.setColor(female ? new Color(212, 125, 154) : new Color(132, 110, 92));
+                sprite.fillOval(size / 2 - 2, 2, 4, 3);
+                sprite.setColor(RABBIT_DARK);
+                sprite.fillOval(size - 10, size / 3 + 2, 2, 2);
+            } finally {
+                sprite.dispose();
+            }
+            return;
+        }
+
         Graphics2D sprite = (Graphics2D) g.create();
         try {
             if (!facesRight) {
@@ -339,6 +368,25 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawWolf(Graphics2D g, int x, int y, int size, boolean veteran, boolean facesRight) {
+        if (WOLF_SPRITE != null) {
+            Graphics2D sprite = (Graphics2D) g.create();
+            try {
+                sprite.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                sprite.translate(x, y);
+                if (!facesRight) {
+                    sprite.translate(size, 0);
+                    sprite.scale(-1.0, 1.0);
+                }
+                sprite.setColor(SHADOW);
+                sprite.fillOval(1, size - 5, size - 2, 4);
+                sprite.drawImage(WOLF_SPRITE, 0, 0, size, size, null);
+                drawVeteranMark(sprite, 0, 0, size, veteran);
+            } finally {
+                sprite.dispose();
+            }
+            return;
+        }
+
         Graphics2D sprite = (Graphics2D) g.create();
         try {
             if (!facesRight) {
@@ -424,6 +472,17 @@ public final class TerrariumPanel extends JPanel {
         g.setColor(VETERAN_EDGE);
         g.setStroke(VETERAN_STROKE);
         g.drawOval(x + 1, y + 1, size - 3, size - 3);
+    }
+
+    private static BufferedImage loadSprite(String resourcePath) {
+        try (InputStream input = TerrariumPanel.class.getResourceAsStream(resourcePath)) {
+            if (input == null) {
+                return null;
+            }
+            return javax.imageio.ImageIO.read(input);
+        } catch (IOException exception) {
+            return null;
+        }
     }
 
     private Color soilColor(Cell cell) {

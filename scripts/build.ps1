@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $sourceRoot = Join-Path $root "src\main\java"
+$resourceRoot = Join-Path $root "src\main\resources"
 $output = Join-Path $root "out"
 
 if (Test-Path $output) {
@@ -16,5 +17,7 @@ if ($sources.Count -eq 0) {
 }
 
 javac -d $output $sources
+if (Test-Path $resourceRoot) {
+    Copy-Item -Path (Join-Path $resourceRoot '*') -Destination $output -Recurse -Force
+}
 Write-Host "Compiled $($sources.Count) source files to $output"
-
