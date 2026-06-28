@@ -36,7 +36,7 @@ public final class Simulation {
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
         simulation.seedPlants(140);
-        simulation.seedRabbits(32);
+        simulation.seedRabbits(18);
         simulation.seedWolves(3);
         simulation.seedHumans(4);
         simulation.recordSnapshot();
@@ -114,7 +114,7 @@ public final class Simulation {
         sanctuaryPlaced = false;
         deathEvents.clear();
         seedPlants(220);
-        seedRabbits(48);
+        seedRabbits(24);
         seedWolves(4);
         seedHumans(6);
         recordSnapshot();
@@ -431,7 +431,7 @@ public final class Simulation {
             }
 
             Cell cell = grid.cellAt(position);
-            if (random.nextDouble() < cell.plantGrowthFactor() * 0.056) {
+            if (random.nextDouble() < cell.plantGrowthFactor() * 0.032) {
                 placeOrganism(position, new Plant());
                 cell.spendFertility(0.02);
             }
