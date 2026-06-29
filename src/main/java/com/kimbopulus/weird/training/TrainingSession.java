@@ -123,7 +123,7 @@ public final class TrainingSession {
             return "Keep every line inside the target band.";
         }
         if (level == TrainingLevel.CLIMATE_CONTROL) {
-            return "Rain cools and wets one square. Drought dries and warms one square.";
+            return "Rain cools and wets a 3 x 3 patch. Drought dries and warms a 3 x 3 patch.";
         }
         return "Hold the target bands in range.";
     }

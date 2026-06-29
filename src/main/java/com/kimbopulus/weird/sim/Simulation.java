@@ -339,10 +339,10 @@ public final class Simulation {
 
     public boolean rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 0, 0.48);
-            grid.coolAround(center, 0, 1.6);
-            grid.fertilizeAround(center, 0, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 0, 4, 0, 10, 0.18, 0.04, 2));
+            grid.rainAround(center, 1, 0.48);
+            grid.coolAround(center, 1, 1.6);
+            grid.fertilizeAround(center, 1, 0.16);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 1, 4, 0, 10, 0.18, 0.04, 2));
             return true;
         }
         return false;
@@ -350,10 +350,10 @@ public final class Simulation {
 
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 0, 0.32);
-            grid.coolAround(center, 0, 2.0);
-            grid.fertilizeAround(center, 0, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 0, 2, 0, 12, 0.24, 0.05, 3));
+            grid.rainAround(center, 1, 0.32);
+            grid.coolAround(center, 1, 2.0);
+            grid.fertilizeAround(center, 1, 0.22);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 1, 2, 0, 12, 0.24, 0.05, 3));
             return true;
         }
         return false;
@@ -361,10 +361,10 @@ public final class Simulation {
 
     public boolean drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 0, 0.54);
-            grid.warmAround(center, 0, 2.8);
-            grid.spendFertilityAround(center, 0, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 0, 0, 0, 24, 0.18, 0.10, 0));
+            grid.dryAround(center, 1, 0.54);
+            grid.warmAround(center, 1, 2.8);
+            grid.spendFertilityAround(center, 1, 0.18);
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 1, 0, 0, 24, 0.18, 0.10, 0));
             return true;
         }
         return false;

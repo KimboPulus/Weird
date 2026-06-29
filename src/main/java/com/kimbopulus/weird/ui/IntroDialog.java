@@ -32,7 +32,7 @@ Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure
 Rabbits lose energy every turn, so they can starve if they do not find food in time.
 
 If any group gets too low or too high for too long, the level fails.
-Rain and drought change one square at a time and also nudge temperature.
+Rain and drought change a 3 x 3 patch at a time and also nudge temperature.
 Lightning costs 50 tokens and strikes one exact creature.
 The right panel shows the exact balance bands for the current level.
 

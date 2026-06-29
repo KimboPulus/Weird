@@ -211,7 +211,7 @@ public final class TrainingPanel extends JPanel {
         JLabel title = new JLabel("Quick help");
         configureLabel(title, Font.BOLD, 14f, TEXT);
         panel.add(title);
-        panel.add(help("Low plants: Rain or Compost on one square"));
+        panel.add(help("Low plants: Rain on a 3 x 3 patch or Compost on one square"));
         panel.add(help("High plants: Drought or Rabbits"));
         panel.add(help("Too many rabbits: Wolves"));
         panel.add(help("Too many humans: Bears"));

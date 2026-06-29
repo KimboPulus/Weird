@@ -566,7 +566,7 @@ public final class TerrariumPanel extends JPanel {
             int centerX = metrics.offsetX + effect.position.x() * metrics.cellSize + metrics.cellSize / 2;
             int centerY = metrics.offsetY + effect.position.y() * metrics.cellSize + metrics.cellSize / 2;
             int reach = effect.mode == ToolMode.RAIN || effect.mode == ToolMode.DROUGHT
-                    ? metrics.cellSize
+                    ? metrics.cellSize * 2
                     : metrics.cellSize * 2;
             int radius = Math.max(metrics.cellSize / 2, (int) (reach * progress));
             int alpha = (int) (190 * (1.0 - progress));

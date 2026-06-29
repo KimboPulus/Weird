@@ -68,8 +68,8 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 ## Controls
 
-- `Rain` adds moisture and cools the clicked cell.
-- `Drought` dries and warms the clicked cell.
+- `Rain` adds moisture and cools a 3 x 3 patch centered on the click.
+- `Drought` dries and warms a 3 x 3 patch centered on the click.
 - `Compost` raises fertility on the clicked cell.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
 - `Human` plants nearby soil.
