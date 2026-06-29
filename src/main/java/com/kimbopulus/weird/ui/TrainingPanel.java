@@ -2,8 +2,6 @@ package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
-import com.kimbopulus.weird.training.FocusRule;
-import com.kimbopulus.weird.training.TrainingPrompt;
 import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
@@ -12,27 +10,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.RenderingHints;
-import java.util.List;
 
 public final class TrainingPanel extends JPanel {
     private static final Color BACKGROUND = new Color(247, 243, 232);
     private static final Color TEXT = new Color(38, 42, 38);
     private static final Color MUTED = new Color(92, 96, 88);
-    private static final Color GREEN = new Color(71, 139, 84);
-    private static final Color RABBIT = new Color(166, 119, 74);
-    private static final Color WOLF = new Color(78, 88, 103);
-    private static final Color HUMAN = new Color(65, 119, 165);
-    private static final Color RULE_NORMAL = new Color(75, 80, 112);
-    private static final Color RULE_OPPOSITE = new Color(160, 66, 48);
 
     private final Simulation simulation;
     private final TrainingSession training;
@@ -44,19 +31,15 @@ public final class TrainingPanel extends JPanel {
     private final JLabel scoreLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
+    private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
-    private final JLabel ruleLabel = new JLabel();
-    private final JLabel hintLabel = new JLabel();
     private final JLabel warningLabel = new JLabel();
-    private final JLabel promptLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
-    private final JButton[] answerButtons = new JButton[3];
     private final JButton nextLevelButton = new JButton("Next Level");
     private final JButton restartLevelButton = new JButton("Restart Level");
     private final JPanel levelActionsPanel = new JPanel(new GridLayout(0, 1, 0, 5));
-    private final TrendPanel trendPanel;
     private final JPanel helpPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
@@ -84,7 +67,6 @@ public final class TrainingPanel extends JPanel {
         this.onProgressionChanged = onProgressionChanged;
         this.onRestartLevel = onRestartLevel;
         this.onLevelAdvanced = onLevelAdvanced;
-        this.trendPanel = new TrendPanel(simulation);
         this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
@@ -103,43 +85,40 @@ public final class TrainingPanel extends JPanel {
         configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
         configureLabel(goalLabel, Font.BOLD, 14f, TEXT);
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
+        configureLabel(detailLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
-        configureLabel(ruleLabel, Font.BOLD, 13f, RULE_NORMAL);
-        configureLabel(hintLabel, Font.PLAIN, 12f, new Color(74, 105, 71));
-        configureLabel(warningLabel, Font.BOLD, 12f, Color.WHITE);
+        configureLabel(warningLabel, Font.BOLD, 24f, Color.WHITE);
+        configureLabel(feedbackLabel, Font.PLAIN, 13f, MUTED);
+
         warningLabel.setOpaque(true);
         warningLabel.setBackground(new Color(176, 57, 45));
-        warningLabel.setBorder(BorderFactory.createEmptyBorder(4, 7, 4, 7));
+        warningLabel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        warningLabel.setVisible(false);
+
         levelProgress.setStringPainted(true);
         levelProgress.setForeground(new Color(77, 143, 85));
         levelProgress.setBackground(new Color(222, 216, 199));
         levelProgress.setBorderPainted(false);
         levelProgress.setPreferredSize(new Dimension(280, 18));
+
         top.add(levelLabel);
         top.add(goalLabel);
         top.add(levelProgress);
         top.add(createEconomyRow());
         top.add(balanceLabel);
+        top.add(detailLabel);
         top.add(climateLabel);
         top.add(eventLabel);
-        top.add(ruleLabel);
-        top.add(hintLabel);
         top.add(warningLabel);
-
         add(top, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout(0, 9));
+        JPanel center = new JPanel(new BorderLayout(0, 8));
         center.setOpaque(false);
-        center.add(trendPanel, BorderLayout.NORTH);
-        JPanel stack = new JPanel(new BorderLayout(0, 8));
-        stack.setOpaque(false);
-        stack.add(createPromptPanel(), BorderLayout.NORTH);
-        stack.add(helpPanel, BorderLayout.CENTER);
-        center.add(stack, BorderLayout.CENTER);
+        center.add(createDetailPanel(), BorderLayout.NORTH);
+        center.add(helpPanel, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
-        configureLabel(feedbackLabel, Font.PLAIN, 13f, MUTED);
         add(feedbackLabel, BorderLayout.SOUTH);
 
         refresh();
@@ -147,6 +126,8 @@ public final class TrainingPanel extends JPanel {
 
     public void refresh() {
         PopulationSnapshot snapshot = simulation.currentSnapshot();
+        int boardCells = simulation.grid().width() * simulation.grid().height();
+
         scoreLabel.setText("Run " + training.score() + "   Total " + training.progression().totalScore()
                 + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
@@ -159,67 +140,32 @@ public final class TrainingPanel extends JPanel {
                 ? new Color(189, 137, 56)
                 : new Color(77, 143, 85));
         balanceLabel.setText(training.balanceStatus(snapshot));
+        detailLabel.setText(html(training.balanceGuide(snapshot, boardCells)));
         climateLabel.setText(String.format(
-                "Water %.0f%%   Soil %.0f%%   %.0f C",
+                "Water %.0f%%   Soil %.0f%%   %.1f C",
                 snapshot.averageMoisture() * 100.0,
                 snapshot.averageFertility() * 100.0,
                 snapshot.averageTemperature()
         ));
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
-        ruleLabel.setText("Rule: " + training.focusRule().instruction()
-                + "   Memory " + training.memorySpan());
-        ruleLabel.setForeground(training.focusRule() == FocusRule.OPPOSITE
-                ? RULE_OPPOSITE
-                : RULE_NORMAL);
-        String hint = training.contextHint();
-        hintLabel.setText(hint == null ? "" : "Tip: " + hint);
-        hintLabel.setVisible(hint != null);
         String warning = training.levelFailed() ? "LEVEL LOST" : training.dangerWarning();
         warningLabel.setText(warning == null ? "" : warning.toUpperCase());
         warningLabel.setVisible(warning != null);
 
-        TrainingPrompt prompt = training.prompt();
-        if (training.levelFailed()) {
-            promptLabel.setText("Level lost: " + training.failureReason());
-            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
-        } else if (training.levelComplete()) {
-            promptLabel.setText("Level complete. +" + training.lastLevelReward() + " tokens");
-            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
-        } else if (prompt == null) {
-            promptLabel.setText("Watch for the next recall.");
-            setAnswerChoices(List.of("Rising", "Stable", "Falling"), false);
-        } else {
-            promptLabel.setText(html(prompt.question()));
-            setAnswerChoices(prompt.choices(), true);
-        }
-        feedbackLabel.setText(html(training.feedback()));
         nextLevelButton.setVisible(training.levelComplete());
         restartLevelButton.setVisible(training.levelFailed());
         levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
         helpPanel.setVisible(!training.levelComplete() && !training.levelFailed());
+        feedbackLabel.setText(html(training.feedback()));
         feedbackLabel.setForeground(MUTED);
-        trendPanel.repaint();
     }
 
-    private JPanel createPromptPanel() {
+    private JPanel createDetailPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 7));
         panel.setOpaque(false);
+        panel.add(detailLabel, BorderLayout.CENTER);
+        panel.add(levelActionsPanel, BorderLayout.SOUTH);
 
-        configureLabel(promptLabel, Font.BOLD, 15f, TEXT);
-        panel.add(promptLabel, BorderLayout.NORTH);
-
-        JPanel answers = new JPanel(new GridLayout(1, 3, 8, 0));
-        answers.setOpaque(false);
-        answers.setPreferredSize(new Dimension(280, 38));
-        for (int i = 0; i < answerButtons.length; i++) {
-            answerButtons[i] = answerButton(i);
-            answers.add(answerButtons[i]);
-        }
-
-        JPanel answerWrap = new JPanel(new BorderLayout());
-        answerWrap.setOpaque(false);
-        answerWrap.add(answers, BorderLayout.NORTH);
-        panel.add(answerWrap, BorderLayout.CENTER);
         nextLevelButton.setFocusable(false);
         nextLevelButton.setPreferredSize(new Dimension(280, 38));
         nextLevelButton.addActionListener(event -> {
@@ -229,13 +175,14 @@ public final class TrainingPanel extends JPanel {
                 refresh();
             }
         });
+
         restartLevelButton.setFocusable(false);
         restartLevelButton.setPreferredSize(new Dimension(280, 38));
         restartLevelButton.addActionListener(event -> onRestartLevel.run());
+
         levelActionsPanel.setOpaque(false);
         levelActionsPanel.add(nextLevelButton);
         levelActionsPanel.add(restartLevelButton);
-        panel.add(levelActionsPanel, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -257,23 +204,6 @@ public final class TrainingPanel extends JPanel {
         return row;
     }
 
-    private JButton answerButton(int answerIndex) {
-        JButton button = new JButton();
-        button.setFocusable(false);
-        button.addActionListener(event -> {
-            training.answer(answerIndex);
-            refresh();
-        });
-        return button;
-    }
-
-    private void setAnswerChoices(List<String> choices, boolean enabled) {
-        for (int i = 0; i < answerButtons.length; i++) {
-            answerButtons[i].setText(choices.get(i));
-            answerButtons[i].setEnabled(enabled);
-        }
-    }
-
     private JPanel createControlsPanel() {
         JPanel panel = new JPanel(new GridLayout(0, 1, 0, 4));
         panel.setOpaque(false);
@@ -281,10 +211,12 @@ public final class TrainingPanel extends JPanel {
         JLabel title = new JLabel("Quick help");
         configureLabel(title, Font.BOLD, 14f, TEXT);
         panel.add(title);
-        panel.add(help("Low plants: Rain or Compost"));
-        panel.add(help("Too many plants: Rabbit or drought"));
-        panel.add(help("Too many rabbits: Wolf"));
-        panel.add(help("Humans plant; bears hunt humans"));
+        panel.add(help("Low plants: Rain or Compost on one square"));
+        panel.add(help("High plants: Drought or Rabbits"));
+        panel.add(help("Too many rabbits: Wolves"));
+        panel.add(help("Too many humans: Bears"));
+        panel.add(help("Rabbits spend energy each tick and can starve"));
+        panel.add(help("Lightning: 50 tokens, click one creature"));
         return panel;
     }
 
@@ -301,89 +233,5 @@ public final class TrainingPanel extends JPanel {
 
     private String html(String text) {
         return "<html><body style='width:275px'>" + text + "</body></html>";
-    }
-
-    private static final class TrendPanel extends JPanel {
-        private final Simulation simulation;
-
-        private TrendPanel(Simulation simulation) {
-            this.simulation = simulation;
-            setOpaque(false);
-            setPreferredSize(new Dimension(280, 125));
-        }
-
-        @Override
-        protected void paintComponent(Graphics graphics) {
-            super.paintComponent(graphics);
-
-            Graphics2D g = (Graphics2D) graphics.create();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int width = getWidth();
-            int height = getHeight();
-            int left = 12;
-            int top = 12;
-            int chartWidth = width - 24;
-            int chartHeight = height - 30;
-
-            g.setColor(new Color(229, 222, 206));
-            g.fillRoundRect(0, 0, width, height, 8, 8);
-            g.setColor(new Color(206, 197, 178));
-            g.drawRoundRect(0, 0, width - 1, height - 1, 8, 8);
-
-            List<PopulationSnapshot> history = simulation.recentHistory(72);
-            if (history.size() < 2) {
-                g.dispose();
-                return;
-            }
-
-            int max = 1;
-            for (PopulationSnapshot snapshot : history) {
-                max = Math.max(max, Math.max(
-                        snapshot.plants(),
-                        Math.max(snapshot.rabbits(), Math.max(snapshot.wolves(), snapshot.humans()))
-                ));
-            }
-
-            drawLine(g, history, max, left, top, chartWidth, chartHeight, GREEN, PopulationSnapshot::plants);
-            drawLine(g, history, max, left, top, chartWidth, chartHeight, RABBIT, PopulationSnapshot::rabbits);
-            drawLine(g, history, max, left, top, chartWidth, chartHeight, WOLF, PopulationSnapshot::wolves);
-            drawLine(g, history, max, left, top, chartWidth, chartHeight, HUMAN, PopulationSnapshot::humans);
-
-            g.setColor(MUTED);
-            g.setFont(g.getFont().deriveFont(Font.PLAIN, 11f));
-            g.drawString("Plants", left, height - 8);
-            g.drawString("Rabbits", left + 68, height - 8);
-            g.drawString("Wolves", left + 144, height - 8);
-            g.drawString("Humans", left + 210, height - 8);
-            g.dispose();
-        }
-
-        private void drawLine(
-                Graphics2D g,
-                List<PopulationSnapshot> history,
-                int max,
-                int left,
-                int top,
-                int width,
-                int height,
-                Color color,
-                Metric metric
-        ) {
-            g.setColor(color);
-            g.setStroke(new BasicStroke(2f));
-            int previousX = left;
-            int previousY = top + height - (metric.value(history.get(0)) * height / max);
-            for (int i = 1; i < history.size(); i++) {
-                int x = left + i * width / (history.size() - 1);
-                int y = top + height - (metric.value(history.get(i)) * height / max);
-                g.drawLine(previousX, previousY, x, y);
-                previousX = x;
-                previousY = y;
-            }
-        }
-
-        private interface Metric {
-            int value(PopulationSnapshot snapshot);
-        }
     }
 }

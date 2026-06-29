@@ -19,7 +19,8 @@ public final class SimulationSmokeCheck {
         simulation.seedRabbits(15);
         simulation.seedWolves(2);
         simulation.seedHumans(6);
-        require(allRabbitsFemale(simulation), "Fresh rabbit seeds should start female only.");
+        require(!hasMaleRabbit(simulation) && hasFemaleRabbit(simulation),
+                "Fresh rabbit seeds should start female only.");
 
         for (int i = 0; i < 240; i++) {
             simulation.tick();
@@ -54,7 +55,8 @@ public final class SimulationSmokeCheck {
         require(simulation.grid().cellAt(new Position(2, 2)).sanctuary(), "Sanctuary soil should be marked.");
 
         simulation.restart();
-        require(allRabbitsFemale(simulation), "Restart should restore female-only rabbit seeds.");
+        require(hasMaleRabbit(simulation) && hasFemaleRabbit(simulation),
+                "Restart should restore a mixed rabbit starter population.");
         require(simulation.tickCount() == 0, "Restart should reset the tick count.");
         require(simulation.count(OrganismKind.PLANT) > 0, "Restart should restore plants.");
         require(simulation.count(OrganismKind.RABBIT) > 0, "Restart should restore rabbits.");
@@ -69,6 +71,8 @@ public final class SimulationSmokeCheck {
         checkRabbitPairingAndWolfDeparture();
         checkRabbitPlacementSexes();
         checkDeathEvents();
+        checkLocalWeatherAndLightning();
+        checkWolfPairBreeding();
     }
 
     private static void require(boolean condition, String message) {
@@ -151,6 +155,41 @@ public final class SimulationSmokeCheck {
         require(wolves.count(OrganismKind.WOLF) == 0, "A wolf should leave after killing three rabbits.");
     }
 
+    private static void checkWolfPairBreeding() {
+        Simulation simulation = new Simulation(10, 10, 33L);
+        Position first = new Position(4, 4);
+        Position second = new Position(5, 4);
+        simulation.placeOrganism(first, new com.kimbopulus.weird.sim.Wolf());
+        simulation.placeOrganism(second, new com.kimbopulus.weird.sim.Wolf());
+        ((com.kimbopulus.weird.sim.Wolf) simulation.organismAt(first)).tick(simulation, first);
+        require(simulation.count(OrganismKind.WOLF) >= 3, "Wolves should create offspring when they meet.");
+    }
+
+    private static void checkLocalWeatherAndLightning() {
+        Simulation simulation = new Simulation(10, 10, 44L);
+        Position center = new Position(4, 4);
+        Position neighbor = new Position(5, 4);
+        double centerTemperature = simulation.grid().cellAt(center).temperature();
+        double neighborTemperature = simulation.grid().cellAt(neighbor).temperature();
+
+        require(simulation.rain(center), "Rain should affect the clicked square.");
+        require(simulation.grid().cellAt(center).temperature() < centerTemperature,
+                "Rain should cool the clicked square.");
+        require(simulation.grid().cellAt(neighbor).temperature() == neighborTemperature,
+                "Rain should stay local to the clicked square.");
+
+        double afterRainTemperature = simulation.grid().cellAt(center).temperature();
+        require(simulation.drought(center), "Drought should affect the clicked square.");
+        require(simulation.grid().cellAt(center).temperature() > afterRainTemperature,
+                "Drought should warm the clicked square.");
+
+        simulation.addHuman(neighbor);
+        require(simulation.lightning(neighbor), "Lightning should strike an exact occupied square.");
+        require(simulation.count(OrganismKind.HUMAN) == 0, "Lightning should remove the target organism.");
+        require(simulation.recentDeathEvents().get(simulation.recentDeathEvents().size() - 1).cause() == com.kimbopulus.weird.sim.DeathCause.LIGHTNING,
+                "Lightning deaths should be recorded with the lightning cause.");
+    }
+
     private static void setKillCount(com.kimbopulus.weird.sim.Wolf wolf, int value) {
         try {
             var field = com.kimbopulus.weird.sim.Wolf.class.getDeclaredField("rabbitsEaten");
@@ -161,15 +200,26 @@ public final class SimulationSmokeCheck {
         }
     }
 
-    private static boolean allRabbitsFemale(Simulation simulation) {
+    private static boolean hasMaleRabbit(Simulation simulation) {
         for (int y = 0; y < simulation.grid().height(); y++) {
             for (int x = 0; x < simulation.grid().width(); x++) {
                 if (simulation.organismAt(x, y) instanceof Rabbit rabbit && rabbit.male()) {
-                    return false;
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
+    }
+
+    private static boolean hasFemaleRabbit(Simulation simulation) {
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                if (simulation.organismAt(x, y) instanceof Rabbit rabbit && rabbit.female()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static int countMaleRabbits(Simulation simulation) {

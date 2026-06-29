@@ -14,7 +14,6 @@ import com.kimbopulus.weird.sim.RabbitSex;
 import com.kimbopulus.weird.sim.Season;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldGrid;
-import com.kimbopulus.weird.training.FocusRule;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
 
@@ -37,11 +36,13 @@ public final class ModelRegressionCheck {
         checkSimulationHistoryAndEvents();
         checkTrainingLabelsAndReset();
         checkProgressionPersistence();
+        checkProgressionNormalization();
         checkSettingsPersistence();
         checkSpriteResources();
         checkSpriteContent();
         checkRabbitStarvationDeath();
         checkRabbitReproductionCostsEnergy();
+        checkLightningStrikeCostsAndRecordsDeath();
         System.out.println("Model regression check passed.");
     }
 
@@ -196,38 +197,73 @@ public final class ModelRegressionCheck {
 
     private static void checkTrainingLabelsAndReset() {
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
-        require("Need rabbits".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 200, 3, 2, 3, 0, 0.5, 0.5, 21.0))),
-                "Low rabbits should be called out first.");
-        require("Need wolves".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 200, 10, 1, 3, 0, 0.5, 0.5, 21.0))),
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 60, 10, 4, 4, 0, 0.50, 0.50, 21.0)).startsWith("Plants low"),
+                "Low plants should be called out.");
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 780, 10, 4, 4, 0, 0.50, 0.50, 21.0)).startsWith("Plants high"),
+                "High plants should be called out.");
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 2, 4, 4, 0, 0.50, 0.50, 21.0)).startsWith("Rabbits low"),
+                "Low rabbits should be called out.");
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 1, 4, 0, 0.50, 0.50, 21.0)).startsWith("Wolves low"),
                 "Low wolves should be called out.");
-        require("Too many plants".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 1201, 10, 2, 3, 0, 0.5, 0.5, 21.0))),
-                "Plant overgrowth should be flagged.");
-        require("Need humans".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 200, 10, 2, 2, 0, 0.5, 0.5, 21.0))),
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 2, 0, 0.50, 0.50, 21.0)).startsWith("Humans low"),
                 "Low humans should be called out.");
-        require("Balance: steady".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.5, 0.5, 21.0))),
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.10, 0.50, 21.0)).startsWith("Moisture low"),
+                "Low moisture should be called out.");
+        require(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 40.0)).startsWith("Temperature high"),
+                "High temperature should be called out.");
+        require("Balance: steady".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0))),
                 "Healthy populations should read as steady.");
+        String guide = training.balanceGuide(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0), 988);
+        require(guide.contains("Current:") && guide.contains("Target:") && guide.contains("%"),
+                "Balance guidance should show the current state and exact ranges.");
 
         training.noteAction("Rain", "cell 1,1");
         require(training.feedback().equals("Rain used."), "Tool feedback should echo the action.");
-        require(training.contextHint().equals("Try one tool on the board.") || training.contextHint().equals("Watch what changes after each tool."),
-                "Early guidance should be present.");
+        require(training.contextHint().contains("click") || training.contextHint().contains("square"),
+                "Early guidance should describe the click-based tools.");
         training.reset();
         require(training.score() == 0 && training.streak() == 0, "Reset should clear run progress.");
         require(training.feedback().equals("Hold the ecosystem steady."), "Reset should restore the default feedback.");
-        require(training.focusRule() == FocusRule.NORMAL, "Reset should restore the normal focus rule.");
+    }
+
+    private static void checkProgressionNormalization() throws IOException {
+        Path file = Files.createTempFile("weird-progression-normalize", ".properties");
+        try {
+            Files.writeString(file, """
+                    focusXp=1200
+                    totalScore=1200
+                    tokens=1900
+                    owned.RAIN_BARREL=true
+                    owned.RICH_COMPOST=true
+                    owned.SANCTUARY=true
+                    """);
+
+            ProgressionProfile profile = ProgressionProfile.load(file);
+            require(profile.totalScore() == 1200, "Total score should be preserved.");
+            require(profile.tokens() == 200, "Loaded tokens should be capped from an inflated save.");
+
+            ProgressionProfile reloaded = ProgressionProfile.load(file);
+            require(reloaded.tokens() == 200, "The normalized token cap should persist back to disk.");
+        } finally {
+            Files.deleteIfExists(file);
+        }
     }
 
     private static void checkProgressionPersistence() throws IOException {
         Path file = Files.createTempFile("weird-progression", ".properties");
         try {
             ProgressionProfile profile = ProgressionProfile.load(file);
-            profile.addFocusXp(125);
+            profile.addFocusXp(420);
             require(profile.buy(ShopItem.RAIN_BARREL), "The profile should buy an affordable item.");
 
             ProgressionProfile reloaded = ProgressionProfile.load(file);
-            require(reloaded.totalScore() == 125, "Progression total score should persist.");
-            require(reloaded.tokens() == 65, "Progression tokens should persist after a purchase.");
+            require(reloaded.totalScore() == 420, "Progression total score should persist.");
+            require(reloaded.tokens() == 10, "Progression tokens should persist after a purchase.");
             require(reloaded.owns(ShopItem.RAIN_BARREL), "Purchased upgrades should persist.");
+
+            profile.resetPurchases();
+            ProgressionProfile cleared = ProgressionProfile.load(file);
+            require(!cleared.owns(ShopItem.RAIN_BARREL), "Resetting the shop should clear owned items.");
         } finally {
             Files.deleteIfExists(file);
         }
@@ -349,6 +385,16 @@ public final class ModelRegressionCheck {
 
         require(maleRabbit.energy() < before, "Mating should spend rabbit energy.");
         require(simulation.count(OrganismKind.RABBIT) >= 3, "A mating pair should create offspring.");
+    }
+
+    private static void checkLightningStrikeCostsAndRecordsDeath() {
+        Simulation simulation = new Simulation(8, 8, 202L);
+        Position target = new Position(2, 2);
+        require(simulation.addHuman(target), "Lightning target should place.");
+        require(simulation.lightning(target), "Lightning should remove the target.");
+        require(simulation.count(OrganismKind.HUMAN) == 0, "Lightning should update the population count.");
+        require(simulation.recentDeathEvents().get(simulation.recentDeathEvents().size() - 1).cause() == DeathCause.LIGHTNING,
+                "Lightning deaths should be recorded with their cause.");
     }
 
     private static void setEnergy(Rabbit rabbit, int value) {

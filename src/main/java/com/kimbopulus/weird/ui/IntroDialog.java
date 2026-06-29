@@ -29,10 +29,12 @@ public final class IntroDialog extends JDialog {
 Keep the board balanced.
 
 Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure humans.
+Rabbits lose energy every turn, so they can starve if they do not find food in time.
 
 If any group gets too low or too high for too long, the level fails.
-Use the tools on the top bar to change rain, drought, compost, or place species.
-Finish each objective to move on, earn score, and unlock more options.
+Rain and drought change one square at a time and also nudge temperature.
+Lightning costs 50 tokens and strikes one exact creature.
+The right panel shows the exact balance bands for the current level.
 
 Click the Info button again anytime to reopen this guide.
 """);
