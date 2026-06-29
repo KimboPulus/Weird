@@ -258,6 +258,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
             audio.play(SoundCue.COMPLETE);
         } else if (!wasFailed && training.levelFailed()) {
+            training.progression().resetPurchases();
             terrariumPanel.showBanner("LEVEL LOST");
             audio.play(SoundCue.FAILURE);
         } else if (!hadWarning && training.dangerWarning() != null) {
@@ -398,6 +399,7 @@ public final class TerrariumFrame extends JFrame {
         if (!training.restartLevel()) {
             return;
         }
+        training.progression().resetPurchases();
         simulation.restart();
         updateAudioTension();
         audio.play(SoundCue.RESTART);
@@ -434,23 +436,25 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void playDeathSounds() {
-        boolean animalDeath = false;
         boolean humanDeath = false;
-        boolean lightningDeath = false;
+        boolean animalDeath = false;
         long newest = lastDeathSoundId;
         for (DeathEvent death : simulation.recentDeathEvents()) {
             if (death.id() <= lastDeathSoundId) {
                 continue;
             }
             newest = Math.max(newest, death.id());
-            humanDeath |= death.kind() == OrganismKind.HUMAN;
-            lightningDeath |= death.cause() == DeathCause.LIGHTNING;
-            animalDeath = true;
+            if (death.cause() == DeathCause.LIGHTNING) {
+                continue;
+            }
+            if (death.kind() == OrganismKind.HUMAN) {
+                humanDeath = true;
+            } else {
+                animalDeath = true;
+            }
         }
         lastDeathSoundId = newest;
-        if (lightningDeath) {
-            audio.play(SoundCue.LIGHTNING);
-        } else if (humanDeath) {
+        if (humanDeath) {
             audio.play(SoundCue.HUMAN_DEATH);
         } else if (animalDeath) {
             audio.play(SoundCue.ANIMAL_DEATH);

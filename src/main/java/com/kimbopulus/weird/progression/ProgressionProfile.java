@@ -33,6 +33,7 @@ public final class ProgressionProfile {
 
     public static ProgressionProfile load(Path path) {
         Properties properties = new Properties();
+        boolean hadLegacyPurchases = false;
         if (Files.exists(path)) {
             try (InputStream input = Files.newInputStream(path)) {
                 properties.load(input);
@@ -50,14 +51,11 @@ public final class ProgressionProfile {
             normalizedTokens = cappedTokens != tokens;
             tokens = cappedTokens;
         }
-        Set<ShopItem> purchases = EnumSet.noneOf(ShopItem.class);
         for (ShopItem item : ShopItem.values()) {
-            if (Boolean.parseBoolean(properties.getProperty("owned." + item.name(), "false"))) {
-                purchases.add(item);
-            }
+            hadLegacyPurchases |= Boolean.parseBoolean(properties.getProperty("owned." + item.name(), "false"));
         }
-        ProgressionProfile profile = new ProgressionProfile(path, totalScore, tokens, purchases);
-        if (normalizedTokens) {
+        ProgressionProfile profile = new ProgressionProfile(path, totalScore, tokens, EnumSet.noneOf(ShopItem.class));
+        if (normalizedTokens || hadLegacyPurchases) {
             profile.save();
         }
         return profile;
@@ -130,9 +128,6 @@ public final class ProgressionProfile {
         properties.setProperty("focusXp", Integer.toString(totalScore));
         properties.setProperty("totalScore", Integer.toString(totalScore));
         properties.setProperty("tokens", Integer.toString(tokens));
-        for (ShopItem item : ShopItem.values()) {
-            properties.setProperty("owned." + item.name(), Boolean.toString(owns(item)));
-        }
         try {
             Path parent = savePath.getParent();
             if (parent != null) {

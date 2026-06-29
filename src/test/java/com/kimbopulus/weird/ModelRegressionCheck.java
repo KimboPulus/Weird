@@ -245,9 +245,13 @@ public final class ModelRegressionCheck {
             ProgressionProfile profile = ProgressionProfile.load(file);
             require(profile.totalScore() == 1200, "Total score should be preserved.");
             require(profile.tokens() == 200, "Loaded tokens should be capped from an inflated save.");
+            require(!profile.owns(ShopItem.RAIN_BARREL), "Shop ownership should not be restored from disk.");
+            require(!profile.owns(ShopItem.RICH_COMPOST), "Shop ownership should not be restored from disk.");
+            require(!profile.owns(ShopItem.SANCTUARY), "Shop ownership should not be restored from disk.");
 
             ProgressionProfile reloaded = ProgressionProfile.load(file);
             require(reloaded.tokens() == 200, "The normalized token cap should persist back to disk.");
+            require(!reloaded.owns(ShopItem.RAIN_BARREL), "The cleaned save should not keep shop ownership.");
         } finally {
             Files.deleteIfExists(file);
         }
@@ -259,11 +263,12 @@ public final class ModelRegressionCheck {
             ProgressionProfile profile = ProgressionProfile.load(file);
             profile.addFocusXp(420);
             require(profile.buy(ShopItem.RAIN_BARREL), "The profile should buy an affordable item.");
+            require(profile.owns(ShopItem.RAIN_BARREL), "The item should be owned during the run.");
 
             ProgressionProfile reloaded = ProgressionProfile.load(file);
             require(reloaded.totalScore() == 420, "Progression total score should persist.");
             require(reloaded.tokens() == 10, "Progression tokens should persist after a purchase.");
-            require(reloaded.owns(ShopItem.RAIN_BARREL), "Purchased upgrades should persist.");
+            require(!reloaded.owns(ShopItem.RAIN_BARREL), "Purchased upgrades should reset when the game reloads.");
 
             profile.resetPurchases();
             ProgressionProfile cleared = ProgressionProfile.load(file);
