@@ -61,6 +61,8 @@ public final class TrainingSessionSmokeCheck {
         require(training.levelComplete(), "The first objective should enter the complete state.");
         require(training.advanceLevel(), "The player should be able to continue after completion.");
         require(training.levelNumber() == 2, "Next Level should advance to level 2.");
+        require("Keep plants and rabbits in range".equals(training.objective()),
+                "The second level objective should be blunt.");
         require(training.drill() == TrainingDrill.BALANCE, "Every level should train ecosystem balance.");
         require(training.score() >= 45, "Level completion should award points.");
     }

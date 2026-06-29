@@ -30,6 +30,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
+    private final JLabel challengeLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
     private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
@@ -84,6 +85,7 @@ public final class TrainingPanel extends JPanel {
         configureLabel(levelLabel, Font.BOLD, 15f, new Color(75, 101, 67));
         configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
         configureLabel(goalLabel, Font.BOLD, 14f, TEXT);
+        configureLabel(challengeLabel, Font.BOLD, 12f, new Color(126, 78, 56));
         configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
         configureLabel(detailLabel, Font.PLAIN, 12f, MUTED);
         configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
@@ -104,10 +106,10 @@ public final class TrainingPanel extends JPanel {
 
         top.add(levelLabel);
         top.add(goalLabel);
+        top.add(challengeLabel);
         top.add(levelProgress);
         top.add(createEconomyRow());
         top.add(balanceLabel);
-        top.add(detailLabel);
         top.add(climateLabel);
         top.add(eventLabel);
         top.add(warningLabel);
@@ -133,6 +135,7 @@ public final class TrainingPanel extends JPanel {
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
         goalLabel.setText(training.objective());
+        challengeLabel.setText(html(training.challengeText()));
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
@@ -211,7 +214,7 @@ public final class TrainingPanel extends JPanel {
         JLabel title = new JLabel("Quick help");
         configureLabel(title, Font.BOLD, 14f, TEXT);
         panel.add(title);
-        panel.add(help("Low plants: Rain on a 3 x 3 patch or Compost on one square"));
+        panel.add(help("Low plants: Rain or Compost"));
         panel.add(help("High plants: Drought or Rabbits"));
         panel.add(help("Too many rabbits: Wolves"));
         panel.add(help("Too many humans: Bears"));

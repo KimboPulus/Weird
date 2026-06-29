@@ -79,6 +79,10 @@ public final class TrainingSession {
         return level.objective();
     }
 
+    public String challengeText() {
+        return level.challenge();
+    }
+
     public int memorySpan() {
         return 0;
     }

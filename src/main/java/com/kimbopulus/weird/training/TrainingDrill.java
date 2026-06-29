@@ -1,9 +1,9 @@
 package com.kimbopulus.weird.training;
 
 public enum TrainingDrill {
-    BALANCE("Balance Run", "Keep the board inside the target bands."),
-    PREDATORS("Predator Watch", "Keep wolves present without letting them take over."),
-    OVERGROWTH("Canopy Control", "Keep plants under control for 30 ticks."),
+    BALANCE("Balance Run", "Keep the board in range."),
+    PREDATORS("Predator Watch", "Keep wolves in range."),
+    OVERGROWTH("Canopy Control", "Keep plants in range for 30 ticks."),
     CLIMATE_ALERT("Weather Shift", "Restore safe moisture and temperature for 20 ticks.");
 
     private final String title;
