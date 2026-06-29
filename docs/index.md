@@ -1,6 +1,6 @@
 # Weird
 
-Small Java terrarium simulation with balance-maintenance levels, recall prompts, weather tools, and a persistent shop.
+Small Java terrarium simulation with balance-maintenance levels, weather tools, and a persistent shop.
 
 ## Screenshots
 

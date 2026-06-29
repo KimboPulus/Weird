@@ -2,7 +2,7 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, humans plant new growth, and wolves and bears shape the balance. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes illustrated terrain and wildlife, six balance-maintenance levels, adaptive recall prompts, changing weather events, a persistent score and upgrade shop, veteran animals, death animations, and ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, six balance-maintenance levels, changing weather events, a persistent score and upgrade shop, veteran animals, death animations, and explicit ecosystem stability goals.
 
 ## Current build
 
@@ -68,12 +68,13 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 ## Controls
 
-- `Rain` adds moisture around the clicked cell.
-- `Drought` dries the clicked area.
-- `Compost` raises fertility in a small area.
+- `Rain` adds moisture and cools the clicked cell.
+- `Drought` dries and warms the clicked cell.
+- `Compost` raises fertility on the clicked cell.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
 - `Human` plants nearby soil.
 - `Bear` is a rare visitor that appears based on human population.
+- `Lightning` spends 50 tokens and strikes one exact creature.
 - `Sanctuary` is purchased in the shop and protects one 2 x 2 soil patch per run.
 - `Pause` stops the timer.
 - `Step` advances one tick.
@@ -83,7 +84,7 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 Keyboard controls:
 
-- `1` to `7` select gardener tools.
+- `1` to `0` select gardener tools.
 - `Space` pauses or resumes.
 - `N` advances one tick.
 - `R` restarts the run.
@@ -94,15 +95,14 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 
 ## Focus training
 
-- Six levels give the run a clear objective. Each level asks you to keep the ecosystem inside a target balance band, then press `Next Level`.
-- Recall questions ask whether a selected population was rising, stable, or falling.
-- Recall lookback grows from 10 to 20 and then 32 ticks as the answer streak improves.
-- Later levels can reverse the recall rule and ask for the opposite trend.
+- Six levels give the run a clear objective. Each level asks you to keep plants, rabbits, wolves, humans, bears, moisture, and temperature inside an explicit target band, then press `Next Level`.
+- The right panel shows the exact current values and target ranges for the active level.
 - Level changes appear briefly over the board with a stronger celebration animation.
 - Ecosystem crises add a bold labeled border and an always-visible warning strip.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
-- Deaths fade out over about 2.8 seconds, and human deaths use a harsher sound cue.
+- Deaths fade out over about 2.8 seconds, and lightning and human deaths use harsher sound cues.
 - Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
+- Restarting the full run clears the shop purchases for that run.
 
 ## Risk and failure
 
@@ -116,7 +116,7 @@ Design decisions and their supporting studies are recorded in `docs/research-bac
 
 ## Shop
 
-Level rewards and correct recall answers grant tokens without reducing total score. The shop contains permanent upgrades:
+Level rewards and strong balance streaks grant tokens without reducing total score. The shop contains permanent upgrades:
 
 - `Sanctuary Permit` unlocks the protected soil tool.
 - `Rain Barrel` increases Rain strength by 50%.
