@@ -16,6 +16,7 @@ public final class TrainingSession {
     private boolean levelFailed;
     private int dangerTicks;
     private String dangerReason;
+    private String failureDetail;
     private int gardenerActions;
 
     public TrainingSession() {
@@ -107,6 +108,9 @@ public final class TrainingSession {
     }
 
     public String failureReason() {
+        if (failureDetail != null) {
+            return failureDetail;
+        }
         return dangerReason == null ? "The ecosystem collapsed." : dangerReason + ".";
     }
 
@@ -165,6 +169,7 @@ public final class TrainingSession {
         stableTicks = 0;
         levelProgress = 0;
         levelComplete = false;
+        failureDetail = null;
         dangerTicks = 0;
         dangerReason = null;
         gardenerActions = 0;
@@ -183,6 +188,7 @@ public final class TrainingSession {
         levelFailed = false;
         dangerTicks = 0;
         dangerReason = null;
+        failureDetail = null;
         gardenerActions = 0;
         feedback = "Level restarted. -15 run score.";
         return true;
@@ -199,6 +205,7 @@ public final class TrainingSession {
         levelFailed = false;
         dangerTicks = 0;
         dangerReason = null;
+        failureDetail = null;
         gardenerActions = 0;
     }
 
@@ -251,7 +258,8 @@ public final class TrainingSession {
         }
         if (dangerTicks >= 14) {
             levelFailed = true;
-            feedback = "Level lost. Restart to try again.";
+            failureDetail = dangerReason == null ? "The ecosystem collapsed." : level.balanceTarget().status(snapshot);
+            feedback = "Level lost: " + failureDetail + "\nRestart to try again.";
         }
     }
 

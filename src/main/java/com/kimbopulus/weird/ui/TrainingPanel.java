@@ -147,8 +147,10 @@ public final class TrainingPanel extends JPanel {
                 snapshot.averageTemperature()
         ));
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
-        String warning = training.levelFailed() ? "LEVEL LOST" : training.dangerWarning();
-        warningLabel.setText(warning == null ? "" : warning.toUpperCase());
+        String warning = training.levelFailed()
+                ? formatFailureWarning(training.failureReason())
+                : training.dangerWarning();
+        warningLabel.setText(warning == null ? "" : (training.levelFailed() ? warning : warning.toUpperCase()));
         warningLabel.setVisible(warning != null);
 
         nextLevelButton.setVisible(training.levelComplete());
@@ -229,6 +231,17 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String html(String text) {
-        return "<html><body style='width:300px'>" + text + "</body></html>";
+        return "<html><body style='width:300px'>" + text.replace("\n", "<br>") + "</body></html>";
+    }
+
+    private String formatFailureWarning(String reason) {
+        int split = reason.indexOf(" (");
+        if (split <= 0) {
+            return html("<span style='font-size:18px;font-weight:bold;'>" + reason + "</span>");
+        }
+        String title = reason.substring(0, split);
+        String detail = reason.substring(split);
+        return "<html><body style='width:300px'><span style='font-size:18px;font-weight:bold;'>" + title
+                + "</span><br><span style='font-size:14px;'>" + detail + "</span></body></html>";
     }
 }

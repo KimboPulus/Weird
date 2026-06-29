@@ -267,7 +267,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
         } else if (!wasFailed && training.levelFailed()) {
             training.progression().resetPurchases();
-            terrariumPanel.showBanner("LEVEL LOST");
+            terrariumPanel.showBanner("LEVEL LOST: " + training.failureReason());
         }
         terrariumPanel.repaint();
         trainingPanel.refresh();

@@ -90,6 +90,10 @@ public final class TrainingSessionSmokeCheck {
             training.update(simulation);
         }
         require(training.levelFailed(), "An unresolved extinction should lose the level.");
+        require(training.failureReason().startsWith("Plants low ("),
+                "A failed level should report the exact reason.");
+        require(training.failureReason().contains("range 90-700"),
+                "A failed level should include the target range.");
         require(training.restartLevel(), "A failed level should be restartable.");
         require(!training.levelFailed(), "Restart should clear the failed state.");
         require(training.levelNumber() == 1, "Restart should keep the current level.");
