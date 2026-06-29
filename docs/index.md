@@ -1,6 +1,6 @@
 # Weird
 
-Small Java terrarium simulation with balance-maintenance levels, weather tools, and a persistent shop.
+Small Java terrarium simulation with balance-maintenance levels, weather tools, a session-only shop, and a readable objective panel.
 
 ## Screenshots
 
@@ -9,6 +9,10 @@ Small Java terrarium simulation with balance-maintenance levels, weather tools, 
 ![Animal pack capture](screenshots/animal-pack-check.png)
 
 ![Level-up capture](screenshots/level-up-check.png)
+
+![Shop capture](screenshots/shop-check.png)
+
+![Audio settings capture](screenshots/audio-settings-check.png)
 
 ## Run
 

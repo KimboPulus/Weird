@@ -3,7 +3,7 @@ package com.kimbopulus.weird.training;
 public enum TrainingLevel {
     STEADY_START(
             "Steady Start",
-            "Keep the board in range",
+            "Keep plants in range 90-700",
             "Plants 90-700",
             TrainingDrill.BALANCE,
             20,
@@ -11,7 +11,7 @@ public enum TrainingLevel {
     ),
     MEMORY_SCAN(
             "Green Rhythm",
-            "Keep plants and rabbits in range",
+            "Keep plants and rabbits in range 110-620 | 6-60",
             "Plants 110-620 | Rabbits 6-60",
             TrainingDrill.BALANCE,
             30,
@@ -19,7 +19,7 @@ public enum TrainingLevel {
     ),
     PREDATOR_CHECK(
             "Predator Line",
-            "Keep wolves in range",
+            "Keep wolves in range 3-9",
             "Wolves 3-9",
             TrainingDrill.BALANCE,
             35,
@@ -27,7 +27,7 @@ public enum TrainingLevel {
     ),
     CANOPY_CONTROL(
             "Human Footprint",
-            "Keep humans in range",
+            "Keep humans in range 3-8",
             "Humans 3-8",
             TrainingDrill.BALANCE,
             40,
@@ -35,7 +35,7 @@ public enum TrainingLevel {
     ),
     CLIMATE_CONTROL(
             "Climate Balance",
-            "Keep moisture and temperature in range",
+            "Keep moisture and temperature in range 42-64% | 16.0-26.0 C",
             "Moisture 42-64% | Temp 16.0-26.0 C",
             TrainingDrill.BALANCE,
             45,

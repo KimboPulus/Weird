@@ -91,24 +91,48 @@ public final class WorldGrid {
         affectAround(center, radius, cell -> cell.addRain(amount));
     }
 
+    public void rainPatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.addRain(amount));
+    }
+
     public void dryAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.dry(amount));
+    }
+
+    public void dryPatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.dry(amount));
     }
 
     public void coolAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.cool(amount));
     }
 
+    public void coolPatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.cool(amount));
+    }
+
     public void warmAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.warm(amount));
+    }
+
+    public void warmPatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.warm(amount));
     }
 
     public void fertilizeAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.addFertility(amount));
     }
 
+    public void fertilizePatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.addFertility(amount));
+    }
+
     public void spendFertilityAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.spendFertility(amount));
+    }
+
+    public void spendFertilityPatch(Position origin, int patchWidth, int patchHeight, double amount) {
+        affectPatch(origin, patchWidth, patchHeight, cell -> cell.spendFertility(amount));
     }
 
     public void rainAll(double amount) {
@@ -140,6 +164,18 @@ public final class WorldGrid {
     private void affectAround(Position center, int radius, CellAction action) {
         for (int y = Math.max(0, center.y() - radius); y <= Math.min(height - 1, center.y() + radius); y++) {
             for (int x = Math.max(0, center.x() - radius); x <= Math.min(width - 1, center.x() + radius); x++) {
+                action.apply(cells[y][x]);
+            }
+        }
+    }
+
+    private void affectPatch(Position origin, int patchWidth, int patchHeight, CellAction action) {
+        int startX = Math.max(0, origin.x());
+        int startY = Math.max(0, origin.y());
+        int endX = Math.min(width - 1, origin.x() + Math.max(1, patchWidth) - 1);
+        int endY = Math.min(height - 1, origin.y() + Math.max(1, patchHeight) - 1);
+        for (int y = startY; y <= endY; y++) {
+            for (int x = startX; x <= endX; x++) {
                 action.apply(cells[y][x]);
             }
         }

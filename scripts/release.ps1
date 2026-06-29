@@ -38,6 +38,8 @@ jpackage `
 $musicDest = Join-Path $appRoot "data\music"
 New-Item -ItemType Directory -Force $musicDest | Out-Null
 Copy-Item $musicSource (Join-Path $musicDest "domowka-theme.wav") -Force
+Copy-Item (Join-Path $root "data\music\lightning.wav") (Join-Path $musicDest "lightning.wav") -Force
+Copy-Item (Join-Path $root "data\music\u_39xav15uou-lightning-237994.mp3") (Join-Path $musicDest "u_39xav15uou-lightning-237994.mp3") -Force
 
 $launcher = Join-Path $releaseRoot "Launch Weird.bat"
 @"

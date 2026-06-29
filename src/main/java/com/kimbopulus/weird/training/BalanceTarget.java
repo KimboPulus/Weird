@@ -111,8 +111,17 @@ public record BalanceTarget(
     public String guide(PopulationSnapshot snapshot, int boardCells) {
         int safeBoardCells = Math.max(1, boardCells);
         return String.format(
-                "Current: Plants %d | Rabbits %d | Wolves %d | Humans %d | Bears %d | Moisture %.0f%% | Temp %.1f C<br>"
-                        + "Target: Plants %s | Rabbits %s | Wolves %s | Humans %s | Bears %s | Moisture %.0f-%.0f%% | Temp %.1f-%.1f C",
+                "Current:<br>"
+                        + "Plants %d | Rabbits %d | Wolves %d | Humans %d | Bears %d<br>"
+                        + "Moisture %.0f%% | Temp %.1f C<br><br>"
+                        + "Target:<br>"
+                        + "Plants %s<br>"
+                        + "Rabbits %s<br>"
+                        + "Wolves %s<br>"
+                        + "Humans %s<br>"
+                        + "Bears %s<br>"
+                        + "Moisture %.0f-%.0f%%<br>"
+                        + "Temp %.1f-%.1f C",
                 snapshot.plants(),
                 snapshot.rabbits(),
                 snapshot.wolves(),

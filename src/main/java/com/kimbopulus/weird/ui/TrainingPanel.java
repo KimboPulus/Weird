@@ -26,11 +26,10 @@ public final class TrainingPanel extends JPanel {
     private final Runnable onProgressionChanged;
     private final Runnable onRestartLevel;
     private final Runnable onLevelAdvanced;
-    private final JLabel titleLabel = new JLabel("Focus Path");
+    private final JLabel titleLabel = new JLabel("OBJECTIVE");
     private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
-    private final JLabel challengeLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
     private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
@@ -71,27 +70,26 @@ public final class TrainingPanel extends JPanel {
         this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
-        setPreferredSize(new Dimension(320, 640));
+        setPreferredSize(new Dimension(344, 660));
         setBorder(BorderFactory.createEmptyBorder(14, 18, 12, 18));
         setLayout(new BorderLayout(0, 9));
 
         JPanel top = new JPanel(new GridLayout(0, 1, 0, 4));
         top.setOpaque(false);
 
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 22f));
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 25f));
         titleLabel.setForeground(TEXT);
         top.add(titleLabel);
 
-        configureLabel(levelLabel, Font.BOLD, 15f, new Color(75, 101, 67));
-        configureLabel(scoreLabel, Font.BOLD, 15f, TEXT);
-        configureLabel(goalLabel, Font.BOLD, 14f, TEXT);
-        configureLabel(challengeLabel, Font.BOLD, 12f, new Color(126, 78, 56));
-        configureLabel(balanceLabel, Font.BOLD, 14f, TEXT);
-        configureLabel(detailLabel, Font.PLAIN, 12f, MUTED);
-        configureLabel(climateLabel, Font.PLAIN, 12f, MUTED);
-        configureLabel(eventLabel, Font.BOLD, 12f, new Color(126, 78, 56));
-        configureLabel(warningLabel, Font.BOLD, 24f, Color.WHITE);
-        configureLabel(feedbackLabel, Font.PLAIN, 13f, MUTED);
+        configureLabel(levelLabel, Font.BOLD, 16f, new Color(75, 101, 67));
+        configureLabel(scoreLabel, Font.BOLD, 16f, TEXT);
+        configureLabel(goalLabel, Font.BOLD, 15f, TEXT);
+        configureLabel(balanceLabel, Font.BOLD, 15f, TEXT);
+        configureLabel(detailLabel, Font.PLAIN, 13f, MUTED);
+        configureLabel(climateLabel, Font.PLAIN, 13f, MUTED);
+        configureLabel(eventLabel, Font.BOLD, 13f, new Color(126, 78, 56));
+        configureLabel(warningLabel, Font.BOLD, 28f, Color.WHITE);
+        configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
         warningLabel.setOpaque(true);
         warningLabel.setBackground(new Color(176, 57, 45));
@@ -106,7 +104,6 @@ public final class TrainingPanel extends JPanel {
 
         top.add(levelLabel);
         top.add(goalLabel);
-        top.add(challengeLabel);
         top.add(levelProgress);
         top.add(createEconomyRow());
         top.add(balanceLabel);
@@ -134,8 +131,7 @@ public final class TrainingPanel extends JPanel {
                 + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
-        goalLabel.setText(training.objective());
-        challengeLabel.setText(html(training.challengeText()));
+        goalLabel.setText(html(training.objective()));
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
@@ -212,20 +208,18 @@ public final class TrainingPanel extends JPanel {
         panel.setOpaque(false);
 
         JLabel title = new JLabel("Quick help");
-        configureLabel(title, Font.BOLD, 14f, TEXT);
+        configureLabel(title, Font.BOLD, 15f, TEXT);
         panel.add(title);
         panel.add(help("Low plants: Rain or Compost"));
         panel.add(help("High plants: Drought or Rabbits"));
         panel.add(help("Too many rabbits: Wolves"));
         panel.add(help("Too many humans: Bears"));
-        panel.add(help("Rabbits spend energy each tick and can starve"));
-        panel.add(help("Lightning: 50 tokens, click one creature"));
         return panel;
     }
 
     private JLabel help(String text) {
         JLabel label = new JLabel(html(text));
-        configureLabel(label, Font.PLAIN, 12f, MUTED);
+        configureLabel(label, Font.PLAIN, 13f, MUTED);
         return label;
     }
 
@@ -235,6 +229,6 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String html(String text) {
-        return "<html><body style='width:275px'>" + text + "</body></html>";
+        return "<html><body style='width:300px'>" + text + "</body></html>";
     }
 }

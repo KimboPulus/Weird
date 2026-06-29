@@ -22,7 +22,7 @@ public final class IntroDialog extends JDialog {
         content.setBorder(BorderFactory.createEmptyBorder(18, 18, 16, 18));
 
         JLabel title = new JLabel("Weird");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 24f));
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 26f));
         content.add(title, BorderLayout.NORTH);
 
         JTextArea body = new JTextArea("""
@@ -32,7 +32,7 @@ Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure
 Rabbits lose energy every turn, so they can starve if they do not find food in time.
 
 If any group gets too low or too high for too long, the level fails.
-Rain and drought change a 3 x 3 patch at a time and also nudge temperature.
+Rain and drought change a 4 x 4 patch at a time and also nudge temperature.
 Lightning costs 50 tokens and strikes one exact creature.
 The right panel shows the exact balance bands for the current level.
 
@@ -42,7 +42,7 @@ Click the Info button again anytime to reopen this guide.
         body.setLineWrap(true);
         body.setWrapStyleWord(true);
         body.setOpaque(false);
-        body.setFont(body.getFont().deriveFont(Font.PLAIN, 15f));
+        body.setFont(body.getFont().deriveFont(Font.PLAIN, 16f));
         content.add(body, BorderLayout.CENTER);
 
         JButton close = new JButton("Got it");
@@ -54,7 +54,7 @@ Click the Info button again anytime to reopen this guide.
 
         setContentPane(content);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setMinimumSize(new Dimension(430, 320));
+        setMinimumSize(new Dimension(460, 340));
         pack();
         setLocationRelativeTo(owner);
     }

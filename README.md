@@ -2,7 +2,7 @@
 
 A small Java terrarium simulation. Plants grow from soil conditions, rabbits graze on plants, humans plant new growth, and wolves and bears shape the balance. The player acts as a gardener by changing the environment or adding species to the board.
 
-The current version includes illustrated terrain and wildlife, six balance-maintenance levels, changing weather events, a persistent score and upgrade shop, veteran animals, death animations, and explicit ecosystem stability goals.
+The current version includes illustrated terrain and wildlife, six balance-maintenance levels, changing weather events, a persistent score, a session-only upgrade shop, veteran animals, death animations, and explicit ecosystem stability goals.
 
 ## Current build
 
@@ -68,13 +68,13 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 ## Controls
 
-- `Rain` adds moisture and cools a 3 x 3 patch centered on the click.
-- `Drought` dries and warms a 3 x 3 patch centered on the click.
+- `Rain` adds moisture and cools a 4 x 4 patch centered on the click.
+- `Drought` dries and warms a 4 x 4 patch centered on the click.
 - `Compost` raises fertility on the clicked cell.
 - `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
 - `Human` plants nearby soil.
 - `Bear` is a rare visitor that appears based on human population.
-- `Lightning` spends 50 tokens and strikes one exact creature.
+- `Lightning` spends 50 tokens and strikes one exact creature with blue lightning.
 - `Sanctuary` is purchased in the shop and protects one 2 x 2 soil patch per run.
 - `Pause` stops the timer.
 - `Step` advances one tick.
@@ -96,13 +96,13 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 ## Focus training
 
 - Six levels give the run a clear objective. Each level asks you to keep plants, rabbits, wolves, humans, bears, moisture, and temperature inside an explicit target band, then press `Next Level`.
-- The right panel shows the exact current values and target ranges for the active level.
+- The right panel shows the exact current values and target ranges for the active level under the `OBJECTIVE` heading.
 - Level changes appear briefly over the board with a stronger celebration animation.
 - Ecosystem crises add a bold labeled border and an always-visible warning strip.
 - Older rabbits and wolves become veterans with a silver marker. Hovering reveals their age and energy.
 - Deaths fade out over about 2.8 seconds, and lightning and human deaths use harsher sound cues.
 - Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
-- Restarting the full run clears the shop purchases for that run.
+- Shop purchases reset when a level is lost, when the full run restarts, and when the game is opened again.
 
 ## Risk and failure
 
@@ -116,8 +116,10 @@ Design decisions and their supporting studies are recorded in `docs/research-bac
 
 ## Shop
 
-Level rewards and strong balance streaks grant tokens without reducing total score. The shop contains permanent upgrades:
+Level rewards and strong balance streaks grant tokens without reducing total score. The shop contains session-only upgrades:
 
 - `Sanctuary Permit` unlocks the protected soil tool.
 - `Rain Barrel` increases Rain strength by 50%.
 - `Rich Compost` increases Compost strength by 50%.
+
+Shop ownership does not persist between launches.

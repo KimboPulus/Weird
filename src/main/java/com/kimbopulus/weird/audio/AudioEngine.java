@@ -22,6 +22,8 @@ public final class AudioEngine implements AutoCloseable {
     private static final double[] MUSIC_NOTES = {220.0, 277.18, 329.63, 415.30, 329.63, 277.18};
     private static final Path MUSIC_WAV = Paths.get("data", "music", "domowka-theme.wav");
     private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
+    private static final Path LIGHTNING_WAV = Paths.get("data", "music", "lightning.wav");
+    private static final Path LIGHTNING_SOURCE = Paths.get("data", "music", "u_39xav15uou-lightning-237994.mp3");
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
@@ -194,6 +196,13 @@ public final class AudioEngine implements AutoCloseable {
 
     private void playClip(SoundCue cue) {
         try {
+            if (cue == SoundCue.LIGHTNING) {
+                Path track = prepareLightningTrack();
+                if (track != null && playTrackClip(track, cue.volume() * effectsVolume)) {
+                    return;
+                }
+                return;
+            }
             Clip clip = AudioSystem.getClip();
             byte[] data = cue == SoundCue.HUMAN_DEATH
                     ? harshDeathTone(cue.duration(), cue.volume() * effectsVolume)
@@ -210,11 +219,73 @@ public final class AudioEngine implements AutoCloseable {
         }
     }
 
+    private boolean playTrackClip(Path track, double volume) throws Exception {
+        try (AudioInputStream stream = AudioSystem.getAudioInputStream(track.toFile())) {
+            Clip clip = AudioSystem.getClip();
+            clip.open(stream);
+            applyClipGain(clip, volume);
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    clip.close();
+                }
+            });
+            clip.start();
+            return true;
+        }
+    }
+
+    private Path prepareLightningTrack() throws IOException, InterruptedException {
+        if (Files.exists(LIGHTNING_WAV)) {
+            return LIGHTNING_WAV;
+        }
+        if (Files.notExists(LIGHTNING_SOURCE)) {
+            return null;
+        }
+
+        Files.createDirectories(LIGHTNING_WAV.getParent());
+        ProcessBuilder builder = new ProcessBuilder(
+                "ffmpeg",
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-i",
+                LIGHTNING_SOURCE.toString(),
+                "-vn",
+                "-ac",
+                "1",
+                "-ar",
+                Integer.toString((int) SAMPLE_RATE),
+                "-sample_fmt",
+                "s16",
+                LIGHTNING_WAV.toString()
+        );
+        builder.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        builder.redirectError(ProcessBuilder.Redirect.DISCARD);
+        Process process = builder.start();
+        if (process.waitFor() != 0 || Files.notExists(LIGHTNING_WAV)) {
+            return null;
+        }
+        return LIGHTNING_WAV;
+    }
+
     private void applyMusicGain(SourceDataLine line, double volume) {
         if (line == null || !line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
             return;
         }
         FloatControl control = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
+        double clamped = Math.max(0.0, Math.min(1.0, volume));
+        float gain = clamped <= 0.0
+                ? control.getMinimum()
+                : (float) (20.0 * Math.log10(clamped));
+        control.setValue(Math.max(control.getMinimum(), Math.min(control.getMaximum(), gain)));
+    }
+
+    private void applyClipGain(Clip clip, double volume) {
+        if (clip == null || !clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            return;
+        }
+        FloatControl control = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
         double clamped = Math.max(0.0, Math.min(1.0, volume));
         float gain = clamped <= 0.0
                 ? control.getMinimum()

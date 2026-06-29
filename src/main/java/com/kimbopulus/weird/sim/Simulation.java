@@ -339,10 +339,11 @@ public final class Simulation {
 
     public boolean rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 1, 0.48);
-            grid.coolAround(center, 1, 1.6);
-            grid.fertilizeAround(center, 1, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 1, 4, 0, 10, 0.18, 0.04, 2));
+            Position origin = patchOrigin(center, 4, 4);
+            grid.rainPatch(origin, 4, 4, 0.48);
+            grid.coolPatch(origin, 4, 4, 1.6);
+            grid.fertilizePatch(origin, 4, 4, 0.16);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2));
             return true;
         }
         return false;
@@ -350,10 +351,11 @@ public final class Simulation {
 
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 1, 0.32);
-            grid.coolAround(center, 1, 2.0);
-            grid.fertilizeAround(center, 1, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 1, 2, 0, 12, 0.24, 0.05, 3));
+            Position origin = patchOrigin(center, 4, 4);
+            grid.rainPatch(origin, 4, 4, 0.32);
+            grid.coolPatch(origin, 4, 4, 2.0);
+            grid.fertilizePatch(origin, 4, 4, 0.22);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3));
             return true;
         }
         return false;
@@ -361,10 +363,11 @@ public final class Simulation {
 
     public boolean drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 1, 0.54);
-            grid.warmAround(center, 1, 2.8);
-            grid.spendFertilityAround(center, 1, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 1, 0, 0, 24, 0.18, 0.10, 0));
+            Position origin = patchOrigin(center, 4, 4);
+            grid.dryPatch(origin, 4, 4, 0.54);
+            grid.warmPatch(origin, 4, 4, 2.8);
+            grid.spendFertilityPatch(origin, 4, 4, 0.18);
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.18, 0.10, 0));
             return true;
         }
         return false;
@@ -564,14 +567,14 @@ public final class Simulation {
             }
 
             if (effect.kind() == EffectKind.RAIN) {
-                grid.rainAround(effect.center(), effect.radius(), effect.magnitude());
-                grid.fertilizeAround(effect.center(), effect.radius(), effect.fertilityBoost());
+                grid.rainPatch(effect.origin(), effect.width(), effect.height(), effect.magnitude());
+                grid.fertilizePatch(effect.origin(), effect.width(), effect.height(), effect.fertilityBoost());
                 if (age == effect.delayTicks()) {
-                    burstPlants(effect.center(), effect.radius(), effect.burstPlants());
+                    burstPlants(effect.origin(), effect.width(), effect.height(), effect.burstPlants());
                 }
             } else {
-                grid.dryAround(effect.center(), effect.radius(), effect.magnitude());
-                grid.spendFertilityAround(effect.center(), effect.radius(), effect.fertilityBoost());
+                grid.dryPatch(effect.origin(), effect.width(), effect.height(), effect.magnitude());
+                grid.spendFertilityPatch(effect.origin(), effect.width(), effect.height(), effect.fertilityBoost());
             }
 
             if (age < effect.delayTicks() + effect.durationTicks()) {
@@ -582,10 +585,10 @@ public final class Simulation {
         areaEffects.addAll(remaining);
     }
 
-    private void burstPlants(Position center, int radius, int amount) {
+    private void burstPlants(Position origin, int width, int height, int amount) {
         for (int i = 0; i < amount; i++) {
-            int x = Math.max(0, Math.min(grid.width() - 1, center.x() + random.nextInt(radius * 2 + 1) - radius));
-            int y = Math.max(0, Math.min(grid.height() - 1, center.y() + random.nextInt(radius * 2 + 1) - radius));
+            int x = Math.max(0, Math.min(grid.width() - 1, origin.x() + random.nextInt(Math.max(1, width))));
+            int y = Math.max(0, Math.min(grid.height() - 1, origin.y() + random.nextInt(Math.max(1, height))));
             Position position = new Position(x, y);
             if (!isEmpty(position)) {
                 continue;
@@ -681,9 +684,15 @@ public final class Simulation {
         }
     }
 
-    private record AreaEffect(EffectKind kind, Position center, int radius, int delayTicks, int age, int durationTicks, double magnitude, double fertilityBoost, int burstPlants) {
+    private Position patchOrigin(Position center, int patchWidth, int patchHeight) {
+        int startX = Math.max(0, Math.min(center.x() - 1, grid.width() - patchWidth));
+        int startY = Math.max(0, Math.min(center.y() - 1, grid.height() - patchHeight));
+        return new Position(startX, startY);
+    }
+
+    private record AreaEffect(EffectKind kind, Position origin, int width, int height, int delayTicks, int age, int durationTicks, double magnitude, double fertilityBoost, int burstPlants) {
         private AreaEffect withAge(int age) {
-            return new AreaEffect(kind, center, radius, delayTicks, age, durationTicks, magnitude, fertilityBoost, burstPlants);
+            return new AreaEffect(kind, origin, width, height, delayTicks, age, durationTicks, magnitude, fertilityBoost, burstPlants);
         }
     }
 

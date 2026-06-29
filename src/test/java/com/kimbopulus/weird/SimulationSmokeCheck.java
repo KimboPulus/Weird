@@ -170,21 +170,25 @@ public final class SimulationSmokeCheck {
         Position center = new Position(4, 4);
         Position neighbor = new Position(5, 4);
         Position diagonal = new Position(5, 5);
+        Position extended = new Position(6, 6);
         Position far = new Position(7, 7);
         double centerTemperature = simulation.grid().cellAt(center).temperature();
         double neighborTemperature = simulation.grid().cellAt(neighbor).temperature();
         double diagonalTemperature = simulation.grid().cellAt(diagonal).temperature();
+        double extendedTemperature = simulation.grid().cellAt(extended).temperature();
         double farTemperature = simulation.grid().cellAt(far).temperature();
 
         require(simulation.rain(center), "Rain should affect the clicked square.");
         require(simulation.grid().cellAt(center).temperature() < centerTemperature,
                 "Rain should cool the clicked square.");
         require(simulation.grid().cellAt(neighbor).temperature() < neighborTemperature,
-                "Rain should affect the 3x3 patch around the click.");
+                "Rain should affect the 4x4 patch around the click.");
         require(simulation.grid().cellAt(diagonal).temperature() < diagonalTemperature,
-                "Rain should reach the 3x3 diagonal cells too.");
+                "Rain should reach the 4x4 diagonal cells too.");
+        require(simulation.grid().cellAt(extended).temperature() < extendedTemperature,
+                "Rain should reach the far corner of the 4x4 patch too.");
         require(simulation.grid().cellAt(far).temperature() == farTemperature,
-                "Rain should stay inside the 3x3 patch.");
+                "Rain should stay inside the 4x4 patch.");
 
         double afterRainTemperature = simulation.grid().cellAt(center).temperature();
         require(simulation.drought(center), "Drought should affect the clicked square.");

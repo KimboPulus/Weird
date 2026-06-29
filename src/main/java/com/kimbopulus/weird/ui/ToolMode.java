@@ -4,13 +4,13 @@ import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 
 public enum ToolMode {
-    RAIN("Rain", "Water a 3 x 3 patch and cool it a little. Repeated use can flood the world.", 0) {
+    RAIN("Rain", "Water a 4 x 4 patch and cool it a little. Repeated use can flood the world.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.rain(position);
         }
     },
-    DROUGHT("Drought", "Dry a 3 x 3 patch and warm it a little. Repeated use can kill the soil.", 0) {
+    DROUGHT("Drought", "Dry a 4 x 4 patch and warm it a little. Repeated use can kill the soil.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.drought(position);
@@ -52,7 +52,7 @@ public enum ToolMode {
             return simulation.addWolf(position);
         }
     },
-    LIGHTNING("Lightning", "Strike one exact creature for 50 tokens.", 50) {
+    LIGHTNING("Lightning", "Strike one exact creature with blue lightning for 50 tokens.", 50) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.lightning(position);

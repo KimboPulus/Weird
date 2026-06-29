@@ -14,6 +14,7 @@ import com.kimbopulus.weird.training.TrainingSession;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
+import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -54,6 +55,7 @@ public final class TerrariumFrame extends JFrame {
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
     private long lastDeathSoundId;
+    private Position hoveredBoardPosition;
 
     public TerrariumFrame() {
         super("Weird");
@@ -100,12 +102,10 @@ public final class TerrariumFrame extends JFrame {
                 if (toolMode == ToolMode.LIGHTNING) {
                     if (simulation.organismAt(position) == null) {
                         terrariumPanel.showBanner("Lightning needs a target");
-                        audio.play(SoundCue.WARNING);
                         return;
                     }
                     if (!training.progression().spendTokens(toolMode.tokenCost())) {
                         terrariumPanel.showBanner("Need 50 tokens");
-                        audio.play(SoundCue.WARNING);
                         return;
                     }
                 }
@@ -126,6 +126,7 @@ public final class TerrariumFrame extends JFrame {
             @Override
             public void mouseMoved(MouseEvent event) {
                 Position position = terrariumPanel.positionAtPoint(event.getX(), event.getY());
+                hoveredBoardPosition = position;
                 if (terrariumPanel.setHoverPosition(position)) {
                     updateToolHint(position);
                 }
@@ -139,7 +140,7 @@ public final class TerrariumFrame extends JFrame {
         timer.start();
         updateToolAvailability();
         updateStatus();
-        updateToolHint(null);
+        updateToolHint(hoveredBoardPosition);
         SwingUtilities.invokeLater(this::showIntroIfNeeded);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -181,9 +182,10 @@ public final class TerrariumFrame extends JFrame {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
             button.setToolTipText(shortcutLabel(shortcut) + ": " + mode.description());
+            installHoverHint(button);
             button.addActionListener(event -> {
                 toolMode = mode;
-                updateToolHint(null);
+                updateToolHint(hoveredBoardPosition);
             });
             if (mode == toolMode) {
                 button.setSelected(true);
@@ -206,28 +208,36 @@ public final class TerrariumFrame extends JFrame {
 
         pauseButton = new JButton("Pause");
         pauseButton.setFocusable(false);
+        pauseButton.setToolTipText("Pause or resume the simulation.");
+        installHoverHint(pauseButton);
         pauseButton.addActionListener(event -> togglePause());
         toolbar.add(pauseButton);
 
         JButton stepButton = new JButton("Step");
         stepButton.setFocusable(false);
+        stepButton.setToolTipText("Advance the simulation by one tick.");
+        installHoverHint(stepButton);
         stepButton.addActionListener(event -> stepSimulation());
         toolbar.add(stepButton);
 
         JButton restartButton = new JButton("Restart");
         restartButton.setFocusable(false);
+        restartButton.setToolTipText("Restart the current level from the beginning.");
+        installHoverHint(restartButton);
         restartButton.addActionListener(event -> restart());
         toolbar.add(restartButton);
 
         JButton audioButton = new JButton("Audio");
         audioButton.setFocusable(false);
         audioButton.setToolTipText("Set music and effect volume.");
+        installHoverHint(audioButton);
         audioButton.addActionListener(event -> AudioSettingsDialog.show(this, settings, this::applyAudioSettings));
         toolbar.add(audioButton);
 
         JButton infoButton = new JButton("Info");
         infoButton.setFocusable(false);
         infoButton.setToolTipText("Show the short game guide again.");
+        installHoverHint(infoButton);
         infoButton.addActionListener(event -> IntroDialog.show(this));
         toolbar.add(infoButton);
 
@@ -247,7 +257,6 @@ public final class TerrariumFrame extends JFrame {
     private void stepSimulation() {
         boolean wasComplete = training.levelComplete();
         boolean wasFailed = training.levelFailed();
-        boolean hadWarning = training.dangerWarning() != null;
         simulation.tick();
         training.update(simulation);
         terrariumPanel.syncDeathEffects();
@@ -256,13 +265,9 @@ public final class TerrariumFrame extends JFrame {
         updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
-            audio.play(SoundCue.COMPLETE);
         } else if (!wasFailed && training.levelFailed()) {
             training.progression().resetPurchases();
             terrariumPanel.showBanner("LEVEL LOST");
-            audio.play(SoundCue.FAILURE);
-        } else if (!hadWarning && training.dangerWarning() != null) {
-            audio.play(SoundCue.WARNING);
         }
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -294,12 +299,11 @@ public final class TerrariumFrame extends JFrame {
         simulation.restart();
         training.reset();
         updateAudioTension();
-        audio.play(SoundCue.RESTART);
         terrariumPanel.repaint();
         trainingPanel.refresh();
         updateToolAvailability();
         updateStatus();
-        updateToolHint(null);
+        updateToolHint(hoveredBoardPosition);
     }
 
     private void updateStatus() {
@@ -324,6 +328,21 @@ public final class TerrariumFrame extends JFrame {
         toolHintLabel.setText(toolMode.label() + ": " + terrariumPanel.describe(position));
     }
 
+    private void installHoverHint(AbstractButton button) {
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent event) {
+                String hint = button.getToolTipText();
+                toolHintLabel.setText(hint == null || hint.isBlank() ? button.getText() : hint);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                updateToolHint(hoveredBoardPosition);
+            }
+        });
+    }
+
     private void updateToolAvailability() {
         JToggleButton sanctuaryButton = toolButtons.get(ToolMode.SANCTUARY);
         if (sanctuaryButton == null) {
@@ -339,7 +358,7 @@ public final class TerrariumFrame extends JFrame {
             if (toolMode == ToolMode.SANCTUARY) {
                 toolMode = ToolMode.RAIN;
                 toolButtons.get(ToolMode.RAIN).setSelected(true);
-                updateToolHint(null);
+                updateToolHint(hoveredBoardPosition);
             }
         } else {
             sanctuaryButton.setToolTipText(shortcutLabel(ToolMode.values().length) + ": " + ToolMode.SANCTUARY.description());
@@ -384,7 +403,7 @@ public final class TerrariumFrame extends JFrame {
         }
         toolMode = mode;
         button.setSelected(true);
-        updateToolHint(null);
+        updateToolHint(hoveredBoardPosition);
     }
 
     private void applyPurchasedUpgrade(Position position) {
@@ -402,7 +421,6 @@ public final class TerrariumFrame extends JFrame {
         training.progression().resetPurchases();
         simulation.restart();
         updateAudioTension();
-        audio.play(SoundCue.RESTART);
         terrariumPanel.showBanner("Level restarted");
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -411,15 +429,14 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void playToolSound() {
-        SoundCue cue = switch (toolMode) {
-            case RAIN -> SoundCue.WATER;
-            case DROUGHT -> SoundCue.DRY;
-            case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
-            case HUMAN -> SoundCue.GROW;
-            case BEAR, RABBIT, WOLF -> SoundCue.PLACE;
-            case LIGHTNING -> SoundCue.LIGHTNING;
-        };
-        audio.play(cue);
+        if (toolMode == ToolMode.RAIN || toolMode == ToolMode.DROUGHT || toolMode == ToolMode.COMPOST) {
+            return;
+        }
+        if (toolMode == ToolMode.LIGHTNING) {
+            audio.play(SoundCue.LIGHTNING);
+            return;
+        }
+        audio.play(SoundCue.PLACE);
     }
 
     private String shortcutLabel(int index) {
@@ -432,7 +449,6 @@ public final class TerrariumFrame extends JFrame {
 
     private void celebrateLevel() {
         terrariumPanel.showLevelUp("LEVEL " + training.levelNumber() + "  " + training.levelTitle());
-        audio.play(SoundCue.LEVEL_UP);
     }
 
     private void playDeathSounds() {

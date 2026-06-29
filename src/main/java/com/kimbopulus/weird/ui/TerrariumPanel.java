@@ -468,7 +468,7 @@ public final class TerrariumPanel extends JPanel {
             Graphics2D sprite = (Graphics2D) g.create();
             try {
                 sprite.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-                int renderSize = Math.max(size, (int) Math.round(size * 1.25));
+                int renderSize = Math.max(size + 10, (int) Math.round(size * 2.2));
                 int renderX = x - (renderSize - size) / 2;
                 int renderY = y - (renderSize - size) / 2;
                 sprite.translate(renderX, renderY);
@@ -700,13 +700,13 @@ public final class TerrariumPanel extends JPanel {
         int boltX = x + size / 2;
         int top = y - (int) (progress * size * 0.3);
         int bottom = y + size + (int) (progress * size * 0.2);
-        g.setColor(new Color(255, 235, 120, alpha));
+        g.setColor(new Color(72, 186, 255, alpha));
         g.fillPolygon(
                 new int[]{boltX - 2, boltX + 3, boltX, boltX + 6, boltX + 1, boltX + 4, boltX - 1},
                 new int[]{top, top + 7, top + 7, top + 15, top + 15, bottom, bottom - 6},
                 7
         );
-        g.setColor(new Color(255, 248, 200, Math.max(0, alpha - 40)));
+        g.setColor(new Color(220, 244, 255, Math.max(0, alpha - 40)));
         g.fillOval(x + size / 2 - 4, y + size / 2 - 4, 8, 8);
         g.drawLine(x + 2, y + 2, x + size - 2, y + size - 2);
         g.drawLine(x + size - 2, y + 2, x + 2, y + size - 2);
@@ -809,7 +809,7 @@ public final class TerrariumPanel extends JPanel {
             case BEAR -> new Color(157, 106, 73, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
-            case LIGHTNING -> new Color(245, 220, 86, alpha);
+            case LIGHTNING -> new Color(73, 184, 255, alpha);
             case SANCTUARY -> new Color(232, 218, 112, alpha);
         };
     }

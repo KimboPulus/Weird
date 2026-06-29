@@ -197,7 +197,7 @@ public final class ModelRegressionCheck {
 
     private static void checkTrainingLabelsAndReset() {
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
-        require("Keep the board in range".equals(training.objective()),
+        require("Keep plants in range 90-700".equals(training.objective()),
                 "The first level objective should be blunt.");
         require("Plants 90-700".equals(training.challengeText()),
                 "The first level challenge should show the target range directly.");
