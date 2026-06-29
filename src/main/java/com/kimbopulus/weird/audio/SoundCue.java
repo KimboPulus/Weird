@@ -11,6 +11,7 @@ public enum SoundCue {
     FAILURE(110, 0.45, 0.13),
     ANIMAL_DEATH(145, 0.34, 0.11),
     HUMAN_DEATH(92, 0.75, 0.16),
+    LIGHTNING(960, 0.18, 0.12),
     RESTART(392, 0.24, 0.10);
 
     private final double frequency;

@@ -44,13 +44,23 @@ public final class ProgressionProfile {
         int legacyScore = parseInt(properties.getProperty("focusXp"), 0);
         int totalScore = parseInt(properties.getProperty("totalScore"), legacyScore);
         int tokens = parseInt(properties.getProperty("tokens"), legacyScore);
+        boolean normalizedTokens = false;
+        if (totalScore > 0) {
+            int cappedTokens = Math.min(tokens, Math.max(0, totalScore / 6));
+            normalizedTokens = cappedTokens != tokens;
+            tokens = cappedTokens;
+        }
         Set<ShopItem> purchases = EnumSet.noneOf(ShopItem.class);
         for (ShopItem item : ShopItem.values()) {
             if (Boolean.parseBoolean(properties.getProperty("owned." + item.name(), "false"))) {
                 purchases.add(item);
             }
         }
-        return new ProgressionProfile(path, totalScore, tokens, purchases);
+        ProgressionProfile profile = new ProgressionProfile(path, totalScore, tokens, purchases);
+        if (normalizedTokens) {
+            profile.save();
+        }
+        return profile;
     }
 
     public int focusXp() {
@@ -77,7 +87,9 @@ public final class ProgressionProfile {
         if (owns(item) || tokens < item.cost()) {
             return false;
         }
-        tokens -= item.cost();
+        if (!spendTokens(item.cost())) {
+            return false;
+        }
         purchases.add(item);
         save();
         return true;
@@ -88,7 +100,24 @@ public final class ProgressionProfile {
             return;
         }
         totalScore += amount;
-        tokens += amount;
+        tokens += Math.max(1, amount / 6);
+        save();
+    }
+
+    public boolean spendTokens(int amount) {
+        if (amount <= 0 || tokens < amount) {
+            return false;
+        }
+        tokens -= amount;
+        save();
+        return true;
+    }
+
+    public void resetPurchases() {
+        if (purchases.isEmpty()) {
+            return;
+        }
+        purchases.clear();
         save();
     }
 

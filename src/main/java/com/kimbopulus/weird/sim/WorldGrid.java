@@ -95,6 +95,14 @@ public final class WorldGrid {
         affectAround(center, radius, cell -> cell.dry(amount));
     }
 
+    public void coolAround(Position center, int radius, double amount) {
+        affectAround(center, radius, cell -> cell.cool(amount));
+    }
+
+    public void warmAround(Position center, int radius, double amount) {
+        affectAround(center, radius, cell -> cell.warm(amount));
+    }
+
     public void fertilizeAround(Position center, int radius, double amount) {
         affectAround(center, radius, cell -> cell.addFertility(amount));
     }

@@ -3,6 +3,7 @@ package com.kimbopulus.weird.ui;
 import com.kimbopulus.weird.audio.AudioEngine;
 import com.kimbopulus.weird.audio.SoundCue;
 import com.kimbopulus.weird.sim.OrganismKind;
+import com.kimbopulus.weird.sim.DeathCause;
 import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
@@ -95,11 +96,26 @@ public final class TerrariumFrame extends JFrame {
                 if (position == null) {
                     return;
                 }
-                toolMode.apply(simulation, position);
+                String targetDescription = terrariumPanel.describe(position);
+                if (toolMode == ToolMode.LIGHTNING) {
+                    if (simulation.organismAt(position) == null) {
+                        terrariumPanel.showBanner("Lightning needs a target");
+                        audio.play(SoundCue.WARNING);
+                        return;
+                    }
+                    if (!training.progression().spendTokens(toolMode.tokenCost())) {
+                        terrariumPanel.showBanner("Need 50 tokens");
+                        audio.play(SoundCue.WARNING);
+                        return;
+                    }
+                }
+                if (!toolMode.apply(simulation, position)) {
+                    return;
+                }
                 applyPurchasedUpgrade(position);
                 playToolSound();
                 terrariumPanel.showToolEffect(position, toolMode);
-                training.noteAction(toolMode.label(), terrariumPanel.describe(position));
+                training.noteAction(toolMode.label(), targetDescription);
                 terrariumPanel.repaint();
                 trainingPanel.refresh();
                 updateToolAvailability();
@@ -273,6 +289,7 @@ public final class TerrariumFrame extends JFrame {
         if (answer != JOptionPane.YES_OPTION) {
             return;
         }
+        training.progression().resetPurchases();
         simulation.restart();
         training.reset();
         updateAudioTension();
@@ -324,7 +341,7 @@ public final class TerrariumFrame extends JFrame {
                 updateToolHint(null);
             }
         } else {
-            sanctuaryButton.setToolTipText("9: " + ToolMode.SANCTUARY.description());
+            sanctuaryButton.setToolTipText(shortcutLabel(ToolMode.values().length) + ": " + ToolMode.SANCTUARY.description());
         }
     }
 
@@ -398,6 +415,7 @@ public final class TerrariumFrame extends JFrame {
             case COMPOST, PLANT, SANCTUARY -> SoundCue.GROW;
             case HUMAN -> SoundCue.GROW;
             case BEAR, RABBIT, WOLF -> SoundCue.PLACE;
+            case LIGHTNING -> SoundCue.LIGHTNING;
         };
         audio.play(cue);
     }
@@ -418,6 +436,7 @@ public final class TerrariumFrame extends JFrame {
     private void playDeathSounds() {
         boolean animalDeath = false;
         boolean humanDeath = false;
+        boolean lightningDeath = false;
         long newest = lastDeathSoundId;
         for (DeathEvent death : simulation.recentDeathEvents()) {
             if (death.id() <= lastDeathSoundId) {
@@ -425,10 +444,13 @@ public final class TerrariumFrame extends JFrame {
             }
             newest = Math.max(newest, death.id());
             humanDeath |= death.kind() == OrganismKind.HUMAN;
+            lightningDeath |= death.cause() == DeathCause.LIGHTNING;
             animalDeath = true;
         }
         lastDeathSoundId = newest;
-        if (humanDeath) {
+        if (lightningDeath) {
+            audio.play(SoundCue.LIGHTNING);
+        } else if (humanDeath) {
             audio.play(SoundCue.HUMAN_DEATH);
         } else if (animalDeath) {
             audio.play(SoundCue.ANIMAL_DEATH);

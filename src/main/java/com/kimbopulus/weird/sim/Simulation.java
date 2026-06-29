@@ -38,9 +38,10 @@ public final class Simulation {
 
     public static Simulation createDefault() {
         Simulation simulation = new Simulation(DEFAULT_WIDTH, DEFAULT_HEIGHT, System.nanoTime());
-        simulation.seedPlants(110);
-        simulation.seedRabbits(18);
-        simulation.seedWolves(3);
+        simulation.seedPlants(95);
+        simulation.seedRabbits(12);
+        simulation.seedRabbits(2, RabbitSex.MALE);
+        simulation.seedWolves(5);
         simulation.seedHumans(4);
         simulation.recordSnapshot();
         return simulation;
@@ -119,10 +120,11 @@ public final class Simulation {
         deathEvents.clear();
         birthEvents.clear();
         areaEffects.clear();
-        seedPlants(160);
-        seedRabbits(24);
-        seedWolves(4);
-        seedHumans(6);
+        seedPlants(140);
+        seedRabbits(15);
+        seedRabbits(3, RabbitSex.MALE);
+        seedWolves(5);
+        seedHumans(5);
         recordSnapshot();
     }
 
@@ -335,41 +337,62 @@ public final class Simulation {
         deathEvents.clear();
     }
 
-    public void rain(Position center) {
+    public boolean rain(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.48);
-            grid.fertilizeAround(center, 2, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 2, 4, 0, 10, 0.18, 0.04, 8));
+            grid.rainAround(center, 0, 0.48);
+            grid.coolAround(center, 0, 1.6);
+            grid.fertilizeAround(center, 0, 0.16);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 0, 4, 0, 10, 0.18, 0.04, 2));
+            return true;
         }
+        return false;
     }
 
-    public void rainBoost(Position center) {
+    public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
-            grid.rainAround(center, 2, 0.28);
-            grid.fertilizeAround(center, 2, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 2, 2, 0, 12, 0.24, 0.05, 12));
+            grid.rainAround(center, 0, 0.32);
+            grid.coolAround(center, 0, 2.0);
+            grid.fertilizeAround(center, 0, 0.22);
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, center, 0, 2, 0, 12, 0.24, 0.05, 3));
+            return true;
         }
+        return false;
     }
 
-    public void drought(Position center) {
+    public boolean drought(Position center) {
         if (grid.contains(center)) {
-            grid.dryAround(center, 2, 0.54);
-            grid.spendFertilityAround(center, 2, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 2, 0, 0, 24, 0.18, 0.10, 0));
+            grid.dryAround(center, 0, 0.54);
+            grid.warmAround(center, 0, 2.8);
+            grid.spendFertilityAround(center, 0, 0.18);
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, center, 0, 0, 0, 24, 0.18, 0.10, 0));
+            return true;
         }
+        return false;
     }
 
-    public void compost(Position center) {
+    public boolean compost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 1, 0.30);
-            grid.rainAround(center, 1, 0.08);
+            grid.fertilizeAround(center, 0, 0.30);
+            grid.rainAround(center, 0, 0.08);
+            return true;
         }
+        return false;
     }
 
-    public void compostBoost(Position center) {
+    public boolean compostBoost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 1, 0.15);
+            grid.fertilizeAround(center, 0, 0.15);
+            return true;
         }
+        return false;
+    }
+
+    public boolean lightning(Position position) {
+        if (!grid.contains(position) || organismAt(position) == null) {
+            return false;
+        }
+        removeOrganism(position, DeathCause.LIGHTNING);
+        return true;
     }
 
     public boolean addSanctuary(Position position) {
@@ -447,7 +470,7 @@ public final class Simulation {
             return;
         }
 
-        int attempts = Math.max(4, (grid.width() * grid.height()) / 80);
+        int attempts = Math.max(3, (grid.width() * grid.height()) / 100);
         for (int i = 0; i < attempts; i++) {
             Position position = new Position(random.nextInt(grid.width()), random.nextInt(grid.height()));
             if (!isEmpty(position)) {
@@ -455,7 +478,7 @@ public final class Simulation {
             }
 
             Cell cell = grid.cellAt(position);
-            if (random.nextDouble() < cell.plantGrowthFactor() * 0.032) {
+            if (random.nextDouble() < cell.plantGrowthFactor() * 0.022) {
                 placeOrganism(position, new Plant());
                 cell.spendFertility(0.02);
             }
@@ -470,10 +493,10 @@ public final class Simulation {
 
         int rabbitFloor = Math.max(8, cells / 80);
         if (plants > cells / 7 && rabbits < rabbitFloor && random.nextDouble() < 0.42) {
-            placeRandomly(new Rabbit(RabbitSex.FEMALE), 60);
+            placeRandomly(new Rabbit(random.nextBoolean() ? RabbitSex.MALE : RabbitSex.FEMALE), 60);
         }
 
-        if (rabbits > cells / 26 && wolves < 2 && random.nextDouble() < 0.04) {
+        if (rabbits > cells / 34 && wolves < 5 && random.nextDouble() < 0.12) {
             placeRandomly(new Wolf(), 60);
         }
     }
@@ -513,7 +536,10 @@ public final class Simulation {
             case RAIN_FRONT -> grid.rainAll(0.12);
             case HEAT_WAVE -> grid.dryAndWarmAll(0.1, 2.5);
             case WILD_BLOOM -> seedPlants(Math.max(12, grid.width() * grid.height() / 70));
-            case RABBIT_ARRIVAL -> seedRabbits(Math.max(3, grid.width() * grid.height() / 380));
+            case RABBIT_ARRIVAL -> {
+                seedRabbits(Math.max(3, grid.width() * grid.height() / 380));
+                seedRabbits(1, RabbitSex.MALE);
+            }
             case WOLF_ARRIVAL -> seedWolves(Math.max(1, grid.width() * grid.height() / 900));
             case CALM -> {
             }
@@ -521,7 +547,7 @@ public final class Simulation {
     }
 
     private int plantLimit() {
-        return (int) (grid.width() * grid.height() * 0.58);
+        return (int) (grid.width() * grid.height() * 0.52);
     }
 
     private void applyAreaEffects() {
@@ -646,7 +672,7 @@ public final class Simulation {
         organisms[position.y()][position.x()] = null;
         if (organism != null) {
             adjustCount(organism.kind(), -1);
-            if (organism.kind() != OrganismKind.PLANT) {
+            if (organism.kind() != OrganismKind.PLANT || cause == DeathCause.LIGHTNING) {
                 deathEvents.add(new DeathEvent(++deathSequence, organism.kind(), cause, position, System.currentTimeMillis()));
                 if (deathEvents.size() > 80) {
                     deathEvents.remove(0);

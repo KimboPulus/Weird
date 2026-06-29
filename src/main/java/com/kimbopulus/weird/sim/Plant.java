@@ -16,7 +16,7 @@ public final class Plant extends Organism {
         Cell cell = simulation.grid().cellAt(position);
         double growth = cell.plantGrowthFactor();
 
-        gainEnergy(1 + (int) Math.round(growth * 4.0));
+        gainEnergy(1 + (int) Math.round(growth * 3.0));
         if (energy() > MAX_ENERGY) {
             setEnergy(MAX_ENERGY);
         }
@@ -27,7 +27,7 @@ public final class Plant extends Organism {
             return;
         }
 
-        if (simulation.canPlantsSpread() && energy() >= SEED_COST && simulation.random().nextDouble() < growth * 0.238) {
+        if (simulation.canPlantsSpread() && energy() >= SEED_COST && simulation.random().nextDouble() < growth * 0.18) {
             List<Position> emptyNeighbors = simulation.emptyNeighbors(position);
             if (!emptyNeighbors.isEmpty()) {
                 simulation.placeOrganism(emptyNeighbors.get(0), new Plant());

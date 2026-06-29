@@ -4,67 +4,75 @@ import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 
 public enum ToolMode {
-    RAIN("Rain", "Strongly water a 5 x 5 area. Repeated use can flood the world.") {
+    RAIN("Rain", "Water one square and cool it a little. Repeated use can flood the world.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.rain(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.rain(position);
         }
     },
-    DROUGHT("Drought", "Strongly dry a 5 x 5 area. Repeated use can kill the soil.") {
+    DROUGHT("Drought", "Dry one square and warm it a little. Repeated use can kill the soil.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.drought(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.drought(position);
         }
     },
-    COMPOST("Compost", "Strongly boost a 3 x 3 patch. Overuse can cause plant surges.") {
+    COMPOST("Compost", "Boost one square. Overuse can cause plant surges.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.compost(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.compost(position);
         }
     },
-    PLANT("Plant", "Place one plant on an empty cell.") {
+    PLANT("Plant", "Place one plant on an empty cell.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addPlant(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addPlant(position);
         }
     },
-    HUMAN("Human", "Place one human on an empty cell.") {
+    HUMAN("Human", "Place one human on an empty cell.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addHuman(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addHuman(position);
         }
     },
-    BEAR("Bear", "Place one bear on an empty cell.") {
+    BEAR("Bear", "Place one bear on an empty cell.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addBear(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addBear(position);
         }
     },
-    RABBIT("Rabbit", "Place one male rabbit on an empty cell.") {
+    RABBIT("Rabbit", "Place one male rabbit on an empty cell.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addRabbit(position, com.kimbopulus.weird.sim.RabbitSex.MALE);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addRabbit(position, com.kimbopulus.weird.sim.RabbitSex.MALE);
         }
     },
-    WOLF("Wolf", "Place one predator on an empty cell.") {
+    WOLF("Wolf", "Place one predator on an empty cell.", 0) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addWolf(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addWolf(position);
         }
     },
-    SANCTUARY("Sanctuary", "Protect one 2 x 2 seed patch from seasons and world weather.") {
+    LIGHTNING("Lightning", "Strike one exact creature for 50 tokens.", 50) {
         @Override
-        public void apply(Simulation simulation, Position position) {
-            simulation.addSanctuary(position);
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.lightning(position);
+        }
+    },
+    SANCTUARY("Sanctuary", "Protect one 2 x 2 seed patch from seasons and world weather.", 0) {
+        @Override
+        public boolean apply(Simulation simulation, Position position) {
+            return simulation.addSanctuary(position);
         }
     };
 
     private final String label;
     private final String description;
+    private final int tokenCost;
 
-    ToolMode(String label, String description) {
+    ToolMode(String label, String description, int tokenCost) {
         this.label = label;
         this.description = description;
+        this.tokenCost = tokenCost;
     }
 
     public String label() {
@@ -75,5 +83,9 @@ public enum ToolMode {
         return description;
     }
 
-    public abstract void apply(Simulation simulation, Position position);
+    public int tokenCost() {
+        return tokenCost;
+    }
+
+    public abstract boolean apply(Simulation simulation, Position position);
 }

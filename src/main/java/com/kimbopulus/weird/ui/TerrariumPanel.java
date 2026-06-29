@@ -446,9 +446,12 @@ public final class TerrariumPanel extends JPanel {
     private void drawHuman(Graphics2D g, int x, int y, int size) {
         if (HUMAN_SPRITE != null) {
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            int renderSize = Math.max(size, (int) Math.round(size * 1.25));
+            int renderX = x - (renderSize - size) / 2;
+            int renderY = y - (renderSize - size) / 2;
             g.setColor(SHADOW);
-            g.fillOval(x + 3, y + size - 4, size - 6, 3);
-            g.drawImage(HUMAN_SPRITE, x, y, size, size, null);
+            g.fillOval(renderX + 3, renderY + renderSize - 5, renderSize - 6, 4);
+            g.drawImage(HUMAN_SPRITE, renderX, renderY, renderSize, renderSize, null);
             return;
         }
         int center = x + size / 2;
@@ -465,14 +468,17 @@ public final class TerrariumPanel extends JPanel {
             Graphics2D sprite = (Graphics2D) g.create();
             try {
                 sprite.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-                sprite.translate(x, y);
+                int renderSize = Math.max(size, (int) Math.round(size * 1.25));
+                int renderX = x - (renderSize - size) / 2;
+                int renderY = y - (renderSize - size) / 2;
+                sprite.translate(renderX, renderY);
                 if (!facesRight) {
-                    sprite.translate(size, 0);
+                    sprite.translate(renderSize, 0);
                     sprite.scale(-1.0, 1.0);
                 }
                 sprite.setColor(SHADOW);
-                sprite.fillOval(1, size - 5, size - 2, 4);
-                sprite.drawImage(BEAR_SPRITE, 0, 0, size, size, null);
+                sprite.fillOval(1, renderSize - 5, renderSize - 2, 4);
+                sprite.drawImage(BEAR_SPRITE, 0, 0, renderSize, renderSize, null);
             } finally {
                 sprite.dispose();
             }
@@ -560,7 +566,7 @@ public final class TerrariumPanel extends JPanel {
             int centerX = metrics.offsetX + effect.position.x() * metrics.cellSize + metrics.cellSize / 2;
             int centerY = metrics.offsetY + effect.position.y() * metrics.cellSize + metrics.cellSize / 2;
             int reach = effect.mode == ToolMode.RAIN || effect.mode == ToolMode.DROUGHT
-                    ? metrics.cellSize * 3
+                    ? metrics.cellSize
                     : metrics.cellSize * 2;
             int radius = Math.max(metrics.cellSize / 2, (int) (reach * progress));
             int alpha = (int) (190 * (1.0 - progress));
@@ -582,16 +588,17 @@ public final class TerrariumPanel extends JPanel {
     private void drawCrisisEdge(Graphics2D g, BoardMetrics metrics) {
         String crisis = null;
         Color color = null;
-        if (simulation.count(OrganismKind.RABBIT) < 12) {
+        int boardCells = simulation.grid().width() * simulation.grid().height();
+        if (simulation.count(OrganismKind.RABBIT) < 6) {
             crisis = "RABBITS LOW";
             color = new Color(212, 153, 67, 210);
         } else if (simulation.count(OrganismKind.WOLF) < 2) {
             crisis = "WOLVES LOW";
             color = new Color(194, 83, 66, 210);
-        } else if (simulation.count(OrganismKind.RABBIT) > 105) {
+        } else if (simulation.count(OrganismKind.RABBIT) > Math.max(70, boardCells / 8)) {
             crisis = "RABBITS HIGH";
             color = new Color(194, 83, 66, 210);
-        } else if (simulation.count(OrganismKind.PLANT) > 1100) {
+        } else if (simulation.count(OrganismKind.PLANT) > Math.max(650, boardCells * 2 / 3)) {
             crisis = "PLANTS HIGH";
             color = new Color(212, 153, 67, 210);
         } else if (simulation.count(OrganismKind.HUMAN) < 3) {
@@ -605,12 +612,12 @@ public final class TerrariumPanel extends JPanel {
         g.setColor(color);
         g.setStroke(new BasicStroke(4f));
         g.drawRect(metrics.offsetX + 2, metrics.offsetY + 2, metrics.width - 5, metrics.height - 5);
-        g.setFont(g.getFont().deriveFont(Font.BOLD, 12f));
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 30f));
         FontMetrics fontMetrics = g.getFontMetrics();
-        int labelWidth = fontMetrics.stringWidth(crisis) + 16;
-        g.fillRoundRect(metrics.offsetX + 8, metrics.offsetY + 8, labelWidth, 24, 5, 5);
+        int labelWidth = fontMetrics.stringWidth(crisis) + 28;
+        g.fillRoundRect(metrics.offsetX + 8, metrics.offsetY + 8, labelWidth, 42, 10, 10);
         g.setColor(Color.WHITE);
-        g.drawString(crisis, metrics.offsetX + 16, metrics.offsetY + 25);
+        g.drawString(crisis, metrics.offsetX + 18, metrics.offsetY + 38);
     }
 
     private void drawDeathEffects(Graphics2D g, BoardMetrics metrics) {
@@ -648,6 +655,10 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private void drawDeathShape(Graphics2D g, OrganismKind kind, DeathCause cause, int x, int y, int size, int alpha, double progress) {
+        if (cause == DeathCause.LIGHTNING) {
+            drawLightningDeath(g, x, y, size, alpha, progress);
+            return;
+        }
         Color color = switch (kind) {
             case RABBIT -> new Color(188, 48, 52, alpha);
             case WOLF -> new Color(145, 153, 164, alpha);
@@ -683,6 +694,22 @@ public final class TerrariumPanel extends JPanel {
             g.fillOval(x, y + size / 3, size, size * 2 / 3);
             g.fillOval(x + size / 2, y, size / 2, size / 2);
         }
+    }
+
+    private void drawLightningDeath(Graphics2D g, int x, int y, int size, int alpha, double progress) {
+        int boltX = x + size / 2;
+        int top = y - (int) (progress * size * 0.3);
+        int bottom = y + size + (int) (progress * size * 0.2);
+        g.setColor(new Color(255, 235, 120, alpha));
+        g.fillPolygon(
+                new int[]{boltX - 2, boltX + 3, boltX, boltX + 6, boltX + 1, boltX + 4, boltX - 1},
+                new int[]{top, top + 7, top + 7, top + 15, top + 15, bottom, bottom - 6},
+                7
+        );
+        g.setColor(new Color(255, 248, 200, Math.max(0, alpha - 40)));
+        g.fillOval(x + size / 2 - 4, y + size / 2 - 4, 8, 8);
+        g.drawLine(x + 2, y + 2, x + size - 2, y + size - 2);
+        g.drawLine(x + size - 2, y + 2, x + 2, y + size - 2);
     }
 
     private void drawKnifeKill(Graphics2D g, int x, int y, int size, int alpha, double progress) {
@@ -782,6 +809,7 @@ public final class TerrariumPanel extends JPanel {
             case BEAR -> new Color(157, 106, 73, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);
             case WOLF -> new Color(157, 164, 177, alpha);
+            case LIGHTNING -> new Color(245, 220, 86, alpha);
             case SANCTUARY -> new Color(232, 218, 112, alpha);
         };
     }
