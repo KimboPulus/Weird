@@ -69,7 +69,7 @@ public final class TerrariumPanel extends JPanel {
     private static final long LEVEL_UP_DURATION_MS = 2600;
     private static final long DEATH_DURATION_MS = 2800;
     private static final long BIRTH_DURATION_MS = 1500;
-    private static final long POPUP_DURATION_MS = 4600;
+    private static final long POPUP_DURATION_MS = 10_000;
     private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
