@@ -7,7 +7,7 @@ import com.kimbopulus.weird.sim.Simulation;
 import java.util.function.LongSupplier;
 
 public final class TrainingSession {
-    private static final long FAILURE_GRACE_MS = 5_000L;
+    private static final long FAILURE_GRACE_MS = 15_000L;
 
     private final ProgressionProfile progression;
     private final LongSupplier clock;

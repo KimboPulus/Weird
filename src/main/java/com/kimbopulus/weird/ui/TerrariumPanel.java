@@ -998,9 +998,9 @@ public final class TerrariumPanel extends JPanel {
                     double wet = moisture / 7.0;
                     double rich = fertility / 7.0;
                     double warm = heat / 7.0;
-                    int red = (int) (83 + rich * 45 + warm * 29 - wet * 10);
-                    int green = (int) (62 + rich * 54 + wet * 29 - warm * 6);
-                    int blue = (int) (39 + wet * 61 + rich * 4);
+                    int red = (int) (94 + rich * 38 + warm * 34 - wet * 30);
+                    int green = (int) (56 + rich * 48 + wet * 55 - warm * 12);
+                    int blue = (int) (24 + wet * 95 + rich * 8 - warm * 6);
                     palette[moisture][fertility][heat] = new Color(
                             Math.max(0, Math.min(255, red)),
                             Math.max(0, Math.min(255, green)),

@@ -113,7 +113,7 @@ public final class VisualSmokeCheck {
                 removeSpecies(simulation, OrganismKind.PLANT);
                 training.update(simulation);
             }
-            now.addAndGet(5_000L);
+            now.addAndGet(15_000L);
             training.update(simulation);
             require(training.levelFailed(), "Failure scenario did not lose the level.");
             renderPanels(simulation, training, output);
