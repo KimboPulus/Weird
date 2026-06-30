@@ -308,7 +308,10 @@ public final class TerrariumFrame extends JFrame {
         training.progression().resetPurchases();
         simulation.restart();
         training.reset();
-        terrariumPanel.clearMechanicPopups();
+        terrariumPanel.resetMechanicPopups();
+        lastDeathSoundId = 0L;
+        lastPopupDeathId = 0L;
+        lastPopupBirthId = 0L;
         lastWorldEvent = simulation.currentEvent();
         updateAudioTension();
         terrariumPanel.repaint();
@@ -432,7 +435,10 @@ public final class TerrariumFrame extends JFrame {
         }
         training.progression().resetPurchases();
         simulation.restart();
-        terrariumPanel.clearMechanicPopups();
+        terrariumPanel.resetMechanicPopups();
+        lastDeathSoundId = 0L;
+        lastPopupDeathId = 0L;
+        lastPopupBirthId = 0L;
         lastWorldEvent = simulation.currentEvent();
         updateAudioTension();
         terrariumPanel.showBanner("Level restarted");
@@ -576,7 +582,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "danger-timer",
                     "Red warning means danger is ticking",
-                    "If one band stays out of range for 14 ticks, the level is lost."
+                    "If one band stays out of range for 15 seconds, the level is lost."
             );
         }
 

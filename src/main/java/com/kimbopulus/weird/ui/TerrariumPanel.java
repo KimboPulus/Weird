@@ -130,6 +130,12 @@ public final class TerrariumPanel extends JPanel {
         repaint();
     }
 
+    public void resetMechanicPopups() {
+        mechanicPopups.clear();
+        seenPopupKeys.clear();
+        repaint();
+    }
+
     public void showBanner(String text) {
         bannerText = text;
         bannerStartedAt = System.currentTimeMillis();

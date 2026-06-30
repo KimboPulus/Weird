@@ -18,6 +18,7 @@ import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
@@ -43,6 +44,7 @@ public final class ModelRegressionCheck {
         checkRabbitStarvationDeath();
         checkRabbitReproductionCostsEnergy();
         checkLightningStrikeCostsAndRecordsDeath();
+        checkMechanicPopupReset();
         System.out.println("Model regression check passed.");
     }
 
@@ -330,6 +332,19 @@ public final class ModelRegressionCheck {
         require(hasWhiteCorners("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should keep a white square background.");
     }
 
+    private static void checkMechanicPopupReset() throws ReflectiveOperationException {
+        TerrariumPanel panel = new TerrariumPanel(new Simulation(8, 8, 12L));
+        panel.showMechanicPopup("restart-tip", "Restart tip", "This should show once.");
+        panel.showMechanicPopup("restart-tip", "Restart tip", "This should stay deduped.");
+        require(mechanicPopupCount(panel) == 1, "Duplicate popup keys should still dedupe.");
+
+        panel.resetMechanicPopups();
+        require(mechanicPopupCount(panel) == 0, "Reset should clear popup cards.");
+
+        panel.showMechanicPopup("restart-tip", "Restart tip", "This should show again after reset.");
+        require(mechanicPopupCount(panel) == 1, "Reset should let the same popup key appear again.");
+    }
+
     private static boolean hasOpaquePixel(String path) throws IOException {
         try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
             if (input == null) {
@@ -349,6 +364,12 @@ public final class ModelRegressionCheck {
             }
             return false;
         }
+    }
+
+    private static int mechanicPopupCount(TerrariumPanel panel) throws ReflectiveOperationException {
+        Field field = TerrariumPanel.class.getDeclaredField("mechanicPopups");
+        field.setAccessible(true);
+        return ((java.util.List<?>) field.get(panel)).size();
     }
 
     private static boolean hasWhiteCorners(String path) throws IOException {

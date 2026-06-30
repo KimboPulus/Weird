@@ -101,7 +101,7 @@ public final class TrainingPanel extends JPanel {
         warningLabel.setBackground(new Color(176, 57, 45));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         warningLabel.setAlignmentX(LEFT_ALIGNMENT);
-        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
         warningLabel.setVisible(false);
 
         levelProgress.setStringPainted(true);
@@ -167,8 +167,8 @@ public final class TrainingPanel extends JPanel {
         ));
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
         String warning = training.levelFailed()
-                ? formatFailureWarning(training.failureReason())
-                : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel());
+                ? formatFailureWarning(training.failureReason(), training.failureAction())
+                : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel(), training.dangerAction());
         warningLabel.setText(warning == null ? "" : warning);
         warningLabel.setVisible(warning != null);
 
@@ -257,22 +257,25 @@ public final class TrainingPanel extends JPanel {
         return "<html><body style='width:" + width + "px'>" + text.replace("\n", "<br>") + "</body></html>";
     }
 
-    private String formatFailureWarning(String reason) {
-        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>Level failed</span>"
-                + "<br><span style='font-size:13px;'>" + reason + "</span></body></html>";
+    private String formatFailureWarning(String reason, String action) {
+        return "<html><body style='width:292px'><span style='font-size:17px;font-weight:bold;'>Level failed</span>"
+                + "<br><span style='font-size:13px;'>" + reason + "</span>"
+                + (action == null ? "" : "<br><span style='font-size:13px;color:#f6dfca;'>" + action + "</span>")
+                + "</body></html>";
     }
 
-    private String formatDangerWarning(String reason, String countdownText) {
+    private String formatDangerWarning(String reason, String countdownText, String action) {
         if (reason == null || countdownText == null) {
             return null;
         }
         int split = reason.indexOf(" (");
         String title = split <= 0 ? reason : reason.substring(0, split);
         String detail = split <= 0 ? "" : reason.substring(split);
-        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>"
+        return "<html><body style='width:292px'><span style='font-size:17px;font-weight:bold;'>"
                 + title
                 + "</span>"
                 + (detail.isBlank() ? "" : "<br><span style='font-size:13px;'>" + detail + "</span>")
+                + (action == null ? "" : "<br><span style='font-size:13px;color:#f6dfca;'>" + action + "</span>")
                 + "<br><span style='font-size:12px;color:#f6dfca;'>" + countdownText + "</span>"
                 + "</body></html>";
     }

@@ -123,6 +123,10 @@ public final class TrainingSession {
         return dangerDetail;
     }
 
+    public String dangerAction() {
+        return actionForCategory(dangerReason);
+    }
+
     public String dangerCountdownLabel() {
         if (levelFailed || dangerReason == null || dangerStartedAtMillis < 0L) {
             return null;
@@ -136,6 +140,10 @@ public final class TrainingSession {
             return failureDetail;
         }
         return dangerDetail == null ? "The ecosystem collapsed." : dangerDetail + " stayed out of range too long.";
+    }
+
+    public String failureAction() {
+        return actionForCategory(dangerReason);
     }
 
     public String contextHint() {
@@ -324,5 +332,28 @@ public final class TrainingSession {
     private void awardPoints(int points) {
         score += points;
         progression.addFocusXp(points);
+    }
+
+    private String actionForCategory(String category) {
+        if (category == null) {
+            return null;
+        }
+        return switch (category) {
+            case "Plants low" -> "Do this: use Rain or Compost on bare patches.";
+            case "Plants high" -> "Do this: use Drought on dense patches or add a Rabbit.";
+            case "Rabbits low" -> "Do this: add a Rabbit.";
+            case "Rabbits high" -> "Do this: add a Wolf.";
+            case "Wolves low" -> "Do this: add a Wolf.";
+            case "Wolves high" -> "Do this: stop adding wolves and add Rabbits.";
+            case "Humans low" -> "Do this: add a Human.";
+            case "Humans high" -> "Do this: add a Bear.";
+            case "Bears low" -> "Do this: if humans are high, add a Bear.";
+            case "Bears high" -> "Do this: stop adding bears and let them leave after 2 kills.";
+            case "Moisture low" -> "Do this: use Rain on the driest 4 x 4 patch.";
+            case "Moisture high" -> "Do this: use Drought on the wettest 4 x 4 patch.";
+            case "Temperature low" -> "Do this: use Drought on cold squares.";
+            case "Temperature high" -> "Do this: use Rain on the hottest 4 x 4 patch.";
+            default -> null;
+        };
     }
 }

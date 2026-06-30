@@ -22,6 +22,7 @@ public final class TrainingSessionSmokeCheck {
         checkLevelFailure();
         checkPlantOvergrowthFailure();
         checkRecoveredWarningClearsAfterCompletion();
+        checkWarningActions();
         checkShopPurchases();
         checkObjectiveProgressUsesDisplayedGoal();
         checkBalanceGuide();
@@ -155,6 +156,32 @@ public final class TrainingSessionSmokeCheck {
         require(!training.levelFailed(), "A completed level should not fail after the player already secured it.");
     }
 
+    private static void checkWarningActions() {
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        PopulationSnapshot hot = new PopulationSnapshot(0, com.kimbopulus.weird.sim.Season.SPRING,
+                320, 20, 4, 4, 0, 0.50, 0.50, 40.0);
+        PopulationSnapshot wet = new PopulationSnapshot(0, com.kimbopulus.weird.sim.Season.SPRING,
+                320, 20, 4, 4, 0, 0.90, 0.50, 21.0);
+        PopulationSnapshot wolvesLow = new PopulationSnapshot(0, com.kimbopulus.weird.sim.Season.SPRING,
+                320, 20, 1, 4, 0, 0.50, 0.50, 21.0);
+
+        require(training.balanceStatus(hot).startsWith("Temperature high"), "Hot snapshot should trigger the temperature warning.");
+        require(training.balanceStatus(wet).startsWith("Moisture high"), "Wet snapshot should trigger the moisture warning.");
+        require(training.balanceStatus(wolvesLow).startsWith("Wolves low"), "Low wolves snapshot should trigger the wolf warning.");
+
+        forceDanger(training, "Temperature high");
+        require("Do this: use Rain on the hottest 4 x 4 patch.".equals(training.dangerAction()),
+                "Hot warnings should explain that rain is the fix.");
+
+        forceDanger(training, "Moisture high");
+        require("Do this: use Drought on the wettest 4 x 4 patch.".equals(training.dangerAction()),
+                "Wet warnings should explain that drought is the fix.");
+
+        forceDanger(training, "Wolves low");
+        require("Do this: add a Wolf.".equals(training.dangerAction()),
+                "Wolf shortages should explain that the player needs to add a wolf.");
+    }
+
     private static void checkShopPurchases() {
         ProgressionProfile profile = ProgressionProfile.inMemory();
         require(!profile.buy(ShopItem.RAIN_BARREL), "An upgrade should require enough tokens.");
@@ -245,6 +272,14 @@ public final class TrainingSessionSmokeCheck {
         var field = TrainingSession.class.getDeclaredField(name);
         field.setAccessible(true);
         field.set(training, value);
+    }
+
+    private static void forceDanger(TrainingSession training, String category) {
+        try {
+            setField(training, "dangerReason", category);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     private static void removeSpecies(Simulation simulation, OrganismKind kind) {
