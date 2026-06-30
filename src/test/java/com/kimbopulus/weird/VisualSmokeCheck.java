@@ -274,10 +274,10 @@ public final class VisualSmokeCheck {
         TrainingPanel panel = new TrainingPanel(simulation, training);
         root.add(board, BorderLayout.CENTER);
         root.add(panel, BorderLayout.EAST);
-        root.setSize(1280, 720);
+        root.setSize(1440, 820);
         layoutTree(root);
 
-        BufferedImage image = new BufferedImage(1280, 720, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = new BufferedImage(1440, 820, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         root.paint(g);
         g.dispose();
@@ -325,7 +325,7 @@ public final class VisualSmokeCheck {
         int darkPixels = 0;
         int sampled = 0;
         for (int y = 80; y < image.getHeight() - 80; y += 8) {
-            for (int x = 80; x < image.getWidth() - 360; x += 8) {
+            for (int x = 80; x < image.getWidth() - 440; x += 8) {
                 Color color = new Color(image.getRGB(x, y), true);
                 if (color.getRed() < 150 && color.getGreen() < 150 && color.getBlue() < 150) {
                     darkPixels++;

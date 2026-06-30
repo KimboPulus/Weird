@@ -5,6 +5,8 @@ import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.training.TrainingSession;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,6 +33,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel scoreLabel = new JLabel();
     private final JLabel goalLabel = new JLabel();
     private final JLabel balanceLabel = new JLabel();
+    private final JLabel countsLabel = new JLabel();
     private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
@@ -70,45 +73,57 @@ public final class TrainingPanel extends JPanel {
         this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
-        setPreferredSize(new Dimension(368, 660));
+        setPreferredSize(new Dimension(432, 700));
         setBorder(BorderFactory.createEmptyBorder(14, 18, 12, 18));
         setLayout(new BorderLayout(0, 9));
 
-        JPanel top = new JPanel(new GridLayout(0, 1, 0, 4));
+        JPanel top = new JPanel();
         top.setOpaque(false);
+        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 25f));
         titleLabel.setForeground(TEXT);
         top.add(titleLabel);
+        top.add(Box.createVerticalStrut(6));
 
-        configureLabel(levelLabel, Font.BOLD, 16f, new Color(75, 101, 67));
-        configureLabel(scoreLabel, Font.BOLD, 16f, TEXT);
-        configureLabel(goalLabel, Font.BOLD, 15f, TEXT);
-        configureLabel(balanceLabel, Font.BOLD, 15f, TEXT);
-        configureLabel(detailLabel, Font.PLAIN, 13f, MUTED);
-        configureLabel(climateLabel, Font.PLAIN, 13f, MUTED);
-        configureLabel(eventLabel, Font.BOLD, 13f, new Color(126, 78, 56));
-        configureLabel(warningLabel, Font.BOLD, 24f, Color.WHITE);
+        configureLabel(levelLabel, Font.BOLD, 18f, new Color(75, 101, 67));
+        configureLabel(scoreLabel, Font.BOLD, 18f, TEXT);
+        configureLabel(goalLabel, Font.BOLD, 17f, TEXT);
+        configureLabel(balanceLabel, Font.BOLD, 17f, TEXT);
+        configureLabel(countsLabel, Font.BOLD, 18f, TEXT);
+        configureLabel(detailLabel, Font.PLAIN, 14f, MUTED);
+        configureLabel(climateLabel, Font.PLAIN, 14f, MUTED);
+        configureLabel(eventLabel, Font.BOLD, 14f, new Color(126, 78, 56));
+        configureLabel(warningLabel, Font.BOLD, 28f, Color.WHITE);
         configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
         warningLabel.setOpaque(true);
         warningLabel.setBackground(new Color(176, 57, 45));
-        warningLabel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        warningLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         warningLabel.setVisible(false);
 
         levelProgress.setStringPainted(true);
         levelProgress.setForeground(new Color(77, 143, 85));
         levelProgress.setBackground(new Color(222, 216, 199));
         levelProgress.setBorderPainted(false);
-        levelProgress.setPreferredSize(new Dimension(280, 18));
+        levelProgress.setPreferredSize(new Dimension(330, 20));
 
         top.add(levelLabel);
+        top.add(Box.createVerticalStrut(4));
         top.add(goalLabel);
+        top.add(Box.createVerticalStrut(6));
         top.add(levelProgress);
+        top.add(Box.createVerticalStrut(8));
         top.add(createEconomyRow());
+        top.add(Box.createVerticalStrut(10));
         top.add(balanceLabel);
+        top.add(Box.createVerticalStrut(4));
+        top.add(countsLabel);
+        top.add(Box.createVerticalStrut(4));
         top.add(climateLabel);
+        top.add(Box.createVerticalStrut(2));
         top.add(eventLabel);
+        top.add(Box.createVerticalStrut(8));
         top.add(warningLabel);
         add(top, BorderLayout.NORTH);
 
@@ -131,15 +146,17 @@ public final class TrainingPanel extends JPanel {
                 + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
-        goalLabel.setText(html(training.objective(), 276));
+        goalLabel.setText(html(training.objective(), 336));
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
         levelProgress.setForeground(training.levelComplete()
                 ? new Color(189, 137, 56)
                 : new Color(77, 143, 85));
-        balanceLabel.setText(training.balanceStatus(snapshot));
-        detailLabel.setText(html(training.balanceGuide(snapshot, boardCells), 300));
+        balanceLabel.setText(training.objectiveStatus(snapshot));
+        balanceLabel.setForeground(training.objectiveOnTrack(snapshot) ? new Color(75, 101, 67) : new Color(126, 78, 56));
+        countsLabel.setText(html(training.currentSummary(snapshot), 336));
+        detailLabel.setText(html(training.balanceGuide(snapshot, boardCells), 336));
         climateLabel.setText(String.format(
                 "Water %.0f%%   Soil %.0f%%   %.1f C",
                 snapshot.averageMoisture() * 100.0,
@@ -156,8 +173,8 @@ public final class TrainingPanel extends JPanel {
         nextLevelButton.setVisible(training.levelComplete());
         restartLevelButton.setVisible(training.levelFailed());
         levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
-        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed());
-        feedbackLabel.setText(html(training.feedback()));
+        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed() && warning == null);
+        feedbackLabel.setText(html(training.feedback(), 336));
         feedbackLabel.setForeground(MUTED);
     }
 
@@ -220,8 +237,8 @@ public final class TrainingPanel extends JPanel {
     }
 
     private JLabel help(String text) {
-        JLabel label = new JLabel(html(text, 300));
-        configureLabel(label, Font.PLAIN, 13f, MUTED);
+        JLabel label = new JLabel(html(text, 336));
+        configureLabel(label, Font.PLAIN, 14f, MUTED);
         return label;
     }
 
@@ -241,11 +258,11 @@ public final class TrainingPanel extends JPanel {
     private String formatFailureWarning(String reason) {
         int split = reason.indexOf(" (");
         if (split <= 0) {
-            return html("<span style='font-size:17px;font-weight:bold;'>" + reason + "</span>", 276);
+            return html("<span style='font-size:18px;font-weight:bold;'>" + reason + "</span>", 336);
         }
         String title = reason.substring(0, split);
         String detail = reason.substring(split);
-        return "<html><body style='width:276px'><span style='font-size:17px;font-weight:bold;'>" + title
-                + "</span><br><span style='font-size:13px;'>" + detail + "</span></body></html>";
+        return "<html><body style='width:336px'><span style='font-size:18px;font-weight:bold;'>" + title
+                + "</span><br><span style='font-size:14px;'>" + detail + "</span></body></html>";
     }
 }
