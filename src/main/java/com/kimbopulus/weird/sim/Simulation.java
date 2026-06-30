@@ -341,9 +341,9 @@ public final class Simulation {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
             grid.rainPatch(origin, 4, 4, 0.48);
-            grid.coolPatch(origin, 4, 4, 1.6);
+            grid.coolPatch(origin, 4, 4, 3.2);
             grid.fertilizePatch(origin, 4, 4, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2, 0.40));
             return true;
         }
         return false;
@@ -353,9 +353,9 @@ public final class Simulation {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
             grid.rainPatch(origin, 4, 4, 0.32);
-            grid.coolPatch(origin, 4, 4, 2.0);
+            grid.coolPatch(origin, 4, 4, 4.2);
             grid.fertilizePatch(origin, 4, 4, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3, 0.55));
             return true;
         }
         return false;
@@ -367,7 +367,7 @@ public final class Simulation {
             grid.dryPatch(origin, 4, 4, 0.54);
             grid.warmPatch(origin, 4, 4, 2.8);
             grid.spendFertilityPatch(origin, 4, 4, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.18, 0.10, 0));
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.18, 0.10, 0, 0.18));
             return true;
         }
         return false;
@@ -568,12 +568,14 @@ public final class Simulation {
 
             if (effect.kind() == EffectKind.RAIN) {
                 grid.rainPatch(effect.origin(), effect.width(), effect.height(), effect.magnitude());
+                grid.coolPatch(effect.origin(), effect.width(), effect.height(), effect.temperatureDelta());
                 grid.fertilizePatch(effect.origin(), effect.width(), effect.height(), effect.fertilityBoost());
                 if (age == effect.delayTicks()) {
                     burstPlants(effect.origin(), effect.width(), effect.height(), effect.burstPlants());
                 }
             } else {
                 grid.dryPatch(effect.origin(), effect.width(), effect.height(), effect.magnitude());
+                grid.warmPatch(effect.origin(), effect.width(), effect.height(), effect.temperatureDelta());
                 grid.spendFertilityPatch(effect.origin(), effect.width(), effect.height(), effect.fertilityBoost());
             }
 
@@ -690,9 +692,21 @@ public final class Simulation {
         return new Position(startX, startY);
     }
 
-    private record AreaEffect(EffectKind kind, Position origin, int width, int height, int delayTicks, int age, int durationTicks, double magnitude, double fertilityBoost, int burstPlants) {
+    private record AreaEffect(
+            EffectKind kind,
+            Position origin,
+            int width,
+            int height,
+            int delayTicks,
+            int age,
+            int durationTicks,
+            double magnitude,
+            double fertilityBoost,
+            int burstPlants,
+            double temperatureDelta) {
         private AreaEffect withAge(int age) {
-            return new AreaEffect(kind, origin, width, height, delayTicks, age, durationTicks, magnitude, fertilityBoost, burstPlants);
+            return new AreaEffect(kind, origin, width, height, delayTicks, age, durationTicks,
+                    magnitude, fertilityBoost, burstPlants, temperatureDelta);
         }
     }
 

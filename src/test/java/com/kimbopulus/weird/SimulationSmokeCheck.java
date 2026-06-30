@@ -75,6 +75,7 @@ public final class SimulationSmokeCheck {
         checkDeathEvents();
         checkLocalWeatherAndLightning();
         checkWolfPairBreeding();
+        checkRainCountersHeatWave();
     }
 
     private static void require(boolean condition, String message) {
@@ -202,6 +203,24 @@ public final class SimulationSmokeCheck {
         require(simulation.count(OrganismKind.HUMAN) == 0, "Lightning should remove the target organism.");
         require(simulation.recentDeathEvents().get(simulation.recentDeathEvents().size() - 1).cause() == com.kimbopulus.weird.sim.DeathCause.LIGHTNING,
                 "Lightning deaths should be recorded with the lightning cause.");
+    }
+
+    private static void checkRainCountersHeatWave() {
+        Simulation simulation = new Simulation(12, 12, 57L);
+        Position center = new Position(5, 5);
+        simulation.grid().dryAndWarmAll(0.0, 2.5);
+        double afterHeatWave = simulation.grid().cellAt(center).temperature();
+
+        require(simulation.rain(center), "Rain should still be usable after a heat spike.");
+        double afterRain = simulation.grid().cellAt(center).temperature();
+        require(afterRain <= afterHeatWave - 3.0,
+                "Rain should cool a hot patch hard enough to counter a heat wave quickly.");
+
+        for (int i = 0; i < 4; i++) {
+            simulation.tick();
+        }
+        require(simulation.grid().cellAt(center).temperature() < afterRain,
+                "Ongoing rain should keep cooling while the rain effect is active.");
     }
 
     private static void setKillCount(com.kimbopulus.weird.sim.Wolf wolf, int value) {
