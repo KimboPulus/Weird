@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class VisualSmokeCheck {
@@ -46,7 +47,10 @@ public final class VisualSmokeCheck {
         File birthOutput = new File(output.getParentFile(), "birth-check.png");
         File sexOutput = new File(output.getParentFile(), "rabbit-sex-check.png");
         File animalPackOutput = new File(output.getParentFile(), "animal-pack-check.png");
+        File warningOutput = new File(output.getParentFile(), "warning-check.png");
+        File popupOutput = new File(output.getParentFile(), "mechanic-popup-check.png");
         File levelScreensDir = new File(output.getParentFile(), "levels");
+        File levelOverview = new File(output.getParentFile(), "levels-overview.png");
         SwingUtilities.invokeAndWait(() -> {
             render(output);
             renderFailure(failureOutput);
@@ -54,7 +58,10 @@ public final class VisualSmokeCheck {
             renderBirth(birthOutput);
             renderRabbitSexes(sexOutput);
             renderAnimalPack(animalPackOutput);
+            renderWarning(warningOutput);
+            renderMechanicPopups(popupOutput);
             renderLevelScreens(levelScreensDir);
+            renderLevelOverview(levelOverview);
         });
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
@@ -62,7 +69,10 @@ public final class VisualSmokeCheck {
         System.out.println("Birth check saved " + birthOutput.getAbsolutePath());
         System.out.println("Rabbit sex check saved " + sexOutput.getAbsolutePath());
         System.out.println("Animal pack check saved " + animalPackOutput.getAbsolutePath());
+        System.out.println("Warning check saved " + warningOutput.getAbsolutePath());
+        System.out.println("Mechanic popup check saved " + popupOutput.getAbsolutePath());
         System.out.println("Level screenshots saved " + levelScreensDir.getAbsolutePath());
+        System.out.println("Level overview saved " + levelOverview.getAbsolutePath());
     }
 
     private static void render(File output) {
@@ -174,6 +184,39 @@ public final class VisualSmokeCheck {
         }
     }
 
+    private static void renderWarning(File output) {
+        try {
+            Simulation simulation = balancedLevelSimulation(67L);
+            removeSpecies(simulation, OrganismKind.WOLF);
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            forceLevel(training, TrainingLevel.PREDATOR_CHECK);
+            for (int i = 0; i < 6; i++) {
+                training.update(simulation);
+            }
+            require(training.dangerWarning() != null, "Warning scenario did not trigger danger text.");
+            renderPanels(simulation, training, output);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderMechanicPopups(File output) {
+        try {
+            Simulation simulation = balancedLevelSimulation(77L);
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            renderPanels(simulation, training, output, null, board -> {
+                board.showMechanicPopup("rain-tip", "Rain affects a 4 x 4 patch",
+                        "It cools that patch now and can trigger delayed plant growth.");
+                board.showMechanicPopup("rabbit-tip", "Rabbits can starve",
+                        "Rabbits lose energy every tick. If they miss plants for too long, they die.");
+                board.showMechanicPopup("bear-tip", "Bears leave after 2 kills",
+                        "A bear keeps chasing humans until it has eaten 2 of them, then it walks off.");
+            });
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
     private static void renderLevelScreens(File directory) {
         try {
             directory.mkdirs();
@@ -181,6 +224,35 @@ public final class VisualSmokeCheck {
                 File output = new File(directory, String.format("level-%d-%s.png", level.ordinal() + 1, slug(level.title())));
                 renderLevelScreen(level, output);
             }
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderLevelOverview(File output) {
+        try {
+            TrainingLevel[] levels = TrainingLevel.values();
+            int columns = 2;
+            int rows = (levels.length + columns - 1) / columns;
+            int tileWidth = 720;
+            int tileHeight = 410;
+            BufferedImage sheet = new BufferedImage(columns * tileWidth, rows * tileHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = sheet.createGraphics();
+            g.setColor(new Color(20, 22, 19));
+            g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+            for (int i = 0; i < levels.length; i++) {
+                TrainingLevel level = levels[i];
+                Simulation simulation = balancedLevelSimulation(101L + level.ordinal() * 17L);
+                TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+                forceLevel(training, level);
+                BufferedImage panel = renderPanelsImage(simulation, training, null, null);
+                int x = (i % columns) * tileWidth;
+                int y = (i / columns) * tileHeight;
+                g.drawImage(panel, x, y, tileWidth, tileHeight, null);
+            }
+            g.dispose();
+            output.getParentFile().mkdirs();
+            ImageIO.write(sheet, "png", output);
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
         }
@@ -266,10 +338,34 @@ public final class VisualSmokeCheck {
             File output,
             String levelBanner
     ) throws Exception {
+        renderPanels(simulation, training, output, levelBanner, null);
+    }
+
+    private static void renderPanels(
+            Simulation simulation,
+            TrainingSession training,
+            File output,
+            String levelBanner,
+            Consumer<TerrariumPanel> boardSetup
+    ) throws Exception {
+        BufferedImage image = renderPanelsImage(simulation, training, levelBanner, boardSetup);
+        output.getParentFile().mkdirs();
+        ImageIO.write(image, "png", output);
+    }
+
+    private static BufferedImage renderPanelsImage(
+            Simulation simulation,
+            TrainingSession training,
+            String levelBanner,
+            Consumer<TerrariumPanel> boardSetup
+    ) throws Exception {
         JPanel root = new JPanel(new BorderLayout());
         TerrariumPanel board = new TerrariumPanel(simulation);
         if (levelBanner != null) {
             board.showLevelUp(levelBanner);
+        }
+        if (boardSetup != null) {
+            boardSetup.accept(board);
         }
         TrainingPanel panel = new TrainingPanel(simulation, training);
         root.add(board, BorderLayout.CENTER);
@@ -284,9 +380,7 @@ public final class VisualSmokeCheck {
 
         require(hasEnoughColorVariation(image), "Rendered image looks blank.");
         require(hasReadableBoardArea(image), "Board area did not render expected dark background.");
-
-        output.getParentFile().mkdirs();
-        ImageIO.write(image, "png", output);
+        return image;
     }
 
     private static void removeSpecies(Simulation simulation, OrganismKind kind) {
