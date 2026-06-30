@@ -1,5 +1,6 @@
 out/
 release/
+scripts/
 data/*
 !data/music/
 data/music/*
