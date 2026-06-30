@@ -88,18 +88,20 @@ public final class TrainingPanel extends JPanel {
 
         configureLabel(levelLabel, Font.BOLD, 18f, new Color(75, 101, 67));
         configureLabel(scoreLabel, Font.BOLD, 18f, TEXT);
-        configureLabel(goalLabel, Font.BOLD, 17f, TEXT);
+        configureLabel(goalLabel, Font.BOLD, 15f, TEXT);
         configureLabel(balanceLabel, Font.BOLD, 17f, TEXT);
         configureLabel(countsLabel, Font.BOLD, 18f, TEXT);
         configureLabel(detailLabel, Font.PLAIN, 14f, MUTED);
         configureLabel(climateLabel, Font.PLAIN, 14f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 14f, new Color(126, 78, 56));
-        configureLabel(warningLabel, Font.BOLD, 28f, Color.WHITE);
+        configureLabel(warningLabel, Font.BOLD, 20f, Color.WHITE);
         configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
         warningLabel.setOpaque(true);
         warningLabel.setBackground(new Color(176, 57, 45));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        warningLabel.setAlignmentX(LEFT_ALIGNMENT);
+        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         warningLabel.setVisible(false);
 
         levelProgress.setStringPainted(true);
@@ -146,7 +148,7 @@ public final class TrainingPanel extends JPanel {
                 + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
-        goalLabel.setText(html(training.objective(), 336));
+        goalLabel.setText(html(training.objective(), 352));
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
@@ -166,8 +168,8 @@ public final class TrainingPanel extends JPanel {
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
         String warning = training.levelFailed()
                 ? formatFailureWarning(training.failureReason())
-                : training.dangerWarning();
-        warningLabel.setText(warning == null ? "" : (training.levelFailed() ? warning : warning.toUpperCase()));
+                : formatDangerWarning(training.balanceStatus(snapshot), training.dangerWarning());
+        warningLabel.setText(warning == null ? "" : warning);
         warningLabel.setVisible(warning != null);
 
         nextLevelButton.setVisible(training.levelComplete());
@@ -258,11 +260,39 @@ public final class TrainingPanel extends JPanel {
     private String formatFailureWarning(String reason) {
         int split = reason.indexOf(" (");
         if (split <= 0) {
-            return html("<span style='font-size:18px;font-weight:bold;'>" + reason + "</span>", 336);
+            return html("<span style='font-size:17px;font-weight:bold;'>" + reason + "</span>", 328);
         }
         String title = reason.substring(0, split);
         String detail = reason.substring(split);
-        return "<html><body style='width:336px'><span style='font-size:18px;font-weight:bold;'>" + title
-                + "</span><br><span style='font-size:14px;'>" + detail + "</span></body></html>";
+        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>" + title
+                + "</span><br><span style='font-size:13px;'>" + detail + "</span></body></html>";
+    }
+
+    private String formatDangerWarning(String reason, String dangerText) {
+        if (dangerText == null) {
+            return null;
+        }
+        int split = reason.indexOf(" (");
+        String title = split <= 0 ? reason : reason.substring(0, split);
+        String detail = split <= 0 ? "" : reason.substring(split);
+        String timer = extractTimer(dangerText);
+        String timerLine = timer.isBlank()
+                ? ""
+                : "<br><span style='font-size:12px;color:#f6dfca;'>Danger " + timer + "</span>";
+        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>"
+                + title
+                + "</span>"
+                + (detail.isBlank() ? "" : "<br><span style='font-size:13px;'>" + detail + "</span>")
+                + timerLine
+                + "</body></html>";
+    }
+
+    private String extractTimer(String dangerText) {
+        int open = dangerText.lastIndexOf('(');
+        int close = dangerText.lastIndexOf(')');
+        if (open < 0 || close <= open) {
+            return "";
+        }
+        return dangerText.substring(open + 1, close);
     }
 }

@@ -2,11 +2,13 @@ package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.audio.AudioEngine;
 import com.kimbopulus.weird.audio.SoundCue;
+import com.kimbopulus.weird.sim.BirthEvent;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.DeathCause;
 import com.kimbopulus.weird.sim.DeathEvent;
 import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.sim.WorldEvent;
 import com.kimbopulus.weird.progression.ShopItem;
 import com.kimbopulus.weird.settings.GameSettings;
 import com.kimbopulus.weird.training.TrainingSession;
@@ -57,7 +59,10 @@ public final class TerrariumFrame extends JFrame {
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
     private long lastDeathSoundId;
+    private long lastPopupDeathId;
+    private long lastPopupBirthId;
     private Position hoveredBoardPosition;
+    private WorldEvent lastWorldEvent = WorldEvent.CALM;
 
     public TerrariumFrame() {
         super("Weird");
@@ -117,6 +122,7 @@ public final class TerrariumFrame extends JFrame {
                 applyPurchasedUpgrade(position);
                 playToolSound();
                 terrariumPanel.showToolEffect(position, toolMode);
+                showToolMechanicTip(toolMode);
                 training.noteAction(toolMode.label(), targetDescription);
                 terrariumPanel.repaint();
                 trainingPanel.refresh();
@@ -265,6 +271,7 @@ public final class TerrariumFrame extends JFrame {
         terrariumPanel.syncDeathEffects();
         terrariumPanel.syncBirthEffects();
         playDeathSounds();
+        showPassiveMechanicTips();
         updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
             terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
@@ -301,6 +308,8 @@ public final class TerrariumFrame extends JFrame {
         training.progression().resetPurchases();
         simulation.restart();
         training.reset();
+        terrariumPanel.clearMechanicPopups();
+        lastWorldEvent = simulation.currentEvent();
         updateAudioTension();
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -423,6 +432,8 @@ public final class TerrariumFrame extends JFrame {
         }
         training.progression().resetPurchases();
         simulation.restart();
+        terrariumPanel.clearMechanicPopups();
+        lastWorldEvent = simulation.currentEvent();
         updateAudioTension();
         terrariumPanel.showBanner("Level restarted");
         terrariumPanel.repaint();
@@ -499,6 +510,142 @@ public final class TerrariumFrame extends JFrame {
             audio.setTension(0.7);
         } else {
             audio.setTension(0.0);
+        }
+    }
+
+    private void showToolMechanicTip(ToolMode mode) {
+        switch (mode) {
+            case RAIN -> terrariumPanel.showMechanicPopup(
+                    "tool-rain",
+                    "Rain affects a 4 x 4 patch",
+                    "It cools that patch now and can trigger delayed plant growth over the next few ticks."
+            );
+            case DROUGHT -> terrariumPanel.showMechanicPopup(
+                    "tool-drought",
+                    "Drought lingers after the click",
+                    "It warms a 4 x 4 patch and keeps drying that soil for many ticks."
+            );
+            case COMPOST -> terrariumPanel.showMechanicPopup(
+                    "tool-compost",
+                    "Compost boosts one square",
+                    "It raises fertility right away. Overuse can cause a local plant spike."
+            );
+            case HUMAN -> terrariumPanel.showMechanicPopup(
+                    "tool-human",
+                    "Humans roam and defend themselves",
+                    "They move often, sometimes plant nearby soil, and stab wolves that step next to them."
+            );
+            case BEAR -> terrariumPanel.showMechanicPopup(
+                    "tool-bear",
+                    "Bears hunt humans",
+                    "A bear keeps chasing humans until it has eaten 2 of them, then it leaves."
+            );
+            case RABBIT -> terrariumPanel.showMechanicPopup(
+                    "tool-rabbit",
+                    "This tool places a male rabbit",
+                    "Males breed once. When one reaches a female, 3 female rabbits can appear."
+            );
+            case WOLF -> terrariumPanel.showMechanicPopup(
+                    "tool-wolf",
+                    "Wolves hunt hard and leave full",
+                    "They chase rabbits, can breed once, and leave the map after 3 rabbit kills."
+            );
+            case LIGHTNING -> terrariumPanel.showMechanicPopup(
+                    "tool-lightning",
+                    "Lightning hits one exact creature",
+                    "It costs 50 tokens and only works if you click directly on a living target."
+            );
+            case SANCTUARY -> terrariumPanel.showMechanicPopup(
+                    "tool-sanctuary",
+                    "Sanctuary protects a 2 x 2 patch",
+                    "That soil resists seasons and global weather, so it is useful as an anchor area."
+            );
+        }
+    }
+
+    private void showPassiveMechanicTips() {
+        WorldEvent event = simulation.currentEvent();
+        if (event != lastWorldEvent) {
+            lastWorldEvent = event;
+            if (event != WorldEvent.CALM) {
+                terrariumPanel.showMechanicPopup("event-" + event.name(), event.title(), event.description());
+            }
+        }
+
+        if (training.dangerWarning() != null) {
+            terrariumPanel.showMechanicPopup(
+                    "danger-timer",
+                    "Red warning means danger is ticking",
+                    "If one band stays out of range for 14 ticks, the level is lost."
+            );
+        }
+
+        for (DeathEvent death : simulation.recentDeathEvents()) {
+            if (death.id() <= lastPopupDeathId) {
+                continue;
+            }
+            lastPopupDeathId = Math.max(lastPopupDeathId, death.id());
+            maybeShowDeathTip(death);
+        }
+
+        for (BirthEvent birth : simulation.recentBirthEvents()) {
+            if (birth.id() <= lastPopupBirthId) {
+                continue;
+            }
+            lastPopupBirthId = Math.max(lastPopupBirthId, birth.id());
+            maybeShowBirthTip(birth);
+        }
+    }
+
+    private void maybeShowDeathTip(DeathEvent death) {
+        if (death.kind() == OrganismKind.RABBIT && death.cause() == DeathCause.NATURAL) {
+            terrariumPanel.showMechanicPopup(
+                    "rabbit-starvation",
+                    "Rabbits can starve",
+                    "Rabbits lose energy every tick. If they do not reach plants in time, they die on their own."
+            );
+            return;
+        }
+        if (death.kind() == OrganismKind.WOLF && death.cause() == DeathCause.NATURAL) {
+            terrariumPanel.showMechanicPopup(
+                    "wolf-starvation",
+                    "Wolves can starve too",
+                    "Wolves burn energy fast. If rabbits thin out, wolf numbers can collapse."
+            );
+            return;
+        }
+        if (death.kind() == OrganismKind.WOLF && death.cause() == DeathCause.HUMAN_ATTACK) {
+            terrariumPanel.showMechanicPopup(
+                    "human-vs-wolf",
+                    "Humans kill nearby wolves",
+                    "If a wolf steps next to a human, the human can stab it before moving."
+            );
+            return;
+        }
+        if (death.kind() == OrganismKind.HUMAN && death.cause() == DeathCause.NATURAL) {
+            terrariumPanel.showMechanicPopup(
+                    "bear-kill",
+                    "That human was killed by a bear",
+                    "Bear kills count as natural deaths here. Bears leave after 2 human kills."
+            );
+        }
+    }
+
+    private void maybeShowBirthTip(BirthEvent birth) {
+        if (birth.kind() == OrganismKind.RABBIT) {
+            terrariumPanel.showMechanicPopup(
+                    "rabbit-birth",
+                    "Rabbit breeding spike",
+                    "A male rabbit can trigger a one-time burst of 3 female rabbits when he reaches a female."
+            );
+            return;
+        }
+        if (birth.kind() == OrganismKind.WOLF) {
+            terrariumPanel.showMechanicPopup(
+                    "wolf-birth",
+                    "Wolves can reproduce",
+                    "When two wolves meet and there is room, they can add 1 extra wolf."
+            );
         }
     }
 

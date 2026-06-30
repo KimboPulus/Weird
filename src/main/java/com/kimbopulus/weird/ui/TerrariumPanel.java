@@ -28,8 +28,10 @@ import java.awt.RenderingHints;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public final class TerrariumPanel extends JPanel {
     private static final Color GRID_LINE = new Color(39, 33, 27, 28);
@@ -67,10 +69,13 @@ public final class TerrariumPanel extends JPanel {
     private static final long LEVEL_UP_DURATION_MS = 2600;
     private static final long DEATH_DURATION_MS = 2800;
     private static final long BIRTH_DURATION_MS = 1500;
+    private static final long POPUP_DURATION_MS = 4600;
     private static final Color[][][] SOIL_PALETTE = createSoilPalette();
 
     private final Simulation simulation;
     private final List<ToolEffect> toolEffects = new ArrayList<>();
+    private final List<MechanicPopup> mechanicPopups = new ArrayList<>();
+    private final Set<String> seenPopupKeys = new HashSet<>();
     private final Timer effectTimer;
     private Position hoverPosition;
     private String bannerText;
@@ -103,6 +108,25 @@ public final class TerrariumPanel extends JPanel {
         if (!effectTimer.isRunning()) {
             effectTimer.start();
         }
+        repaint();
+    }
+
+    public void showMechanicPopup(String key, String title, String detail) {
+        if (!seenPopupKeys.add(key)) {
+            return;
+        }
+        if (mechanicPopups.size() >= 3) {
+            mechanicPopups.remove(0);
+        }
+        mechanicPopups.add(new MechanicPopup(title, detail, System.currentTimeMillis()));
+        if (!effectTimer.isRunning()) {
+            effectTimer.start();
+        }
+        repaint();
+    }
+
+    public void clearMechanicPopups() {
+        mechanicPopups.clear();
         repaint();
     }
 
@@ -217,6 +241,7 @@ public final class TerrariumPanel extends JPanel {
         drawHover(g, metrics);
         drawCrisisEdge(g, metrics);
         drawBanner(g, metrics);
+        drawMechanicPopups(g, metrics);
 
         g.dispose();
     }
@@ -781,6 +806,59 @@ public final class TerrariumPanel extends JPanel {
         g.drawString(bannerText, x + 21, y + (levelUpBanner ? 47 : 35));
     }
 
+    private void drawMechanicPopups(Graphics2D g, BoardMetrics metrics) {
+        if (mechanicPopups.isEmpty()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        int popupWidth = Math.min(320, Math.max(250, metrics.width / 3));
+        int x = metrics.offsetX + metrics.width - popupWidth - 18;
+        int y = metrics.offsetY + 18;
+        Font titleFont = g.getFont().deriveFont(Font.BOLD, 17f);
+        Font detailFont = g.getFont().deriveFont(Font.PLAIN, 14f);
+
+        for (int i = mechanicPopups.size() - 1; i >= 0; i--) {
+            MechanicPopup popup = mechanicPopups.get(i);
+            double progress = (now - popup.startedAt()) / (double) POPUP_DURATION_MS;
+            if (progress < 0.0 || progress >= 1.0) {
+                continue;
+            }
+
+            int alpha = progress < 0.82 ? 228 : (int) (228 * (1.0 - progress) / 0.18);
+            List<String> titleLines = wrappedLines(g, titleFont, popup.title(), popupWidth - 26);
+            List<String> detailLines = wrappedLines(g, detailFont, popup.detail(), popupWidth - 26);
+            int height = 18 + titleLines.size() * 20 + detailLines.size() * 17 + 14;
+
+            Graphics2D card = (Graphics2D) g.create();
+            try {
+                card.setColor(new Color(24, 30, 27, alpha));
+                card.fillRoundRect(x, y, popupWidth, height, 12, 12);
+                card.setColor(new Color(191, 208, 153, Math.max(0, alpha - 18)));
+                card.setStroke(new BasicStroke(2f));
+                card.drawRoundRect(x, y, popupWidth, height, 12, 12);
+
+                int lineY = y + 24;
+                card.setFont(titleFont);
+                card.setColor(new Color(246, 244, 233, alpha));
+                for (String line : titleLines) {
+                    card.drawString(line, x + 13, lineY);
+                    lineY += 20;
+                }
+
+                card.setFont(detailFont);
+                card.setColor(new Color(220, 218, 206, alpha));
+                for (String line : detailLines) {
+                    card.drawString(line, x + 13, lineY);
+                    lineY += 17;
+                }
+            } finally {
+                card.dispose();
+            }
+            y += height + 10;
+        }
+    }
+
     private void drawCelebration(Graphics2D g, BoardMetrics metrics, double progress, int alpha) {
         g.setColor(new Color(236, 211, 88, Math.max(0, alpha / 4)));
         g.fillRect(metrics.offsetX, metrics.offsetY, metrics.width, metrics.height);
@@ -821,6 +899,12 @@ public final class TerrariumPanel extends JPanel {
                 iterator.remove();
             }
         }
+        Iterator<MechanicPopup> popupIterator = mechanicPopups.iterator();
+        while (popupIterator.hasNext()) {
+            if (now - popupIterator.next().startedAt() > POPUP_DURATION_MS) {
+                popupIterator.remove();
+            }
+        }
         repaint();
         boolean bannerActive = bannerText != null
                 && now - bannerStartedAt <= bannerDuration();
@@ -829,7 +913,7 @@ public final class TerrariumPanel extends JPanel {
         }
         boolean birthsActive = hasActiveBirths(now);
         boolean deathsActive = hasActiveDeaths(now);
-        if (toolEffects.isEmpty() && !bannerActive && !birthsActive && !deathsActive) {
+        if (toolEffects.isEmpty() && mechanicPopups.isEmpty() && !bannerActive && !birthsActive && !deathsActive) {
             effectTimer.stop();
         }
     }
@@ -878,6 +962,34 @@ public final class TerrariumPanel extends JPanel {
         repaint(x - 3, y - 3, metrics.cellSize + 6, metrics.cellSize + 6);
     }
 
+    private List<String> wrappedLines(Graphics2D g, Font font, String text, int maxWidth) {
+        List<String> lines = new ArrayList<>();
+        if (text == null || text.isBlank()) {
+            return lines;
+        }
+        FontMetrics metrics = g.getFontMetrics(font);
+        for (String paragraph : text.split("\\n")) {
+            if (paragraph.isBlank()) {
+                lines.add("");
+                continue;
+            }
+            StringBuilder current = new StringBuilder();
+            for (String word : paragraph.split("\\s+")) {
+                String candidate = current.isEmpty() ? word : current + " " + word;
+                if (!current.isEmpty() && metrics.stringWidth(candidate) > maxWidth) {
+                    lines.add(current.toString());
+                    current = new StringBuilder(word);
+                } else {
+                    current = new StringBuilder(candidate);
+                }
+            }
+            if (!current.isEmpty()) {
+                lines.add(current.toString());
+            }
+        }
+        return lines;
+    }
+
     private static Color[][][] createSoilPalette() {
         Color[][][] palette = new Color[8][8][8];
         for (int moisture = 0; moisture < 8; moisture++) {
@@ -913,5 +1025,8 @@ public final class TerrariumPanel extends JPanel {
     }
 
     private record ToolEffect(Position position, ToolMode mode, long startedAt) {
+    }
+
+    private record MechanicPopup(String title, String detail, long startedAt) {
     }
 }
