@@ -21,6 +21,7 @@ public final class TrainingSessionSmokeCheck {
         checkLevelAdvance();
         checkLevelFailure();
         checkPlantOvergrowthFailure();
+        checkRecoveredWarningClearsAfterCompletion();
         checkShopPurchases();
         checkObjectiveProgressUsesDisplayedGoal();
         checkBalanceGuide();
@@ -120,6 +121,38 @@ public final class TrainingSessionSmokeCheck {
         now.addAndGet(15_000L);
         training.update(simulation);
         require(training.levelFailed(), "Excess plants should lose the level.");
+    }
+
+    private static void checkRecoveredWarningClearsAfterCompletion() {
+        Simulation simulation = new Simulation(48, 32, 211L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedWolves(4);
+        simulation.seedHumans(6);
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
+        forceLevel(training, TrainingLevel.STEADY_START);
+        try {
+            setBooleanField(training, "levelComplete", true);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        removeSpecies(simulation, OrganismKind.WOLF);
+        simulation.tick();
+        training.update(simulation);
+        require(training.dangerWarning() != null, "A completed level should still surface active warnings.");
+
+        simulation.addWolf(new Position(0, 0));
+        simulation.addWolf(new Position(1, 0));
+        simulation.addWolf(new Position(2, 0));
+        simulation.tick();
+        training.update(simulation);
+        require(training.dangerWarning() == null, "Recovering the board should clear the warning even after completion.");
+
+        now.addAndGet(20_000L);
+        training.update(simulation);
+        require(!training.levelFailed(), "A completed level should not fail after the player already secured it.");
     }
 
     private static void checkShopPurchases() {

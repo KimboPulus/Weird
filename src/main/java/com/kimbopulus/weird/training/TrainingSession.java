@@ -41,11 +41,11 @@ public final class TrainingSession {
 
     public void update(Simulation simulation) {
         PopulationSnapshot current = simulation.currentSnapshot();
-        if (levelComplete || levelFailed) {
+        if (levelFailed) {
             return;
         }
-        updateDanger(current);
-        if (levelFailed) {
+        updateDanger(current, !levelComplete);
+        if (levelFailed || levelComplete) {
             return;
         }
         updateStability(current);
@@ -284,7 +284,7 @@ public final class TrainingSession {
         feedback = "Level complete. +" + lastLevelReward + " tokens.";
     }
 
-    private void updateDanger(PopulationSnapshot snapshot) {
+    private void updateDanger(PopulationSnapshot snapshot, boolean allowFailure) {
         String currentDanger = dangerReason(snapshot);
         long now = clock.getAsLong();
         if (currentDanger == null) {
@@ -304,7 +304,7 @@ public final class TrainingSession {
             dangerStartedAtMillis = now;
         }
         dangerDetail = currentDetail;
-        if (dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= FAILURE_GRACE_MS) {
+        if (allowFailure && dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= FAILURE_GRACE_MS) {
             levelFailed = true;
             failureDetail = dangerDetail == null
                     ? "The ecosystem collapsed."
