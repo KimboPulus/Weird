@@ -38,6 +38,8 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -175,10 +177,11 @@ public final class TerrariumFrame extends JFrame {
         toolbar.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
         ButtonGroup tools = new ButtonGroup();
-        JPanel toolButtons = new JPanel(new GridLayout(1, ToolMode.values().length, 6, 0));
+        ToolMode[] modes = orderedToolModes();
+        JPanel toolButtons = new JPanel(new GridLayout(1, modes.length, 6, 0));
         toolButtons.setOpaque(false);
         int shortcut = 1;
-        for (ToolMode mode : ToolMode.values()) {
+        for (ToolMode mode : modes) {
             JToggleButton button = new JToggleButton(mode.label());
             button.setFocusable(false);
             button.setToolTipText(shortcutLabel(shortcut) + ": " + mode.description());
@@ -361,13 +364,13 @@ public final class TerrariumFrame extends JFrame {
                 updateToolHint(hoveredBoardPosition);
             }
         } else {
-            sanctuaryButton.setToolTipText(shortcutLabel(ToolMode.values().length) + ": " + ToolMode.SANCTUARY.description());
+            sanctuaryButton.setToolTipText(shortcutLabel(toolButtons.size()) + ": " + ToolMode.SANCTUARY.description());
         }
     }
 
     private void installKeyBindings() {
         JComponent root = getRootPane();
-        ToolMode[] modes = ToolMode.values();
+        ToolMode[] modes = orderedToolModes();
         for (int i = 0; i < modes.length; i++) {
             ToolMode mode = modes[i];
             String actionName = "tool-" + mode.name();
@@ -497,5 +500,11 @@ public final class TerrariumFrame extends JFrame {
         } else {
             audio.setTension(0.0);
         }
+    }
+
+    private ToolMode[] orderedToolModes() {
+        return Arrays.stream(ToolMode.values())
+                .sorted(Comparator.comparing(ToolMode::label))
+                .toArray(ToolMode[]::new);
     }
 }

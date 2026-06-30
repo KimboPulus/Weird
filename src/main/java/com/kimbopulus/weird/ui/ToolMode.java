@@ -22,12 +22,6 @@ public enum ToolMode {
             return simulation.compost(position);
         }
     },
-    PLANT("Plant", "Place one plant on an empty cell.", 0) {
-        @Override
-        public boolean apply(Simulation simulation, Position position) {
-            return simulation.addPlant(position);
-        }
-    },
     HUMAN("Human", "Place one human on an empty cell.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {

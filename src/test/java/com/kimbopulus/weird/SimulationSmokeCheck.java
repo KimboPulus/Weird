@@ -63,6 +63,8 @@ public final class SimulationSmokeCheck {
         require(simulation.count(OrganismKind.WOLF) > 0, "Restart should restore wolves.");
         require(simulation.count(OrganismKind.HUMAN) > 0, "Restart should restore humans.");
         require(!simulation.sanctuaryPlaced(), "Restart should allow a new sanctuary.");
+        require(java.util.Arrays.stream(ToolMode.values()).noneMatch(mode -> mode.name().equals("PLANT")),
+                "The manual plant tool should stay removed.");
         require(java.util.Arrays.stream(ToolMode.values()).noneMatch(mode -> mode.name().equals("RABBIT_FEMALE")),
                 "The external female rabbit tool should stay removed.");
 

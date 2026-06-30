@@ -144,6 +144,15 @@ public final class ModelRegressionCheck {
         require(!simulation.moveOrganism(plantTarget, rabbitTarget), "moveOrganism should reject occupied targets.");
         require(simulation.organismAt(plantTarget) instanceof Rabbit, "Failed moves should not move the rabbit.");
 
+        Position humanStart = new Position(1, 4);
+        Position humanPlant = new Position(2, 4);
+        simulation.placeOrganism(humanStart, new com.kimbopulus.weird.sim.Human());
+        simulation.addPlant(humanPlant);
+        require(simulation.moveAnimal(humanStart, humanPlant, OrganismKind.RABBIT),
+                "Humans should be able to walk through plants too.");
+        require(simulation.organismAt(humanPlant) instanceof com.kimbopulus.weird.sim.Human,
+                "A human should occupy the plant cell after moving.");
+
         simulation.addPlant(new Position(6, 6));
         simulation.addPlant(new Position(6, 7));
         require(simulation.visibleWithKind(new Position(5, 6), OrganismKind.PLANT, 2).size() >= 2,
@@ -197,7 +206,7 @@ public final class ModelRegressionCheck {
 
     private static void checkTrainingLabelsAndReset() {
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
-        require("Keep plants in range 90-700".equals(training.objective()),
+        require("Keep plants 90-700".equals(training.objective()),
                 "The first level objective should be blunt.");
         require("Plants 90-700".equals(training.challengeText()),
                 "The first level challenge should show the target range directly.");

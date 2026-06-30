@@ -804,7 +804,6 @@ public final class TerrariumPanel extends JPanel {
             case RAIN -> new Color(78, 151, 214, alpha);
             case DROUGHT -> new Color(218, 135, 65, alpha);
             case COMPOST -> new Color(104, 157, 78, alpha);
-            case PLANT -> new Color(73, 184, 89, alpha);
             case HUMAN -> new Color(183, 73, 84, alpha);
             case BEAR -> new Color(157, 106, 73, alpha);
             case RABBIT -> new Color(235, 211, 171, alpha);

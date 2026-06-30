@@ -70,7 +70,7 @@ public final class TrainingPanel extends JPanel {
         this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
-        setPreferredSize(new Dimension(344, 660));
+        setPreferredSize(new Dimension(368, 660));
         setBorder(BorderFactory.createEmptyBorder(14, 18, 12, 18));
         setLayout(new BorderLayout(0, 9));
 
@@ -88,7 +88,7 @@ public final class TrainingPanel extends JPanel {
         configureLabel(detailLabel, Font.PLAIN, 13f, MUTED);
         configureLabel(climateLabel, Font.PLAIN, 13f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 13f, new Color(126, 78, 56));
-        configureLabel(warningLabel, Font.BOLD, 28f, Color.WHITE);
+        configureLabel(warningLabel, Font.BOLD, 24f, Color.WHITE);
         configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
         warningLabel.setOpaque(true);
@@ -131,7 +131,7 @@ public final class TrainingPanel extends JPanel {
                 + "   Tokens " + training.progression().tokens());
         levelLabel.setText("Level " + training.levelNumber() + "/" + training.levelCount()
                 + "   " + training.levelTitle());
-        goalLabel.setText(html(training.objective()));
+        goalLabel.setText(html(training.objective(), 276));
         levelProgress.setMaximum(training.drillTarget());
         levelProgress.setValue(training.drillProgress());
         levelProgress.setString(training.drillProgress() + " / " + training.drillTarget());
@@ -139,7 +139,7 @@ public final class TrainingPanel extends JPanel {
                 ? new Color(189, 137, 56)
                 : new Color(77, 143, 85));
         balanceLabel.setText(training.balanceStatus(snapshot));
-        detailLabel.setText(html(training.balanceGuide(snapshot, boardCells)));
+        detailLabel.setText(html(training.balanceGuide(snapshot, boardCells), 300));
         climateLabel.setText(String.format(
                 "Water %.0f%%   Soil %.0f%%   %.1f C",
                 snapshot.averageMoisture() * 100.0,
@@ -220,7 +220,7 @@ public final class TrainingPanel extends JPanel {
     }
 
     private JLabel help(String text) {
-        JLabel label = new JLabel(html(text));
+        JLabel label = new JLabel(html(text, 300));
         configureLabel(label, Font.PLAIN, 13f, MUTED);
         return label;
     }
@@ -231,17 +231,21 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String html(String text) {
-        return "<html><body style='width:300px'>" + text.replace("\n", "<br>") + "</body></html>";
+        return html(text, 300);
+    }
+
+    private String html(String text, int width) {
+        return "<html><body style='width:" + width + "px'>" + text.replace("\n", "<br>") + "</body></html>";
     }
 
     private String formatFailureWarning(String reason) {
         int split = reason.indexOf(" (");
         if (split <= 0) {
-            return html("<span style='font-size:18px;font-weight:bold;'>" + reason + "</span>");
+            return html("<span style='font-size:17px;font-weight:bold;'>" + reason + "</span>", 276);
         }
         String title = reason.substring(0, split);
         String detail = reason.substring(split);
-        return "<html><body style='width:300px'><span style='font-size:18px;font-weight:bold;'>" + title
-                + "</span><br><span style='font-size:14px;'>" + detail + "</span></body></html>";
+        return "<html><body style='width:276px'><span style='font-size:17px;font-weight:bold;'>" + title
+                + "</span><br><span style='font-size:13px;'>" + detail + "</span></body></html>";
     }
 }

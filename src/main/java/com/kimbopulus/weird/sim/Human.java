@@ -18,9 +18,9 @@ public final class Human extends Organism {
 
         Position current = position;
         if (simulation.random().nextDouble() < 0.72) {
-            List<Position> empty = simulation.emptyNeighbors(position);
-            if (!empty.isEmpty() && simulation.moveOrganism(position, empty.get(0))) {
-                current = empty.get(0);
+            List<Position> passable = simulation.passableNeighbors(position, OrganismKind.RABBIT);
+            if (!passable.isEmpty() && simulation.moveAnimal(position, passable.get(0), OrganismKind.RABBIT)) {
+                current = passable.get(0);
             }
         }
 

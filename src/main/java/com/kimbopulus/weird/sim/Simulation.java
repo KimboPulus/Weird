@@ -208,7 +208,7 @@ public final class Simulation {
 
     public boolean moveAnimal(Position from, Position to, OrganismKind foodKind) {
         Organism target = organismAt(to);
-        if (target != null && foodKind != OrganismKind.PLANT && target.kind() == OrganismKind.PLANT) {
+        if (target != null && target.kind() == OrganismKind.PLANT) {
             removeOrganism(to);
         }
         return moveOrganism(from, to);
@@ -228,7 +228,7 @@ public final class Simulation {
         List<Position> passable = new ArrayList<>();
         for (Position neighbor : grid.neighbors(position, random)) {
             Organism organism = organismAt(neighbor);
-            if (organism == null || (foodKind != OrganismKind.PLANT && organism.kind() == OrganismKind.PLANT)) {
+            if (organism == null || organism.kind() == OrganismKind.PLANT) {
                 passable.add(neighbor);
             }
         }

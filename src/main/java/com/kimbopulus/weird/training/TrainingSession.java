@@ -123,7 +123,7 @@ public final class TrainingSession {
         }
         if (level == TrainingLevel.STEADY_START) {
             if (gardenerActions == 0) {
-                return "Start with Rain, Compost, or one planted creature.";
+                return "Start with Rain or Compost, then watch the board react.";
             }
             if (gardenerActions < 3) {
                 return "Watch the current values after each click.";
