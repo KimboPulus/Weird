@@ -4,8 +4,13 @@ import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.sim.PopulationSnapshot;
 import com.kimbopulus.weird.sim.Simulation;
 
+import java.util.function.LongSupplier;
+
 public final class TrainingSession {
+    private static final long FAILURE_GRACE_MS = 5_000L;
+
     private final ProgressionProfile progression;
+    private final LongSupplier clock;
     private int score;
     private int stableTicks;
     private int levelProgress;
@@ -16,15 +21,22 @@ public final class TrainingSession {
     private boolean levelFailed;
     private int dangerTicks;
     private String dangerReason;
+    private String dangerDetail;
+    private long dangerStartedAtMillis = -1L;
     private String failureDetail;
     private int gardenerActions;
 
     public TrainingSession() {
-        this(ProgressionProfile.loadDefault());
+        this(ProgressionProfile.loadDefault(), System::currentTimeMillis);
     }
 
     public TrainingSession(ProgressionProfile progression) {
+        this(progression, System::currentTimeMillis);
+    }
+
+    public TrainingSession(ProgressionProfile progression, LongSupplier clock) {
         this.progression = progression;
+        this.clock = clock;
     }
 
     public void update(Simulation simulation) {
@@ -101,17 +113,29 @@ public final class TrainingSession {
     }
 
     public String dangerWarning() {
-        if (levelFailed || dangerTicks < 5 || dangerReason == null) {
+        if (levelFailed || dangerReason == null || dangerDetail == null) {
             return null;
         }
-        return "Warning: " + dangerReason + " (" + dangerTicks + "/14)";
+        return dangerDetail + " | " + dangerCountdownLabel();
+    }
+
+    public String dangerDetail() {
+        return dangerDetail;
+    }
+
+    public String dangerCountdownLabel() {
+        if (levelFailed || dangerReason == null || dangerStartedAtMillis < 0L) {
+            return null;
+        }
+        long remainingMs = Math.max(0L, FAILURE_GRACE_MS - (clock.getAsLong() - dangerStartedAtMillis));
+        return String.format("%.1fs to fix", remainingMs / 1000.0);
     }
 
     public String failureReason() {
         if (failureDetail != null) {
             return failureDetail;
         }
-        return dangerReason == null ? "The ecosystem collapsed." : dangerReason + ".";
+        return dangerDetail == null ? "The ecosystem collapsed." : dangerDetail + " stayed out of range too long.";
     }
 
     public String contextHint() {
@@ -184,6 +208,8 @@ public final class TrainingSession {
         failureDetail = null;
         dangerTicks = 0;
         dangerReason = null;
+        dangerDetail = null;
+        dangerStartedAtMillis = -1L;
         gardenerActions = 0;
         feedback = "Level " + levelNumber() + " started.";
         return true;
@@ -200,6 +226,8 @@ public final class TrainingSession {
         levelFailed = false;
         dangerTicks = 0;
         dangerReason = null;
+        dangerDetail = null;
+        dangerStartedAtMillis = -1L;
         failureDetail = null;
         gardenerActions = 0;
         feedback = "Level restarted. -15 run score.";
@@ -217,6 +245,8 @@ public final class TrainingSession {
         levelFailed = false;
         dangerTicks = 0;
         dangerReason = null;
+        dangerDetail = null;
+        dangerStartedAtMillis = -1L;
         failureDetail = null;
         gardenerActions = 0;
     }
@@ -256,21 +286,29 @@ public final class TrainingSession {
 
     private void updateDanger(PopulationSnapshot snapshot) {
         String currentDanger = dangerReason(snapshot);
+        long now = clock.getAsLong();
         if (currentDanger == null) {
             dangerTicks = 0;
             dangerReason = null;
+            dangerDetail = null;
+            dangerStartedAtMillis = -1L;
             return;
         }
 
+        String currentDetail = level.balanceTarget().status(snapshot);
         if (currentDanger.equals(dangerReason)) {
             dangerTicks++;
         } else {
             dangerReason = currentDanger;
             dangerTicks = 1;
+            dangerStartedAtMillis = now;
         }
-        if (dangerTicks >= 14) {
+        dangerDetail = currentDetail;
+        if (dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= FAILURE_GRACE_MS) {
             levelFailed = true;
-            failureDetail = dangerReason == null ? "The ecosystem collapsed." : level.balanceTarget().status(snapshot);
+            failureDetail = dangerDetail == null
+                    ? "The ecosystem collapsed."
+                    : dangerDetail + String.format(" stayed out of range for %.1f seconds.", FAILURE_GRACE_MS / 1000.0);
             feedback = "Level lost: " + failureDetail + "\nRestart to try again.";
         }
     }

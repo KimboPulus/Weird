@@ -11,6 +11,8 @@ import com.kimbopulus.weird.training.TrainingDrill;
 import com.kimbopulus.weird.training.TrainingLevel;
 import com.kimbopulus.weird.training.TrainingSession;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public final class TrainingSessionSmokeCheck {
     private TrainingSessionSmokeCheck() {
     }
@@ -75,27 +77,31 @@ public final class TrainingSessionSmokeCheck {
         simulation.seedRabbits(48);
         simulation.seedWolves(4);
         simulation.seedHumans(6);
-        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
         removeSpecies(simulation, OrganismKind.PLANT);
         removeSpecies(simulation, OrganismKind.RABBIT);
         removeSpecies(simulation, OrganismKind.WOLF);
         removeSpecies(simulation, OrganismKind.HUMAN);
 
-        for (int i = 0; i < 6; i++) {
-            simulation.tick();
-            training.update(simulation);
-        }
+        training.update(simulation);
         require(training.dangerWarning() != null, "A sustained crisis should show a warning.");
+        require("5.0s to fix".equals(training.dangerCountdownLabel()),
+                "The warning should start with a full 5 second grace period.");
 
-        for (int i = 6; i < 14; i++) {
-            simulation.tick();
-            training.update(simulation);
-        }
+        now.addAndGet(4_900L);
+        training.update(simulation);
+        require(!training.levelFailed(), "The level should not fail before the grace period expires.");
+
+        now.addAndGet(100L);
+        training.update(simulation);
         require(training.levelFailed(), "An unresolved extinction should lose the level.");
         require(training.failureReason().startsWith("Plants low ("),
                 "A failed level should report the exact reason.");
         require(training.failureReason().contains("range 90-700"),
                 "A failed level should include the target range.");
+        require(training.failureReason().contains("5.0 seconds"),
+                "A failed level should explain that the band stayed bad for 5 seconds.");
         require(training.restartLevel(), "A failed level should be restartable.");
         require(!training.levelFailed(), "Restart should clear the failed state.");
         require(training.levelNumber() == 1, "Restart should keep the current level.");
@@ -105,18 +111,14 @@ public final class TrainingSessionSmokeCheck {
         Simulation simulation = new Simulation(48, 32, 123L);
         fillPlantsExcept(simulation, 1200);
         placeSupportAnimals(simulation);
-        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
 
-        for (int i = 0; i < 6; i++) {
-            simulation.tick();
-            training.update(simulation);
-        }
+        training.update(simulation);
         require(training.dangerWarning() != null, "Excess plants should trigger a warning.");
 
-        for (int i = 6; i < 14; i++) {
-            simulation.tick();
-            training.update(simulation);
-        }
+        now.addAndGet(5_000L);
+        training.update(simulation);
         require(training.levelFailed(), "Excess plants should lose the level.");
     }
 
@@ -180,6 +182,8 @@ public final class TrainingSessionSmokeCheck {
             setIntField(training, "stableTicks", 0);
             setIntField(training, "dangerTicks", 0);
             setField(training, "dangerReason", null);
+            setField(training, "dangerDetail", null);
+            setLongField(training, "dangerStartedAtMillis", -1L);
             setField(training, "failureDetail", null);
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException(exception);
@@ -196,6 +200,12 @@ public final class TrainingSessionSmokeCheck {
         var field = TrainingSession.class.getDeclaredField(name);
         field.setAccessible(true);
         field.setBoolean(training, value);
+    }
+
+    private static void setLongField(TrainingSession training, String name, long value) throws ReflectiveOperationException {
+        var field = TrainingSession.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.setLong(training, value);
     }
 
     private static void setField(TrainingSession training, String name, Object value) throws ReflectiveOperationException {

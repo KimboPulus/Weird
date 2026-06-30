@@ -168,7 +168,7 @@ public final class TrainingPanel extends JPanel {
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
         String warning = training.levelFailed()
                 ? formatFailureWarning(training.failureReason())
-                : formatDangerWarning(training.balanceStatus(snapshot), training.dangerWarning());
+                : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel());
         warningLabel.setText(warning == null ? "" : warning);
         warningLabel.setVisible(warning != null);
 
@@ -258,41 +258,22 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String formatFailureWarning(String reason) {
-        int split = reason.indexOf(" (");
-        if (split <= 0) {
-            return html("<span style='font-size:17px;font-weight:bold;'>" + reason + "</span>", 328);
-        }
-        String title = reason.substring(0, split);
-        String detail = reason.substring(split);
-        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>" + title
-                + "</span><br><span style='font-size:13px;'>" + detail + "</span></body></html>";
+        return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>Level failed</span>"
+                + "<br><span style='font-size:13px;'>" + reason + "</span></body></html>";
     }
 
-    private String formatDangerWarning(String reason, String dangerText) {
-        if (dangerText == null) {
+    private String formatDangerWarning(String reason, String countdownText) {
+        if (reason == null || countdownText == null) {
             return null;
         }
         int split = reason.indexOf(" (");
         String title = split <= 0 ? reason : reason.substring(0, split);
         String detail = split <= 0 ? "" : reason.substring(split);
-        String timer = extractTimer(dangerText);
-        String timerLine = timer.isBlank()
-                ? ""
-                : "<br><span style='font-size:12px;color:#f6dfca;'>Danger " + timer + "</span>";
         return "<html><body style='width:328px'><span style='font-size:17px;font-weight:bold;'>"
                 + title
                 + "</span>"
                 + (detail.isBlank() ? "" : "<br><span style='font-size:13px;'>" + detail + "</span>")
-                + timerLine
+                + "<br><span style='font-size:12px;color:#f6dfca;'>" + countdownText + "</span>"
                 + "</body></html>";
-    }
-
-    private String extractTimer(String dangerText) {
-        int open = dangerText.lastIndexOf('(');
-        int close = dangerText.lastIndexOf(')');
-        if (open < 0 || close <= open) {
-            return "";
-        }
-        return dangerText.substring(open + 1, close);
     }
 }

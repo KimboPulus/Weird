@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -105,12 +106,15 @@ public final class VisualSmokeCheck {
             removeSpecies(simulation, OrganismKind.RABBIT);
             removeSpecies(simulation, OrganismKind.HUMAN);
 
-            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
-            for (int i = 0; i < 14; i++) {
+            AtomicLong now = new AtomicLong();
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
+            for (int i = 0; i < 2; i++) {
                 simulation.tick();
                 removeSpecies(simulation, OrganismKind.PLANT);
                 training.update(simulation);
             }
+            now.addAndGet(5_000L);
+            training.update(simulation);
             require(training.levelFailed(), "Failure scenario did not lose the level.");
             renderPanels(simulation, training, output);
         } catch (Exception exception) {
@@ -188,11 +192,10 @@ public final class VisualSmokeCheck {
         try {
             Simulation simulation = balancedLevelSimulation(67L);
             removeSpecies(simulation, OrganismKind.WOLF);
-            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            AtomicLong now = new AtomicLong();
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
             forceLevel(training, TrainingLevel.PREDATOR_CHECK);
-            for (int i = 0; i < 6; i++) {
-                training.update(simulation);
-            }
+            training.update(simulation);
             require(training.dangerWarning() != null, "Warning scenario did not trigger danger text.");
             renderPanels(simulation, training, output);
         } catch (Exception exception) {
@@ -307,6 +310,8 @@ public final class VisualSmokeCheck {
         setField(training, "lastLevelReward", 0);
         setField(training, "dangerTicks", 0);
         setField(training, "dangerReason", null);
+        setField(training, "dangerDetail", null);
+        setField(training, "dangerStartedAtMillis", -1L);
         setField(training, "failureDetail", null);
         setField(training, "gardenerActions", 0);
         setField(training, "feedback", "Hold the ecosystem steady.");
