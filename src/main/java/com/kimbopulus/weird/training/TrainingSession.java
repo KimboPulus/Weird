@@ -148,8 +148,20 @@ public final class TrainingSession {
         return level.title() + ": " + level.objective();
     }
 
+    public boolean objectiveOnTrack(PopulationSnapshot snapshot) {
+        return level.objectiveMatches(snapshot);
+    }
+
+    public String objectiveStatus(PopulationSnapshot snapshot) {
+        return level.objectiveStatus(snapshot);
+    }
+
     public String balanceStatus(PopulationSnapshot snapshot) {
         return level.balanceTarget().status(snapshot);
+    }
+
+    public String currentSummary(PopulationSnapshot snapshot) {
+        return level.balanceTarget().currentSummary(snapshot);
     }
 
     public String balanceGuide(PopulationSnapshot snapshot, int boardCells) {
@@ -268,7 +280,7 @@ public final class TrainingSession {
     }
 
     private boolean levelOnTrack(PopulationSnapshot snapshot) {
-        return level.balanceTarget().matches(snapshot);
+        return level.objectiveMatches(snapshot);
     }
 
     private void awardPoints(int points) {

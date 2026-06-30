@@ -227,8 +227,10 @@ public final class ModelRegressionCheck {
         require("Balance: steady".equals(training.balanceStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0))),
                 "Healthy populations should read as steady.");
         String guide = training.balanceGuide(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0), 988);
-        require(guide.contains("Current:") && guide.contains("Target:") && guide.contains("%"),
-                "Balance guidance should show the current state and exact ranges.");
+        require(guide.contains("Fail if:") && guide.contains("outside") && guide.contains("%"),
+                "Balance guidance should show the exact failure bands.");
+        require(training.currentSummary(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0)).contains("Plants 320"),
+                "Current summary should expose the population counts.");
 
         training.noteAction("Rain", "cell 1,1");
         require(training.feedback().equals("Rain used."), "Tool feedback should echo the action.");
@@ -237,6 +239,8 @@ public final class ModelRegressionCheck {
         training.reset();
         require(training.score() == 0 && training.streak() == 0, "Reset should clear run progress.");
         require(training.feedback().equals("Hold the ecosystem steady."), "Reset should restore the default feedback.");
+        require(training.objectiveStatus(new PopulationSnapshot(0, Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0)).equals("Objective in range"),
+                "The displayed objective should report when its range is satisfied.");
     }
 
     private static void checkProgressionNormalization() throws IOException {

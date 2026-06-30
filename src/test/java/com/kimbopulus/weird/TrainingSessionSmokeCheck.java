@@ -8,6 +8,7 @@ import com.kimbopulus.weird.sim.RabbitSex;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.training.TrainingDrill;
+import com.kimbopulus.weird.training.TrainingLevel;
 import com.kimbopulus.weird.training.TrainingSession;
 
 public final class TrainingSessionSmokeCheck {
@@ -19,6 +20,7 @@ public final class TrainingSessionSmokeCheck {
         checkLevelFailure();
         checkPlantOvergrowthFailure();
         checkShopPurchases();
+        checkObjectiveProgressUsesDisplayedGoal();
         checkBalanceGuide();
 
         Simulation simulation = new Simulation(32, 22, 12L);
@@ -131,15 +133,75 @@ public final class TrainingSessionSmokeCheck {
         require(!profile.owns(ShopItem.RAIN_BARREL), "Resetting the shop should clear owned items.");
     }
 
+    private static void checkObjectiveProgressUsesDisplayedGoal() {
+        Simulation simulation = new Simulation(48, 32, 52L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(18);
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                simulation.grid().cellAt(x, y).reset(0.82, 23.0, 0.42);
+            }
+        }
+
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        forceLevel(training, TrainingLevel.MEMORY_SCAN);
+        training.update(simulation);
+
+        require(training.drillProgress() == 1,
+                "Level progress should follow the displayed plants-and-rabbits objective.");
+        require("Objective in range".equals(training.objectiveStatus(simulation.currentSnapshot())),
+                "Objective status should confirm when the displayed goal is satisfied.");
+        require(training.balanceStatus(simulation.currentSnapshot()).startsWith("Wolves low"),
+                "Safety warnings should stay separate from the level objective.");
+    }
+
     private static void checkBalanceGuide() {
         TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
         PopulationSnapshot balanced = new PopulationSnapshot(0, com.kimbopulus.weird.sim.Season.SPRING, 320, 20, 4, 4, 0, 0.50, 0.50, 21.0);
         require("Balance: steady".equals(training.balanceStatus(balanced)), "Healthy populations should read as steady.");
+        require(training.currentSummary(balanced).contains("Wolves 4"),
+                "The right panel summary should show the current population counts.");
         String guide = training.balanceGuide(balanced, 988);
-        require(guide.contains("Current:") && guide.contains("Target:") && guide.contains("%"),
-                "Balance guidance should show the current state and exact ranges.");
+        require(guide.contains("Fail if:") && guide.contains("outside") && guide.contains("%"),
+                "Balance guidance should show the exact failure bands.");
         require(training.balanceStatus(new PopulationSnapshot(0, com.kimbopulus.weird.sim.Season.SPRING, 60, 20, 4, 4, 0, 0.50, 0.50, 21.0)).startsWith("Plants low"),
                 "Low plants should be called out.");
+    }
+
+    private static void forceLevel(TrainingSession training, TrainingLevel level) {
+        try {
+            var field = TrainingSession.class.getDeclaredField("level");
+            field.setAccessible(true);
+            field.set(training, level);
+
+            setBooleanField(training, "levelComplete", false);
+            setBooleanField(training, "levelFailed", false);
+            setIntField(training, "levelProgress", 0);
+            setIntField(training, "stableTicks", 0);
+            setIntField(training, "dangerTicks", 0);
+            setField(training, "dangerReason", null);
+            setField(training, "failureDetail", null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void setIntField(TrainingSession training, String name, int value) throws ReflectiveOperationException {
+        var field = TrainingSession.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.setInt(training, value);
+    }
+
+    private static void setBooleanField(TrainingSession training, String name, boolean value) throws ReflectiveOperationException {
+        var field = TrainingSession.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.setBoolean(training, value);
+    }
+
+    private static void setField(TrainingSession training, String name, Object value) throws ReflectiveOperationException {
+        var field = TrainingSession.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(training, value);
     }
 
     private static void removeSpecies(Simulation simulation, OrganismKind kind) {
