@@ -3,9 +3,14 @@ package com.kimbopulus.weird;
 import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.Position;
+import com.kimbopulus.weird.sim.Plant;
 import com.kimbopulus.weird.sim.Rabbit;
 import com.kimbopulus.weird.sim.RabbitSex;
+import com.kimbopulus.weird.sim.Human;
+import com.kimbopulus.weird.sim.Wolf;
+import com.kimbopulus.weird.sim.Bear;
 import com.kimbopulus.weird.progression.ProgressionProfile;
+import com.kimbopulus.weird.training.TrainingLevel;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
 import com.kimbopulus.weird.ui.TrainingPanel;
@@ -20,8 +25,13 @@ import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public final class VisualSmokeCheck {
     private VisualSmokeCheck() {
@@ -36,6 +46,7 @@ public final class VisualSmokeCheck {
         File birthOutput = new File(output.getParentFile(), "birth-check.png");
         File sexOutput = new File(output.getParentFile(), "rabbit-sex-check.png");
         File animalPackOutput = new File(output.getParentFile(), "animal-pack-check.png");
+        File levelScreensDir = new File(output.getParentFile(), "levels");
         SwingUtilities.invokeAndWait(() -> {
             render(output);
             renderFailure(failureOutput);
@@ -43,6 +54,7 @@ public final class VisualSmokeCheck {
             renderBirth(birthOutput);
             renderRabbitSexes(sexOutput);
             renderAnimalPack(animalPackOutput);
+            renderLevelScreens(levelScreensDir);
         });
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
@@ -50,23 +62,13 @@ public final class VisualSmokeCheck {
         System.out.println("Birth check saved " + birthOutput.getAbsolutePath());
         System.out.println("Rabbit sex check saved " + sexOutput.getAbsolutePath());
         System.out.println("Animal pack check saved " + animalPackOutput.getAbsolutePath());
+        System.out.println("Level screenshots saved " + levelScreensDir.getAbsolutePath());
     }
 
     private static void render(File output) {
         try {
-            Simulation simulation = new Simulation(38, 26, 7L);
-            simulation.seedPlants(140);
-            simulation.seedRabbits(32);
-            simulation.seedWolves(3);
-            simulation.seedHumans(4);
-
+            Simulation simulation = balancedLevelSimulation(7L);
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
-            for (int i = 0; i < 80; i++) {
-                simulation.tick();
-                training.update(simulation);
-            }
-            simulation.clearDeathEvents();
-
             renderPanels(simulation, training, output);
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
@@ -170,6 +172,92 @@ public final class VisualSmokeCheck {
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
         }
+    }
+
+    private static void renderLevelScreens(File directory) {
+        try {
+            directory.mkdirs();
+            for (TrainingLevel level : TrainingLevel.values()) {
+                File output = new File(directory, String.format("level-%d-%s.png", level.ordinal() + 1, slug(level.title())));
+                renderLevelScreen(level, output);
+            }
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderLevelScreen(TrainingLevel level, File output) throws Exception {
+        Simulation simulation = balancedLevelSimulation(101L + level.ordinal() * 17L);
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        forceLevel(training, level);
+        renderPanels(simulation, training, output);
+    }
+
+    private static Simulation balancedLevelSimulation(long seed) {
+        Simulation simulation = new Simulation(38, 26, seed);
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                double moisture = clamp(0.52 + ((x % 7) - 3) * 0.018 + ((y % 5) - 2) * 0.012, 0.36, 0.68);
+                double fertility = clamp(0.55 + ((x % 6) - 2.5) * 0.022 + ((y % 4) - 1.5) * 0.018, 0.34, 0.72);
+                double temperature = clamp(21.0 + ((x % 5) - 2) * 0.65 + ((y % 6) - 2.5) * 0.28, 17.0, 25.5);
+                simulation.grid().cellAt(x, y).reset(moisture, temperature, fertility);
+            }
+        }
+
+        List<Position> positions = new ArrayList<>();
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                positions.add(new Position(x, y));
+            }
+        }
+        Collections.shuffle(positions, new java.util.Random(seed));
+
+        place(simulation, positions, 320, Plant::new);
+        place(simulation, positions, 24, () -> new Rabbit(RabbitSex.FEMALE));
+        place(simulation, positions, 5, Wolf::new);
+        place(simulation, positions, 4, Human::new);
+        place(simulation, positions, 1, Bear::new);
+        return simulation;
+    }
+
+    private static void place(Simulation simulation, List<Position> positions, int count, Supplier<? extends com.kimbopulus.weird.sim.Organism> factory) {
+        for (int i = 0; i < count && !positions.isEmpty(); i++) {
+            simulation.placeOrganism(positions.remove(0), factory.get());
+        }
+    }
+
+    private static void forceLevel(TrainingSession training, TrainingLevel level) throws ReflectiveOperationException {
+        setField(training, "level", level);
+        setField(training, "levelComplete", false);
+        setField(training, "levelFailed", false);
+        setField(training, "stableTicks", 0);
+        setField(training, "levelProgress", 0);
+        setField(training, "lastLevelReward", 0);
+        setField(training, "dangerTicks", 0);
+        setField(training, "dangerReason", null);
+        setField(training, "failureDetail", null);
+        setField(training, "gardenerActions", 0);
+        setField(training, "feedback", "Hold the ecosystem steady.");
+    }
+
+    private static void setField(Object target, String name, Object value) throws ReflectiveOperationException {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    private static void setField(Object target, String name, int value) throws ReflectiveOperationException {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        field.setInt(target, value);
+    }
+
+    private static String slug(String text) {
+        return text.toLowerCase().replace(' ', '-');
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static void renderPanels(
