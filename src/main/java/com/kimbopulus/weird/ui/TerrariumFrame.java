@@ -112,7 +112,7 @@ public final class TerrariumFrame extends JFrame {
                         return;
                     }
                     if (!training.progression().spendTokens(toolMode.tokenCost())) {
-                        terrariumPanel.showBanner("Need 50 tokens");
+                        terrariumPanel.showBanner("Need 10 tokens");
                         return;
                     }
                 }
@@ -524,12 +524,12 @@ public final class TerrariumFrame extends JFrame {
             case RAIN -> terrariumPanel.showMechanicPopup(
                     "tool-rain",
                     "Rain affects a 4 x 4 patch",
-                    "It cools that patch now and can trigger delayed plant growth over the next few ticks."
+                    "It cools that patch hard right away and keeps cooling it while delayed growth builds."
             );
             case DROUGHT -> terrariumPanel.showMechanicPopup(
                     "tool-drought",
                     "Drought lingers after the click",
-                    "It warms a 4 x 4 patch and keeps drying that soil for many ticks."
+                    "It heavily dries and warms a 4 x 4 patch. Clicking directly on a creature also kills it."
             );
             case COMPOST -> terrariumPanel.showMechanicPopup(
                     "tool-compost",
@@ -559,7 +559,7 @@ public final class TerrariumFrame extends JFrame {
             case LIGHTNING -> terrariumPanel.showMechanicPopup(
                     "tool-lightning",
                     "Lightning hits one exact creature",
-                    "It costs 50 tokens and only works if you click directly on a living target."
+                    "It costs 10 tokens and only works if you click directly on a living target."
             );
             case SANCTUARY -> terrariumPanel.showMechanicPopup(
                     "tool-sanctuary",
@@ -582,7 +582,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "danger-timer",
                     "Red warning means danger is ticking",
-                    "If one band stays out of range for 15 seconds, the level is lost."
+                    "If one band stays out of range for 30 seconds, the level is lost."
             );
         }
 

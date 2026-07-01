@@ -16,6 +16,7 @@ import com.kimbopulus.weird.sim.Simulation;
 import com.kimbopulus.weird.sim.WorldGrid;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
+import com.kimbopulus.weird.ui.ToolMode;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -45,6 +46,7 @@ public final class ModelRegressionCheck {
         checkRabbitReproductionCostsEnergy();
         checkLightningStrikeCostsAndRecordsDeath();
         checkMechanicPopupReset();
+        checkToolCosts();
         System.out.println("Model regression check passed.");
     }
 
@@ -343,6 +345,10 @@ public final class ModelRegressionCheck {
 
         panel.showMechanicPopup("restart-tip", "Restart tip", "This should show again after reset.");
         require(mechanicPopupCount(panel) == 1, "Reset should let the same popup key appear again.");
+    }
+
+    private static void checkToolCosts() {
+        require(ToolMode.LIGHTNING.tokenCost() == 10, "Lightning should cost 10 tokens.");
     }
 
     private static boolean hasOpaquePixel(String path) throws IOException {

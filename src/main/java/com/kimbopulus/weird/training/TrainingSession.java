@@ -7,7 +7,7 @@ import com.kimbopulus.weird.sim.Simulation;
 import java.util.function.LongSupplier;
 
 public final class TrainingSession {
-    private static final long FAILURE_GRACE_MS = 15_000L;
+    private static final long FAILURE_GRACE_MS = 30_000L;
 
     private final ProgressionProfile progression;
     private final LongSupplier clock;
@@ -339,7 +339,7 @@ public final class TrainingSession {
             return null;
         }
         return switch (category) {
-            case "Plants low" -> "Do this: use Rain or Compost on bare patches.";
+            case "Plants low" -> "Do this: use Rain or Compost.";
             case "Plants high" -> "Do this: use Drought on dense patches or add a Rabbit.";
             case "Rabbits low" -> "Do this: add a Rabbit.";
             case "Rabbits high" -> "Do this: add a Wolf.";

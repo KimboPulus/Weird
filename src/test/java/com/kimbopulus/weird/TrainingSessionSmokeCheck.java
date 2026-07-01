@@ -88,10 +88,10 @@ public final class TrainingSessionSmokeCheck {
 
         training.update(simulation);
         require(training.dangerWarning() != null, "A sustained crisis should show a warning.");
-        require("15.0s to fix".equals(training.dangerCountdownLabel()),
-                "The warning should start with a full 15 second grace period.");
+        require("30.0s to fix".equals(training.dangerCountdownLabel()),
+                "The warning should start with a full 30 second grace period.");
 
-        now.addAndGet(14_900L);
+        now.addAndGet(29_900L);
         training.update(simulation);
         require(!training.levelFailed(), "The level should not fail before the grace period expires.");
 
@@ -102,8 +102,8 @@ public final class TrainingSessionSmokeCheck {
                 "A failed level should report the exact reason.");
         require(training.failureReason().contains("range 90-700"),
                 "A failed level should include the target range.");
-        require(training.failureReason().contains("15.0 seconds"),
-                "A failed level should explain that the band stayed bad for 15 seconds.");
+        require(training.failureReason().contains("30.0 seconds"),
+                "A failed level should explain that the band stayed bad for 30 seconds.");
         require(training.restartLevel(), "A failed level should be restartable.");
         require(!training.levelFailed(), "Restart should clear the failed state.");
         require(training.levelNumber() == 1, "Restart should keep the current level.");
@@ -119,7 +119,7 @@ public final class TrainingSessionSmokeCheck {
         training.update(simulation);
         require(training.dangerWarning() != null, "Excess plants should trigger a warning.");
 
-        now.addAndGet(15_000L);
+        now.addAndGet(30_000L);
         training.update(simulation);
         require(training.levelFailed(), "Excess plants should lose the level.");
     }

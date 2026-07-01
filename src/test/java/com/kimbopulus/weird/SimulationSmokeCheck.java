@@ -176,6 +176,7 @@ public final class SimulationSmokeCheck {
         Position extended = new Position(6, 6);
         Position far = new Position(7, 7);
         double centerTemperature = simulation.grid().cellAt(center).temperature();
+        double centerMoisture = simulation.grid().cellAt(center).moisture();
         double neighborTemperature = simulation.grid().cellAt(neighbor).temperature();
         double diagonalTemperature = simulation.grid().cellAt(diagonal).temperature();
         double extendedTemperature = simulation.grid().cellAt(extended).temperature();
@@ -194,9 +195,16 @@ public final class SimulationSmokeCheck {
                 "Rain should stay inside the 4x4 patch.");
 
         double afterRainTemperature = simulation.grid().cellAt(center).temperature();
+        double afterRainMoisture = simulation.grid().cellAt(center).moisture();
+        simulation.addHuman(center);
         require(simulation.drought(center), "Drought should affect the clicked square.");
+        require(simulation.count(OrganismKind.HUMAN) == 0, "Direct drought clicks should kill creatures on the target cell.");
         require(simulation.grid().cellAt(center).temperature() > afterRainTemperature,
                 "Drought should warm the clicked square.");
+        require(simulation.grid().cellAt(center).moisture() < afterRainMoisture,
+                "Drought should dry the clicked square after rain.");
+        require(simulation.grid().cellAt(center).moisture() < centerMoisture,
+                "Drought should leave the square drier than it started.");
 
         simulation.addHuman(neighbor);
         require(simulation.lightning(neighbor), "Lightning should strike an exact occupied square.");
@@ -213,7 +221,7 @@ public final class SimulationSmokeCheck {
 
         require(simulation.rain(center), "Rain should still be usable after a heat spike.");
         double afterRain = simulation.grid().cellAt(center).temperature();
-        require(afterRain <= afterHeatWave - 3.0,
+        require(afterRain <= afterHeatWave - 4.0,
                 "Rain should cool a hot patch hard enough to counter a heat wave quickly.");
 
         for (int i = 0; i < 4; i++) {

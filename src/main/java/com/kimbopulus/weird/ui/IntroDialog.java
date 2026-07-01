@@ -31,9 +31,10 @@ Keep the board balanced.
 Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure humans.
 Rabbits lose energy every turn, so they can starve if they do not find food in time.
 
-If any group gets too low or too high for too long, the level fails.
-Rain and drought change a 4 x 4 patch at a time and also nudge temperature.
-Lightning costs 50 tokens and strikes one exact creature.
+If any group gets too low or too high for 30 seconds, the level fails.
+Rain and drought change a 4 x 4 patch at a time and strongly move temperature.
+Direct drought clicks kill creatures on that square.
+Lightning costs 10 tokens and strikes one exact creature.
 The right panel shows the exact balance bands for the current level.
 
 Click the Info button again anytime to reopen this guide.

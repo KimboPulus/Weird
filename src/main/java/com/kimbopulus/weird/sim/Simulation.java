@@ -341,9 +341,9 @@ public final class Simulation {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
             grid.rainPatch(origin, 4, 4, 0.48);
-            grid.coolPatch(origin, 4, 4, 3.2);
+            grid.coolPatch(origin, 4, 4, 4.2);
             grid.fertilizePatch(origin, 4, 4, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2, 0.40));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2, 0.55));
             return true;
         }
         return false;
@@ -353,9 +353,9 @@ public final class Simulation {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
             grid.rainPatch(origin, 4, 4, 0.32);
-            grid.coolPatch(origin, 4, 4, 4.2);
+            grid.coolPatch(origin, 4, 4, 5.4);
             grid.fertilizePatch(origin, 4, 4, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3, 0.55));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3, 0.75));
             return true;
         }
         return false;
@@ -363,11 +363,16 @@ public final class Simulation {
 
     public boolean drought(Position center) {
         if (grid.contains(center)) {
+            Organism target = organismAt(center);
+            if (target != null && target.kind() != OrganismKind.PLANT) {
+                removeOrganism(center, DeathCause.NATURAL);
+                grid.cellAt(center).addFertility(0.08);
+            }
             Position origin = patchOrigin(center, 4, 4);
-            grid.dryPatch(origin, 4, 4, 0.54);
-            grid.warmPatch(origin, 4, 4, 2.8);
+            grid.dryPatch(origin, 4, 4, 0.72);
+            grid.warmPatch(origin, 4, 4, 3.0);
             grid.spendFertilityPatch(origin, 4, 4, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.18, 0.10, 0, 0.18));
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.24, 0.10, 0, 0.20));
             return true;
         }
         return false;
