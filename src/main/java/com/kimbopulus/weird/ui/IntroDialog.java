@@ -28,7 +28,7 @@ public final class IntroDialog extends JDialog {
         JTextArea body = new JTextArea("""
 Keep the board balanced.
 
-Plants feed rabbits. Rabbits feed wolves. Humans plant more life. Bears pressure humans.
+Plants feed rabbits. Rabbits feed wolves. Humans plant more life and can add 1 new human the first time 2 of them meet. Bears pressure humans.
 Rabbits lose energy every turn, so they can starve if they do not find food in time.
 
 If any group gets too low or too high for 30 seconds, the level fails.

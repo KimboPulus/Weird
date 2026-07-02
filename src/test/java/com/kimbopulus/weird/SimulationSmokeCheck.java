@@ -72,10 +72,12 @@ public final class SimulationSmokeCheck {
         checkHumanPlantingAndBearVisits();
         checkRabbitPairingAndWolfDeparture();
         checkRabbitPlacementSexes();
+        checkHumanPairing();
         checkDeathEvents();
         checkLocalWeatherAndLightning();
         checkWolfPairBreeding();
         checkRainCountersHeatWave();
+        checkClimateControlCombo();
     }
 
     private static void require(boolean condition, String message) {
@@ -92,6 +94,9 @@ public final class SimulationSmokeCheck {
                     count++;
                 }
             }
+        }
+        if (kind == OrganismKind.PLANT) {
+            count += coveredPlantCount(simulation);
         }
         return count;
     }
@@ -168,6 +173,22 @@ public final class SimulationSmokeCheck {
         require(simulation.count(OrganismKind.WOLF) >= 3, "Wolves should create offspring when they meet.");
     }
 
+    private static void checkHumanPairing() {
+        Simulation simulation = new Simulation(10, 10, 35L);
+        Position first = new Position(4, 4);
+        Position second = new Position(5, 4);
+        simulation.placeOrganism(first, new com.kimbopulus.weird.sim.Human());
+        simulation.placeOrganism(second, new com.kimbopulus.weird.sim.Human());
+        ((com.kimbopulus.weird.sim.Human) simulation.organismAt(first)).tick(simulation, first);
+        require(simulation.count(OrganismKind.HUMAN) == 3,
+                "Two humans should create one extra human the first time they meet.");
+        for (int i = 0; i < 3; i++) {
+            simulation.tick();
+        }
+        require(simulation.count(OrganismKind.HUMAN) == 3,
+                "The same pair of humans should only reproduce once.");
+    }
+
     private static void checkLocalWeatherAndLightning() {
         Simulation simulation = new Simulation(10, 10, 44L);
         Position center = new Position(4, 4);
@@ -221,7 +242,7 @@ public final class SimulationSmokeCheck {
 
         require(simulation.rain(center), "Rain should still be usable after a heat spike.");
         double afterRain = simulation.grid().cellAt(center).temperature();
-        require(afterRain <= afterHeatWave - 4.0,
+        require(afterRain <= afterHeatWave - 5.0,
                 "Rain should cool a hot patch hard enough to counter a heat wave quickly.");
 
         for (int i = 0; i < 4; i++) {
@@ -229,6 +250,28 @@ public final class SimulationSmokeCheck {
         }
         require(simulation.grid().cellAt(center).temperature() < afterRain,
                 "Ongoing rain should keep cooling while the rain effect is active.");
+    }
+
+    private static void checkClimateControlCombo() {
+        Simulation simulation = new Simulation(12, 12, 58L);
+        Position center = new Position(5, 5);
+        simulation.grid().cellAt(center).reset(0.78, 27.0, 0.50);
+
+        require(simulation.drought(center), "Drought should still work on a hot wet square.");
+        double afterDroughtMoisture = simulation.grid().cellAt(center).moisture();
+        double afterDroughtTemperature = simulation.grid().cellAt(center).temperature();
+
+        require(simulation.rain(center), "Rain should be usable on the same square after drought.");
+        double afterRainMoisture = simulation.grid().cellAt(center).moisture();
+        double afterRainTemperature = simulation.grid().cellAt(center).temperature();
+
+        require(afterDroughtMoisture <= 0.05, "Drought should nearly drain an over-wet square.");
+        require(afterRainTemperature < 27.0,
+                "Drought then rain should bring a hot square back below its starting temperature.");
+        require(afterRainMoisture <= 0.25,
+                "Rain should not re-flood the square when used to cool a droughted patch.");
+        require(afterRainTemperature <= afterDroughtTemperature - 5.0,
+                "Rain should reverse most of the drought heat quickly.");
     }
 
     private static void setKillCount(com.kimbopulus.weird.sim.Wolf wolf, int value) {
@@ -273,5 +316,24 @@ public final class SimulationSmokeCheck {
             }
         }
         return count;
+    }
+
+    private static int coveredPlantCount(Simulation simulation) {
+        try {
+            var field = Simulation.class.getDeclaredField("coveredPlants");
+            field.setAccessible(true);
+            Object[][] plants = (Object[][]) field.get(simulation);
+            int count = 0;
+            for (Object[] row : plants) {
+                for (Object plant : row) {
+                    if (plant != null) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 }

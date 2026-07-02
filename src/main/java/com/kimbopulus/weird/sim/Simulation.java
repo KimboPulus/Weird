@@ -14,6 +14,7 @@ public final class Simulation {
     private final Random random;
     private final WorldGrid grid;
     private final Organism[][] organisms;
+    private final Plant[][] coveredPlants;
     private final List<PopulationSnapshot> history = new ArrayList<>();
     private final List<DeathEvent> deathEvents = new ArrayList<>();
     private final List<BirthEvent> birthEvents = new ArrayList<>();
@@ -34,6 +35,7 @@ public final class Simulation {
         this.random = new Random(seed);
         this.grid = new WorldGrid(width, height, random);
         this.organisms = new Organism[height][width];
+        this.coveredPlants = new Plant[height][width];
     }
 
     public static Simulation createDefault() {
@@ -104,6 +106,7 @@ public final class Simulation {
         for (int y = 0; y < grid.height(); y++) {
             for (int x = 0; x < grid.width(); x++) {
                 organisms[y][x] = null;
+                coveredPlants[y][x] = null;
             }
         }
         plantCount = 0;
@@ -169,7 +172,7 @@ public final class Simulation {
             return null;
         }
         Organism organism = organismAt(position);
-        organisms[position.y()][position.x()] = null;
+        restoreCoveredPlant(position);
         if (organism != null) {
             adjustCount(organism.kind(), -1);
             if (organism.kind() != OrganismKind.PLANT) {
@@ -184,7 +187,7 @@ public final class Simulation {
             return null;
         }
         Organism organism = organismAt(position);
-        organisms[position.y()][position.x()] = null;
+        restoreCoveredPlant(position);
         if (organism != null) {
             adjustCount(organism.kind(), -1);
         }
@@ -201,14 +204,20 @@ public final class Simulation {
             return false;
         }
 
+        Plant underneath = coveredPlants[from.y()][from.x()];
+        coveredPlants[from.y()][from.x()] = null;
+        organisms[from.y()][from.x()] = underneath;
         organisms[to.y()][to.x()] = organism;
-        organisms[from.y()][from.x()] = null;
         return true;
     }
 
     public boolean moveAnimal(Position from, Position to, OrganismKind foodKind) {
+        Organism mover = organismAt(from);
         Organism target = organismAt(to);
         if (target != null && target.kind() == OrganismKind.PLANT) {
+            if (mover != null && preservesPlantsWhileMoving(mover.kind())) {
+                return moveOntoPlantPreserving(from, to, mover, (Plant) target);
+            }
             removeOrganism(to);
         }
         return moveOrganism(from, to);
@@ -340,10 +349,10 @@ public final class Simulation {
     public boolean rain(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
-            grid.rainPatch(origin, 4, 4, 0.48);
-            grid.coolPatch(origin, 4, 4, 4.2);
+            grid.rainPatch(origin, 4, 4, 0.18);
+            grid.coolPatch(origin, 4, 4, 5.6);
             grid.fertilizePatch(origin, 4, 4, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.18, 0.04, 2, 0.55));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.08, 0.04, 2, 0.85));
             return true;
         }
         return false;
@@ -352,10 +361,10 @@ public final class Simulation {
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
-            grid.rainPatch(origin, 4, 4, 0.32);
-            grid.coolPatch(origin, 4, 4, 5.4);
+            grid.rainPatch(origin, 4, 4, 0.14);
+            grid.coolPatch(origin, 4, 4, 6.8);
             grid.fertilizePatch(origin, 4, 4, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.24, 0.05, 3, 0.75));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.10, 0.05, 3, 1.05));
             return true;
         }
         return false;
@@ -369,10 +378,10 @@ public final class Simulation {
                 grid.cellAt(center).addFertility(0.08);
             }
             Position origin = patchOrigin(center, 4, 4);
-            grid.dryPatch(origin, 4, 4, 0.72);
-            grid.warmPatch(origin, 4, 4, 3.0);
+            grid.dryPatch(origin, 4, 4, 0.82);
+            grid.warmPatch(origin, 4, 4, 3.2);
             grid.spendFertilityPatch(origin, 4, 4, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.24, 0.10, 0, 0.20));
+            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.30, 0.10, 0, 0.24));
             return true;
         }
         return false;
@@ -679,7 +688,7 @@ public final class Simulation {
             return;
         }
         Organism organism = organismAt(position);
-        organisms[position.y()][position.x()] = null;
+        restoreCoveredPlant(position);
         if (organism != null) {
             adjustCount(organism.kind(), -1);
             if (organism.kind() != OrganismKind.PLANT || cause == DeathCause.LIGHTNING) {
@@ -695,6 +704,28 @@ public final class Simulation {
         int startX = Math.max(0, Math.min(center.x() - 1, grid.width() - patchWidth));
         int startY = Math.max(0, Math.min(center.y() - 1, grid.height() - patchHeight));
         return new Position(startX, startY);
+    }
+
+    private boolean preservesPlantsWhileMoving(OrganismKind kind) {
+        return kind == OrganismKind.HUMAN || kind == OrganismKind.WOLF || kind == OrganismKind.BEAR;
+    }
+
+    private boolean moveOntoPlantPreserving(Position from, Position to, Organism mover, Plant plant) {
+        if (!grid.contains(from) || !grid.contains(to)) {
+            return false;
+        }
+        Plant underneath = coveredPlants[from.y()][from.x()];
+        coveredPlants[from.y()][from.x()] = null;
+        organisms[from.y()][from.x()] = underneath;
+        coveredPlants[to.y()][to.x()] = plant;
+        organisms[to.y()][to.x()] = mover;
+        return true;
+    }
+
+    private void restoreCoveredPlant(Position position) {
+        Plant underneath = coveredPlants[position.y()][position.x()];
+        coveredPlants[position.y()][position.x()] = null;
+        organisms[position.y()][position.x()] = underneath;
     }
 
     private record AreaEffect(

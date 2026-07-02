@@ -156,6 +156,32 @@ public final class ModelRegressionCheck {
                 "Humans should be able to walk through plants too.");
         require(simulation.organismAt(humanPlant) instanceof com.kimbopulus.weird.sim.Human,
                 "A human should occupy the plant cell after moving.");
+        require(simulation.count(OrganismKind.PLANT) == 2,
+                "Humans should not destroy plants when they step onto them.");
+
+        Position humanExit = new Position(3, 4);
+        require(simulation.moveAnimal(humanPlant, humanExit, OrganismKind.RABBIT),
+                "Humans should be able to leave a plant-covered square.");
+        require(simulation.organismAt(humanPlant) instanceof com.kimbopulus.weird.sim.Plant,
+                "The plant should return after a human leaves the square.");
+
+        Position wolfStart = new Position(4, 4);
+        Position wolfPlant = new Position(5, 4);
+        simulation.placeOrganism(wolfStart, new com.kimbopulus.weird.sim.Wolf());
+        simulation.addPlant(wolfPlant);
+        require(simulation.moveAnimal(wolfStart, wolfPlant, OrganismKind.RABBIT),
+                "Wolves should be able to cross plant cells.");
+        require(simulation.count(OrganismKind.PLANT) == 3,
+                "Wolves should not destroy plants when they step onto them.");
+
+        Position bearStart = new Position(7, 4);
+        Position bearPlant = new Position(8, 4);
+        simulation.placeOrganism(bearStart, new com.kimbopulus.weird.sim.Bear());
+        simulation.addPlant(bearPlant);
+        require(simulation.moveAnimal(bearStart, bearPlant, OrganismKind.HUMAN),
+                "Bears should be able to cross plant cells.");
+        require(simulation.count(OrganismKind.PLANT) == 4,
+                "Bears should not destroy plants when they step onto them.");
 
         simulation.addPlant(new Position(6, 6));
         simulation.addPlant(new Position(6, 7));
@@ -164,7 +190,7 @@ public final class ModelRegressionCheck {
 
         int cleared = simulation.clearPatch(new Position(6, 6));
         require(cleared > 0, "Clear patch should remove local plants.");
-        require(simulation.count(OrganismKind.PLANT) == 1, "Clear patch should update the plant count.");
+        require(simulation.count(OrganismKind.PLANT) == 4, "Clear patch should update the plant count.");
         require(simulation.organismAt(rabbitTarget) instanceof com.kimbopulus.weird.sim.Plant,
                 "Clear patch should leave the distant plant intact.");
 

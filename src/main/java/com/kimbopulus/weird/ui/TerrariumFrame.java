@@ -539,7 +539,7 @@ public final class TerrariumFrame extends JFrame {
             case HUMAN -> terrariumPanel.showMechanicPopup(
                     "tool-human",
                     "Humans roam and defend themselves",
-                    "They move often, sometimes plant nearby soil, and stab wolves that step next to them."
+                    "They move over plants without crushing them, sometimes plant nearby soil, breed once when they meet, and stab wolves that step next to them."
             );
             case BEAR -> terrariumPanel.showMechanicPopup(
                     "tool-bear",
@@ -651,6 +651,14 @@ public final class TerrariumFrame extends JFrame {
                     "wolf-birth",
                     "Wolves can reproduce",
                     "When two wolves meet and there is room, they can add 1 extra wolf."
+            );
+            return;
+        }
+        if (birth.kind() == OrganismKind.HUMAN) {
+            terrariumPanel.showMechanicPopup(
+                    "human-birth",
+                    "Humans can add one more human",
+                    "The first time 2 humans meet, that pair can create 1 extra human if a nearby cell is empty."
             );
         }
     }
