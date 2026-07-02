@@ -30,7 +30,8 @@ The build output goes into `out/`, which is ignored by Git.
 .\scripts\release.ps1
 ```
 
-This creates `release\Weird-release.zip` with a runnable Windows app image and the bundled music file.
+This creates `release\Weird-portable.zip` with the full runnable Windows app bundle.
+If WiX is installed on the machine, it also creates `release\Weird-setup.exe`.
 
 ## Check
 
@@ -68,13 +69,13 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 ## Controls
 
-- `Rain` adds moisture and cools a 4 x 4 patch centered on the click.
-- `Drought` dries and warms a 4 x 4 patch centered on the click.
+- `Rain` cools a 4 x 4 patch hard while adding a smaller amount of moisture.
+- `Drought` dries and warms a 4 x 4 patch centered on the click, and kills a creature if you click directly on it.
 - `Compost` raises fertility on the clicked cell.
-- `Plant`, `Rabbit`, and `Wolf` place one organism on an empty clicked cell.
-- `Human` plants nearby soil.
-- `Bear` is a rare visitor that appears based on human population.
-- `Lightning` spends 50 tokens and strikes one exact creature with blue lightning.
+- `Rabbit` and `Wolf` place one organism on an empty clicked cell.
+- `Human` plants nearby soil, can breed once when two humans meet, and walks over plants without destroying them.
+- `Bear` hunts humans and also walks over plants without destroying them.
+- `Lightning` spends 10 tokens and strikes one exact creature with blue lightning.
 - `Sanctuary` is purchased in the shop and protects one 2 x 2 soil patch per run.
 - `Pause` stops the timer.
 - `Step` advances one tick.
@@ -108,7 +109,7 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 
 Rain, Drought, and Compost have strong local effects. Repeated use can flood the terrarium, create lethal dry soil, or trigger uncontrolled plant growth.
 
-A crisis warning appears after five consecutive dangerous ticks. If extinction, runaway rabbits, flooding, lethal dryness, lethal temperature, or human collapse continues for 14 ticks, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
+A crisis warning appears when a tracked band leaves its safe range. If extinction, runaway rabbits, flooding, lethal dryness, lethal temperature, or human collapse continues for 30 seconds, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
 
 Ambient music and sound effects are generated through built-in Java Sound. Audio failure never prevents the simulation from running.
 
