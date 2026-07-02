@@ -25,7 +25,6 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.KeyStroke;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -63,6 +62,7 @@ public final class TerrariumFrame extends JFrame {
     private long lastPopupBirthId;
     private Position hoveredBoardPosition;
     private WorldEvent lastWorldEvent = WorldEvent.CALM;
+    private boolean startupHandled;
 
     public TerrariumFrame() {
         super("Weird");
@@ -145,14 +145,17 @@ public final class TerrariumFrame extends JFrame {
             stepSimulation();
         });
         timer.setCoalesce(true);
-        timer.start();
         updateToolAvailability();
         updateStatus();
         updateToolHint(hoveredBoardPosition);
-        SwingUtilities.invokeLater(this::showIntroIfNeeded);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent event) {
+                handleStartup();
+            }
+
             @Override
             public void windowClosed(WindowEvent event) {
                 audio.close();
@@ -205,6 +208,15 @@ public final class TerrariumFrame extends JFrame {
             shortcut++;
         }
         toolbar.add(toolButtons);
+        toolbar.add(Box.createHorizontalStrut(18));
+
+        JButton howToPlayButton = new JButton("How to play");
+        howToPlayButton.setFocusable(false);
+        howToPlayButton.setToolTipText("Pause and reopen the short game guide.");
+        installHoverHint(howToPlayButton);
+        howToPlayButton.addActionListener(event -> openHowToPlay(false));
+        toolbar.add(howToPlayButton);
+
         toolbar.add(Box.createHorizontalGlue());
 
         toolbar.add(new JLabel("Speed "));
@@ -243,23 +255,14 @@ public final class TerrariumFrame extends JFrame {
         audioButton.addActionListener(event -> AudioSettingsDialog.show(this, settings, this::applyAudioSettings));
         toolbar.add(audioButton);
 
-        JButton infoButton = new JButton("Info");
-        infoButton.setFocusable(false);
-        infoButton.setToolTipText("Show the short game guide again.");
-        installHoverHint(infoButton);
-        infoButton.addActionListener(event -> IntroDialog.show(this));
-        toolbar.add(infoButton);
-
         return toolbar;
     }
 
     private void togglePause() {
         if (timer.isRunning()) {
-            timer.stop();
-            pauseButton.setText("Resume");
+            stopSimulation();
         } else {
-            timer.start();
-            pauseButton.setText("Pause");
+            startSimulation();
         }
     }
 
@@ -501,12 +504,42 @@ public final class TerrariumFrame extends JFrame {
         audio.applySettings(settings);
     }
 
-    private void showIntroIfNeeded() {
+    private void handleStartup() {
+        if (startupHandled) {
+            return;
+        }
+        startupHandled = true;
         if (settings.introSeen()) {
+            startSimulation();
             return;
         }
         settings.setIntroSeen(true);
+        openHowToPlay(true);
+    }
+
+    private void openHowToPlay(boolean forceResumeAfterClose) {
+        boolean wasRunning = timer.isRunning();
+        if (wasRunning) {
+            stopSimulation();
+        }
         IntroDialog.show(this);
+        if (forceResumeAfterClose || wasRunning) {
+            startSimulation();
+        }
+    }
+
+    private void startSimulation() {
+        if (!timer.isRunning()) {
+            timer.start();
+        }
+        pauseButton.setText("Pause");
+    }
+
+    private void stopSimulation() {
+        if (timer.isRunning()) {
+            timer.stop();
+        }
+        pauseButton.setText("Resume");
     }
 
     private void updateAudioTension() {

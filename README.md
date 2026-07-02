@@ -31,7 +31,7 @@ The build output goes into `out/`, which is ignored by Git.
 ```
 
 This creates `release\Weird-portable.zip` with the full runnable Windows app bundle.
-If WiX is installed on the machine, it also creates `release\Weird-setup.exe`.
+Inside that bundle, `Weird\Run Weird.bat` starts the packaged game.
 
 ## Check
 
@@ -82,6 +82,7 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 - `Speed` changes the simulation pace.
 - `Restart` starts a fresh terrarium and training session.
 - `Audio` opens persistent music and effect-volume settings.
+- `How to play` pauses the terrarium and reopens the short guide.
 
 Keyboard controls:
 
