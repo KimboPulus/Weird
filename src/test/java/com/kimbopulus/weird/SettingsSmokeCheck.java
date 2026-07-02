@@ -8,6 +8,7 @@ public final class SettingsSmokeCheck {
 
     public static void main(String[] args) {
         GameSettings settings = GameSettings.inMemory();
+        require(settings.musicVolume() == 15, "Default music volume should start low.");
         settings.setAudioEnabled(false);
         settings.setMusicVolume(140);
         settings.setEffectsVolume(-20);

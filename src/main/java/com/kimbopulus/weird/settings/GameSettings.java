@@ -38,7 +38,7 @@ public final class GameSettings {
         return new GameSettings(
                 path,
                 Boolean.parseBoolean(properties.getProperty("audioEnabled", "true")),
-                parse(properties.getProperty("musicVolume"), 35),
+                parse(properties.getProperty("musicVolume"), 15),
                 parse(properties.getProperty("effectsVolume"), 70),
                 Boolean.parseBoolean(properties.getProperty("introSeen", "false"))
         );
@@ -104,7 +104,7 @@ public final class GameSettings {
     }
 
     private static GameSettings defaults(Path path) {
-        return new GameSettings(path, true, 35, 70, false);
+        return new GameSettings(path, true, 15, 70, false);
     }
 
     private static int parse(String value, int fallback) {
