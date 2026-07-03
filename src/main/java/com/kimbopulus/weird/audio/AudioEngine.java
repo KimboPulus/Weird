@@ -19,11 +19,10 @@ import java.util.List;
 public final class AudioEngine implements AutoCloseable {
     private static final float SAMPLE_RATE = 22_050f;
     private static final AudioFormat FORMAT = new AudioFormat(SAMPLE_RATE, 16, 1, true, false);
-    private static final double[] MUSIC_NOTES = {220.0, 277.18, 329.63, 415.30, 329.63, 277.18};
+    private static final double[] MUSIC_NOTES = {196.0, 220.0, 261.63, 329.63, 261.63, 220.0};
     private static final Path MUSIC_WAV = Paths.get("data", "music", "domowka-theme.wav");
     private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
-    private static final Path LIGHTNING_WAV = Paths.get("data", "music", "lightning.wav");
-    private static final Path LIGHTNING_SOURCE = Paths.get("data", "music", "u_39xav15uou-lightning-237994.mp3");
+    private static final Path COMPLETE_WAV = Paths.get("data", "music", "level-complete.wav");
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
@@ -196,17 +195,18 @@ public final class AudioEngine implements AutoCloseable {
 
     private void playClip(SoundCue cue) {
         try {
-            if (cue == SoundCue.LIGHTNING) {
-                Path track = prepareLightningTrack();
-                if (track != null && playTrackClip(track, cue.volume() * effectsVolume)) {
-                    return;
-                }
+            if (cue == SoundCue.COMPLETE && Files.exists(COMPLETE_WAV) && playTrackClip(COMPLETE_WAV, cue.volume() * effectsVolume)) {
                 return;
             }
             Clip clip = AudioSystem.getClip();
-            byte[] data = cue == SoundCue.HUMAN_DEATH
-                    ? harshDeathTone(cue.duration(), cue.volume() * effectsVolume)
-                    : tone(cue.frequency(), cue.duration(), cue.volume() * effectsVolume, false);
+            byte[] data;
+            if (cue == SoundCue.HUMAN_DEATH) {
+                data = harshDeathTone(cue.duration(), cue.volume() * effectsVolume);
+            } else if (cue == SoundCue.LIGHTNING) {
+                data = thunderTone(cue.duration(), cue.volume() * effectsVolume);
+            } else {
+                data = tone(cue.frequency(), cue.duration(), cue.volume() * effectsVolume, false);
+            }
             clip.open(FORMAT, data, 0, data.length);
             clip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
@@ -232,41 +232,6 @@ public final class AudioEngine implements AutoCloseable {
             clip.start();
             return true;
         }
-    }
-
-    private Path prepareLightningTrack() throws IOException, InterruptedException {
-        if (Files.exists(LIGHTNING_WAV)) {
-            return LIGHTNING_WAV;
-        }
-        if (Files.notExists(LIGHTNING_SOURCE)) {
-            return null;
-        }
-
-        Files.createDirectories(LIGHTNING_WAV.getParent());
-        ProcessBuilder builder = new ProcessBuilder(
-                "ffmpeg",
-                "-y",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-i",
-                LIGHTNING_SOURCE.toString(),
-                "-vn",
-                "-ac",
-                "1",
-                "-ar",
-                Integer.toString((int) SAMPLE_RATE),
-                "-sample_fmt",
-                "s16",
-                LIGHTNING_WAV.toString()
-        );
-        builder.redirectOutput(ProcessBuilder.Redirect.DISCARD);
-        builder.redirectError(ProcessBuilder.Redirect.DISCARD);
-        Process process = builder.start();
-        if (process.waitFor() != 0 || Files.notExists(LIGHTNING_WAV)) {
-            return null;
-        }
-        return LIGHTNING_WAV;
     }
 
     private void applyMusicGain(SourceDataLine line, double volume) {
@@ -325,6 +290,24 @@ public final class AudioEngine implements AutoCloseable {
             double noise = (((i * 1103515245L + 12345) >>> 16) & 0x7fff) / 16384.0 - 1.0;
             wave += noise * 0.6;
             short value = (short) (wave / 2.7 * envelope * volume * Short.MAX_VALUE);
+            data[i * 2] = (byte) (value & 0xff);
+            data[i * 2 + 1] = (byte) ((value >>> 8) & 0xff);
+        }
+        return data;
+    }
+
+    private byte[] thunderTone(double seconds, double volume) {
+        int samples = Math.max(1, (int) (SAMPLE_RATE * seconds));
+        byte[] data = new byte[samples * 2];
+        for (int i = 0; i < samples; i++) {
+            double progress = i / (double) samples;
+            double envelope = Math.sin(Math.PI * progress) * (1.0 - progress * 0.10);
+            double rumble = Math.sin(2.0 * Math.PI * 57.0 * i / SAMPLE_RATE) * 0.8
+                    + Math.sin(2.0 * Math.PI * 84.0 * i / SAMPLE_RATE) * 0.55
+                    + Math.sin(2.0 * Math.PI * 121.0 * i / SAMPLE_RATE) * 0.28;
+            double noise = (((i * 214013L + 2531011L) >>> 8) & 0xffff) / 32768.0 - 1.0;
+            double wave = rumble + noise * 0.22;
+            short value = (short) (wave / 1.8 * envelope * volume * Short.MAX_VALUE);
             data[i * 2] = (byte) (value & 0xff);
             data[i * 2 + 1] = (byte) ((value >>> 8) & 0xff);
         }

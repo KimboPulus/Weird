@@ -4,6 +4,7 @@ scripts/
 data/*
 !data/music/
 data/music/*
+!data/music/level-complete.wav
 !data/music/lightning.wav
 !data/music/u_39xav15uou-lightning-237994.mp3
 *.class
