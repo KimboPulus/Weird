@@ -107,6 +107,7 @@ public final class TerrariumFrame extends JFrame {
                 }
                 String targetDescription = terrariumPanel.describe(position);
                 boolean rainWillCoolWorld = toolMode == ToolMode.RAIN && simulation.rainWillCoolWorld(position);
+                boolean droughtWillHeatWorld = toolMode == ToolMode.DROUGHT && simulation.droughtWillHeatWorld(position);
                 if (toolMode == ToolMode.LIGHTNING) {
                     if (simulation.organismAt(position) == null) {
                         terrariumPanel.showBanner("Lightning needs a target");
@@ -129,6 +130,12 @@ public final class TerrariumFrame extends JFrame {
                             "rain-drought-cool",
                             "Rain hit drought soil",
                             "That combo cools the whole board by 1 C."
+                    );
+                } else if (droughtWillHeatWorld) {
+                    terrariumPanel.showMechanicPopup(
+                            "drought-stack-heat",
+                            "Drought hit dry soil",
+                            "That combo heats the whole board by 2 C."
                     );
                 }
                 training.noteAction(toolMode.label(), targetDescription);
@@ -596,7 +603,7 @@ public final class TerrariumFrame extends JFrame {
             case DROUGHT -> terrariumPanel.showMechanicPopup(
                     "tool-drought",
                     "Drought hits a 4 x 4 patch",
-                    "Dries hard, warms soil, and direct hits kill animals."
+                    "Dries hard, warms soil, and double hits on one patch add 2 C globally."
             );
             case COMPOST -> terrariumPanel.showMechanicPopup(
                     "tool-compost",

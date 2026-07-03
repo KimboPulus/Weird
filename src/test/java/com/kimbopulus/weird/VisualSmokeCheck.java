@@ -226,10 +226,10 @@ public final class VisualSmokeCheck {
             renderPanels(simulation, training, output, null, board -> {
                 board.showMechanicPopup("rain-tip", "Rain hit drought soil",
                         "That combo cools the whole board by 1 C.");
+                board.showMechanicPopup("drought-tip", "Drought hit dry soil",
+                        "That combo heats the whole board by 2 C.");
                 board.showMechanicPopup("rabbit-tip", "Rabbits can starve",
                         "No plant in time means death.");
-                board.showMechanicPopup("bear-tip", "Bears leave after 2 kills",
-                        "A bear leaves after 2 kills.");
             });
         } catch (Exception exception) {
             throw new IllegalStateException(exception);

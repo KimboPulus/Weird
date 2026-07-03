@@ -11,6 +11,7 @@ public final class Simulation {
     public static final int DEFAULT_WIDTH = 38;
     public static final int DEFAULT_HEIGHT = 26;
     private static final double DROUGHT_RAIN_GLOBAL_COOLING = 1.0;
+    private static final double DROUGHT_STACK_GLOBAL_HEATING = 2.0;
 
     private final Random random;
     private final WorldGrid grid;
@@ -369,6 +370,22 @@ public final class Simulation {
         return overlapsActiveDrought(patchOrigin(center, 4, 4), 4, 4);
     }
 
+    public boolean droughtWillHeatWorld(Position center) {
+        if (!grid.contains(center)) {
+            return false;
+        }
+        Position origin = patchOrigin(center, 4, 4);
+        for (AreaEffect effect : areaEffects) {
+            if (effect.kind() == EffectKind.DROUGHT
+                    && effect.origin().equals(origin)
+                    && effect.width() == 4
+                    && effect.height() == 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
@@ -386,6 +403,9 @@ public final class Simulation {
 
     public boolean drought(Position center) {
         if (grid.contains(center)) {
+            if (droughtWillHeatWorld(center)) {
+                grid.warmAll(DROUGHT_STACK_GLOBAL_HEATING);
+            }
             Organism target = organismAt(center);
             if (target != null && target.kind() != OrganismKind.PLANT) {
                 removeOrganism(center, DeathCause.NATURAL);

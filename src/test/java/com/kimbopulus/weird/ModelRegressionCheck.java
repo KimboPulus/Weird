@@ -37,6 +37,7 @@ public final class ModelRegressionCheck {
         checkSimulationMovementAndSearch();
         checkSimulationHistoryAndEvents();
         checkRainAfterDroughtCoolsGlobalTemperature();
+        checkDroughtAfterDroughtHeatsGlobalTemperature();
         checkTrainingLabelsAndReset();
         checkProgressionPersistence();
         checkProgressionNormalization();
@@ -254,6 +255,27 @@ public final class ModelRegressionCheck {
 
         require(Math.abs(actualDrop - expectedDrop) < 0.0001,
                 "Rain on an active drought patch should cool the whole board by 1 extra degree.");
+    }
+
+    private static void checkDroughtAfterDroughtHeatsGlobalTemperature() {
+        Simulation simulation = new Simulation(6, 6, 24L);
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                simulation.grid().cellAt(x, y).reset(0.50, 20.0, 0.50);
+            }
+        }
+
+        Position center = new Position(3, 3);
+        require(simulation.drought(center), "First drought should apply.");
+        double beforeSecondDrought = averageTemperature(simulation);
+
+        require(simulation.drought(center), "Second drought should apply.");
+        double afterSecondDrought = averageTemperature(simulation);
+        double expectedRise = (3.2 * 16.0 / 36.0) + 2.0;
+        double actualRise = afterSecondDrought - beforeSecondDrought;
+
+        require(Math.abs(actualRise - expectedRise) < 0.0001,
+                "Second drought on the same patch should warm the whole board by 2 extra degrees.");
     }
 
     private static void checkTrainingLabelsAndReset() {

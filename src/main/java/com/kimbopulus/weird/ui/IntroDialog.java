@@ -35,6 +35,7 @@ Bears hunt humans.
 Rabbits and wolves can starve.
 Rain and Drought hit a 4 x 4 patch.
 Rain on active drought soil cools the whole board by 1 C.
+Drought twice on one patch heats the whole board by 2 C.
 Direct Drought clicks kill animals on that square.
 Lightning costs 10 tokens.
 If a red warning stays for 30 seconds, the level fails.

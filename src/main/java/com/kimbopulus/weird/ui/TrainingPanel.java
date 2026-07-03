@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
+import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -37,7 +38,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
-    private final JLabel warningLabel = new JLabel();
+    private final JTextArea warningLabel = new JTextArea();
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton nextLevelButton = new JButton("Next Level");
@@ -94,12 +95,17 @@ public final class TrainingPanel extends JPanel {
         configureLabel(detailLabel, Font.PLAIN, 14f, MUTED);
         configureLabel(climateLabel, Font.PLAIN, 14f, MUTED);
         configureLabel(eventLabel, Font.BOLD, 14f, new Color(126, 78, 56));
-        configureLabel(warningLabel, Font.BOLD, 20f, Color.WHITE);
         configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
         warningLabel.setOpaque(true);
         warningLabel.setBackground(new Color(176, 57, 45));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        warningLabel.setFont(warningLabel.getFont().deriveFont(Font.BOLD, 16f));
+        warningLabel.setForeground(Color.WHITE);
+        warningLabel.setEditable(false);
+        warningLabel.setFocusable(false);
+        warningLabel.setLineWrap(true);
+        warningLabel.setWrapStyleWord(true);
         warningLabel.setAlignmentX(LEFT_ALIGNMENT);
         warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
         warningLabel.setVisible(false);
@@ -170,6 +176,10 @@ public final class TrainingPanel extends JPanel {
                 ? formatFailureWarning(training.failureReason(), training.failureAction())
                 : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel(), training.dangerAction());
         warningLabel.setText(warning == null ? "" : warning);
+        warningLabel.setSize(new Dimension(250, Short.MAX_VALUE));
+        Dimension warningSize = warningLabel.getPreferredSize();
+        warningLabel.setPreferredSize(new Dimension(250, warningSize.height));
+        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Math.max(58, warningSize.height)));
         warningLabel.setVisible(warning != null);
 
         nextLevelButton.setVisible(training.levelComplete());
@@ -258,10 +268,9 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String formatFailureWarning(String reason, String action) {
-        return "<html><body style='width:250px'><span style='font-size:16px;font-weight:bold;'>Level failed</span>"
-                + "<br><span style='font-size:12px;'>" + reason + "</span>"
-                + (action == null ? "" : "<br><span style='font-size:12px;color:#f6dfca;'>" + action + "</span>")
-                + "</body></html>";
+        return "Level failed\n"
+                + reason
+                + (action == null ? "" : "\n" + action);
     }
 
     private String formatDangerWarning(String reason, String countdownText, String action) {
@@ -271,12 +280,9 @@ public final class TrainingPanel extends JPanel {
         int split = reason.indexOf(" (");
         String title = split <= 0 ? reason : reason.substring(0, split);
         String detail = split <= 0 ? "" : reason.substring(split);
-        return "<html><body style='width:250px'><span style='font-size:16px;font-weight:bold;'>"
-                + title
-                + "</span>"
-                + (detail.isBlank() ? "" : "<br><span style='font-size:12px;'>" + detail + "</span>")
-                + (action == null ? "" : "<br><span style='font-size:12px;color:#f6dfca;'>" + action + "</span>")
-                + "<br><span style='font-size:11px;color:#f6dfca;'>" + countdownText + "</span>"
-                + "</body></html>";
+        return title
+                + (detail.isBlank() ? "" : "\n" + detail)
+                + (action == null ? "" : "\n" + action)
+                + "\n" + countdownText;
     }
 }
