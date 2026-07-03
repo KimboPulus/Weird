@@ -153,6 +153,10 @@ public final class WorldGrid {
         });
     }
 
+    public void coolAll(double amount) {
+        forEachCell(cell -> cell.cool(amount));
+    }
+
     public void createSanctuary(Position corner) {
         for (int y = corner.y(); y <= Math.min(height - 1, corner.y() + 1); y++) {
             for (int x = corner.x(); x <= Math.min(width - 1, corner.x() + 1); x++) {

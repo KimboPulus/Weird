@@ -36,6 +36,7 @@ public final class ModelRegressionCheck {
         checkSimulationPlacements();
         checkSimulationMovementAndSearch();
         checkSimulationHistoryAndEvents();
+        checkRainAfterDroughtCoolsGlobalTemperature();
         checkTrainingLabelsAndReset();
         checkProgressionPersistence();
         checkProgressionNormalization();
@@ -232,6 +233,27 @@ public final class ModelRegressionCheck {
         require(simulation.tickCount() == 400, "Tick count should match the number of updates.");
         require(simulation.recentHistory(500).size() == 320, "History should keep the most recent 320 snapshots.");
         require(simulation.recentHistory(5).size() == 5, "Recent history should return the requested slice.");
+    }
+
+    private static void checkRainAfterDroughtCoolsGlobalTemperature() {
+        Simulation simulation = new Simulation(6, 6, 23L);
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                simulation.grid().cellAt(x, y).reset(0.50, 20.0, 0.50);
+            }
+        }
+
+        Position center = new Position(3, 3);
+        require(simulation.drought(center), "Drought should apply to the test patch.");
+        double beforeRain = averageTemperature(simulation);
+
+        require(simulation.rain(center), "Rain should apply to the droughted patch.");
+        double afterRain = averageTemperature(simulation);
+        double expectedDrop = (5.6 * 16.0 / 36.0) + 1.0;
+        double actualDrop = beforeRain - afterRain;
+
+        require(Math.abs(actualDrop - expectedDrop) < 0.0001,
+                "Rain on an active drought patch should cool the whole board by 1 extra degree.");
     }
 
     private static void checkTrainingLabelsAndReset() {
@@ -480,6 +502,17 @@ public final class ModelRegressionCheck {
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException(exception);
         }
+    }
+
+    private static double averageTemperature(Simulation simulation) {
+        double total = 0.0;
+        int cells = simulation.grid().width() * simulation.grid().height();
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                total += simulation.grid().cellAt(x, y).temperature();
+            }
+        }
+        return total / cells;
     }
 
     private static void require(boolean condition, String message) {

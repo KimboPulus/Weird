@@ -10,6 +10,7 @@ import java.util.Set;
 public final class Simulation {
     public static final int DEFAULT_WIDTH = 38;
     public static final int DEFAULT_HEIGHT = 26;
+    private static final double DROUGHT_RAIN_GLOBAL_COOLING = 1.0;
 
     private final Random random;
     private final WorldGrid grid;
@@ -349,6 +350,9 @@ public final class Simulation {
     public boolean rain(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
+            if (overlapsActiveDrought(origin, 4, 4)) {
+                grid.coolAll(DROUGHT_RAIN_GLOBAL_COOLING);
+            }
             grid.rainPatch(origin, 4, 4, 0.18);
             grid.coolPatch(origin, 4, 4, 5.6);
             grid.fertilizePatch(origin, 4, 4, 0.16);
@@ -361,6 +365,9 @@ public final class Simulation {
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);
+            if (overlapsActiveDrought(origin, 4, 4)) {
+                grid.coolAll(DROUGHT_RAIN_GLOBAL_COOLING);
+            }
             grid.rainPatch(origin, 4, 4, 0.14);
             grid.coolPatch(origin, 4, 4, 6.8);
             grid.fertilizePatch(origin, 4, 4, 0.22);
@@ -726,6 +733,37 @@ public final class Simulation {
         Plant underneath = coveredPlants[position.y()][position.x()];
         coveredPlants[position.y()][position.x()] = null;
         organisms[position.y()][position.x()] = underneath;
+    }
+
+    private boolean overlapsActiveDrought(Position rainOrigin, int rainWidth, int rainHeight) {
+        for (AreaEffect effect : areaEffects) {
+            if (effect.kind() != EffectKind.DROUGHT) {
+                continue;
+            }
+            if (patchesOverlap(rainOrigin, rainWidth, rainHeight, effect.origin(), effect.width(), effect.height())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean patchesOverlap(
+            Position firstOrigin,
+            int firstWidth,
+            int firstHeight,
+            Position secondOrigin,
+            int secondWidth,
+            int secondHeight
+    ) {
+        int firstRight = firstOrigin.x() + firstWidth - 1;
+        int firstBottom = firstOrigin.y() + firstHeight - 1;
+        int secondRight = secondOrigin.x() + secondWidth - 1;
+        int secondBottom = secondOrigin.y() + secondHeight - 1;
+
+        return firstOrigin.x() <= secondRight
+                && firstRight >= secondOrigin.x()
+                && firstOrigin.y() <= secondBottom
+                && firstBottom >= secondOrigin.y();
     }
 
     private record AreaEffect(
