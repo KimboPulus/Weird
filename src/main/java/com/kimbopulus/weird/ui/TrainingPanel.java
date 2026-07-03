@@ -47,7 +47,6 @@ public final class TrainingPanel extends JPanel {
     private final JButton nextLevelButton = new JButton("Next Level");
     private final JButton restartLevelButton = new JButton("Restart Level");
     private final JPanel levelActionsPanel = new JPanel(new GridLayout(0, 1, 0, 5));
-    private final JPanel helpPanel;
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
         this(simulation, training, () -> {
@@ -74,7 +73,6 @@ public final class TrainingPanel extends JPanel {
         this.onProgressionChanged = onProgressionChanged;
         this.onRestartLevel = onRestartLevel;
         this.onLevelAdvanced = onLevelAdvanced;
-        this.helpPanel = createControlsPanel();
 
         setBackground(BACKGROUND);
         setPreferredSize(new Dimension(432, 700));
@@ -90,15 +88,15 @@ public final class TrainingPanel extends JPanel {
         top.add(titleLabel);
         top.add(Box.createVerticalStrut(6));
 
-        configureLabel(levelLabel, Font.BOLD, 18f, new Color(75, 101, 67));
-        configureLabel(scoreLabel, Font.BOLD, 18f, TEXT);
-        configureLabel(goalLabel, Font.BOLD, 15f, TEXT);
-        configureLabel(balanceLabel, Font.BOLD, 17f, TEXT);
-        configureLabel(countsLabel, Font.BOLD, 18f, TEXT);
-        configureLabel(detailLabel, Font.PLAIN, 14f, MUTED);
-        configureLabel(climateLabel, Font.PLAIN, 14f, MUTED);
-        configureLabel(eventLabel, Font.BOLD, 14f, new Color(126, 78, 56));
-        configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
+        configureLabel(levelLabel, Font.BOLD, 20f, new Color(75, 101, 67));
+        configureLabel(scoreLabel, Font.BOLD, 19f, TEXT);
+        configureLabel(goalLabel, Font.BOLD, 17f, TEXT);
+        configureLabel(balanceLabel, Font.BOLD, 19f, TEXT);
+        configureLabel(countsLabel, Font.BOLD, 21f, TEXT);
+        configureLabel(detailLabel, Font.PLAIN, 16f, MUTED);
+        configureLabel(climateLabel, Font.PLAIN, 16f, MUTED);
+        configureLabel(eventLabel, Font.BOLD, 16f, new Color(126, 78, 56));
+        configureLabel(feedbackLabel, Font.PLAIN, 16f, MUTED);
 
         warningPanel.setOpaque(true);
         warningPanel.setBackground(new Color(176, 57, 45));
@@ -148,7 +146,6 @@ public final class TrainingPanel extends JPanel {
         JPanel center = new JPanel(new BorderLayout(0, 8));
         center.setOpaque(false);
         center.add(createDetailPanel(), BorderLayout.NORTH);
-        center.add(helpPanel, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
         add(feedbackLabel, BorderLayout.SOUTH);
@@ -187,7 +184,6 @@ public final class TrainingPanel extends JPanel {
         nextLevelButton.setVisible(training.levelComplete());
         restartLevelButton.setVisible(training.levelFailed());
         levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
-        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed() && !warningPanel.isVisible());
         feedbackLabel.setText(html(training.feedback(), 336));
         feedbackLabel.setForeground(MUTED);
     }
@@ -234,26 +230,6 @@ public final class TrainingPanel extends JPanel {
         row.add(scoreLabel, BorderLayout.CENTER);
         row.add(shopButton, BorderLayout.EAST);
         return row;
-    }
-
-    private JPanel createControlsPanel() {
-        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 4));
-        panel.setOpaque(false);
-
-        JLabel title = new JLabel("Quick help");
-        configureLabel(title, Font.BOLD, 15f, TEXT);
-        panel.add(title);
-        panel.add(help("Low plants: Rain or Compost"));
-        panel.add(help("High plants: Drought or Rabbits"));
-        panel.add(help("Too many rabbits: Wolves"));
-        panel.add(help("Too many humans: Bears"));
-        return panel;
-    }
-
-    private JLabel help(String text) {
-        JLabel label = new JLabel(html(text, 336));
-        configureLabel(label, Font.PLAIN, 14f, MUTED);
-        return label;
     }
 
     private void configureLabel(JLabel label, int style, float size, Color color) {
