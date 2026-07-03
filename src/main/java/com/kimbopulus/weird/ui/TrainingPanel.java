@@ -12,7 +12,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -38,7 +37,11 @@ public final class TrainingPanel extends JPanel {
     private final JLabel detailLabel = new JLabel();
     private final JLabel climateLabel = new JLabel();
     private final JLabel eventLabel = new JLabel();
-    private final JTextArea warningLabel = new JTextArea();
+    private final JPanel warningPanel = new JPanel();
+    private final JLabel warningTitleLabel = new JLabel();
+    private final JLabel warningDetailLabel = new JLabel();
+    private final JLabel warningActionLabel = new JLabel();
+    private final JLabel warningCountdownLabel = new JLabel();
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton nextLevelButton = new JButton("Next Level");
@@ -97,18 +100,25 @@ public final class TrainingPanel extends JPanel {
         configureLabel(eventLabel, Font.BOLD, 14f, new Color(126, 78, 56));
         configureLabel(feedbackLabel, Font.PLAIN, 14f, MUTED);
 
-        warningLabel.setOpaque(true);
-        warningLabel.setBackground(new Color(176, 57, 45));
-        warningLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
-        warningLabel.setFont(warningLabel.getFont().deriveFont(Font.BOLD, 16f));
-        warningLabel.setForeground(Color.WHITE);
-        warningLabel.setEditable(false);
-        warningLabel.setFocusable(false);
-        warningLabel.setLineWrap(true);
-        warningLabel.setWrapStyleWord(true);
-        warningLabel.setAlignmentX(LEFT_ALIGNMENT);
-        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
-        warningLabel.setVisible(false);
+        warningPanel.setOpaque(true);
+        warningPanel.setBackground(new Color(176, 57, 45));
+        warningPanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        warningPanel.setLayout(new BoxLayout(warningPanel, BoxLayout.Y_AXIS));
+        warningPanel.setAlignmentX(LEFT_ALIGNMENT);
+        warningPanel.setVisible(false);
+
+        configureWarningLine(warningTitleLabel, Font.BOLD, 17f);
+        configureWarningLine(warningDetailLabel, Font.BOLD, 15f);
+        configureWarningLine(warningActionLabel, Font.BOLD, 14f);
+        configureWarningLine(warningCountdownLabel, Font.BOLD, 14f);
+
+        warningPanel.add(warningTitleLabel);
+        warningPanel.add(Box.createVerticalStrut(4));
+        warningPanel.add(warningDetailLabel);
+        warningPanel.add(Box.createVerticalStrut(4));
+        warningPanel.add(warningActionLabel);
+        warningPanel.add(Box.createVerticalStrut(4));
+        warningPanel.add(warningCountdownLabel);
 
         levelProgress.setStringPainted(true);
         levelProgress.setForeground(new Color(77, 143, 85));
@@ -132,7 +142,7 @@ public final class TrainingPanel extends JPanel {
         top.add(Box.createVerticalStrut(2));
         top.add(eventLabel);
         top.add(Box.createVerticalStrut(8));
-        top.add(warningLabel);
+        top.add(warningPanel);
         add(top, BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout(0, 8));
@@ -172,20 +182,12 @@ public final class TrainingPanel extends JPanel {
                 snapshot.averageTemperature()
         ));
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
-        String warning = training.levelFailed()
-                ? formatFailureWarning(training.failureReason(), training.failureAction())
-                : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel(), training.dangerAction());
-        warningLabel.setText(warning == null ? "" : warning);
-        warningLabel.setSize(new Dimension(250, Short.MAX_VALUE));
-        Dimension warningSize = warningLabel.getPreferredSize();
-        warningLabel.setPreferredSize(new Dimension(250, warningSize.height));
-        warningLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Math.max(58, warningSize.height)));
-        warningLabel.setVisible(warning != null);
+        refreshWarningPanel();
 
         nextLevelButton.setVisible(training.levelComplete());
         restartLevelButton.setVisible(training.levelFailed());
         levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
-        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed() && warning == null);
+        helpPanel.setVisible(!training.levelComplete() && !training.levelFailed() && !warningPanel.isVisible());
         feedbackLabel.setText(html(training.feedback(), 336));
         feedbackLabel.setForeground(MUTED);
     }
@@ -259,6 +261,11 @@ public final class TrainingPanel extends JPanel {
         label.setForeground(color);
     }
 
+    private void configureWarningLine(JLabel label, int style, float size) {
+        configureLabel(label, style, size, Color.WHITE);
+        label.setAlignmentX(LEFT_ALIGNMENT);
+    }
+
     private String html(String text) {
         return html(text, 300);
     }
@@ -267,22 +274,95 @@ public final class TrainingPanel extends JPanel {
         return "<html><body style='width:" + width + "px'>" + text.replace("\n", "<br>") + "</body></html>";
     }
 
-    private String formatFailureWarning(String reason, String action) {
-        return "Level failed\n"
-                + reason
-                + (action == null ? "" : "\n" + action);
+    private String warningHtml(String text, int maxLineLength) {
+        return "<html>" + wrapWarningText(text, maxLineLength).replace("\n", "<br>") + "</html>";
     }
 
-    private String formatDangerWarning(String reason, String countdownText, String action) {
+    private String wrapWarningText(String text, int maxLineLength) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String[] inputLines = text.split("\\R");
+        StringBuilder wrapped = new StringBuilder();
+        for (int i = 0; i < inputLines.length; i++) {
+            if (i > 0) {
+                wrapped.append('\n');
+            }
+            appendWrappedLine(wrapped, inputLines[i].trim(), maxLineLength);
+        }
+        return wrapped.toString();
+    }
+
+    private void appendWrappedLine(StringBuilder wrapped, String line, int maxLineLength) {
+        if (line.isBlank()) {
+            return;
+        }
+        int currentLength = 0;
+        for (String word : line.split("\\s+")) {
+            if (word.isBlank()) {
+                continue;
+            }
+            int required = currentLength == 0 ? word.length() : currentLength + 1 + word.length();
+            if (currentLength > 0 && required > maxLineLength) {
+                wrapped.append('\n');
+                wrapped.append(word);
+                currentLength = word.length();
+                continue;
+            }
+            if (currentLength > 0) {
+                wrapped.append(' ');
+                currentLength++;
+            }
+            wrapped.append(word);
+            currentLength += word.length();
+        }
+    }
+
+    private void refreshWarningPanel() {
+        WarningCard warning = training.levelFailed()
+                ? formatFailureWarning(training.failureReason(), training.failureAction())
+                : formatDangerWarning(training.dangerDetail(), training.dangerCountdownLabel(), training.dangerAction());
+        if (warning == null) {
+            warningPanel.setVisible(false);
+            warningTitleLabel.setText("");
+            warningDetailLabel.setText("");
+            warningActionLabel.setText("");
+            warningCountdownLabel.setText("");
+            return;
+        }
+
+        warningTitleLabel.setText(warningHtml(warning.title(), 22));
+        warningDetailLabel.setText(warning.detail() == null ? "" : warningHtml(warning.detail(), 24));
+        warningDetailLabel.setVisible(warning.detail() != null && !warning.detail().isBlank());
+        warningActionLabel.setText(warning.action() == null ? "" : warningHtml(warning.action(), 24));
+        warningActionLabel.setVisible(warning.action() != null && !warning.action().isBlank());
+        warningCountdownLabel.setText(warning.countdown() == null ? "" : warningHtml(warning.countdown(), 24));
+        warningCountdownLabel.setVisible(warning.countdown() != null && !warning.countdown().isBlank());
+
+        warningPanel.setVisible(true);
+        warningPanel.revalidate();
+        warningPanel.repaint();
+    }
+
+    private WarningCard formatFailureWarning(String reason, String action) {
+        return new WarningCard("Level failed", reason, action, null);
+    }
+
+    private WarningCard formatDangerWarning(String reason, String countdownText, String action) {
         if (reason == null || countdownText == null) {
             return null;
         }
         int split = reason.indexOf(" (");
         String title = split <= 0 ? reason : reason.substring(0, split);
         String detail = split <= 0 ? "" : reason.substring(split);
-        return title
-                + (detail.isBlank() ? "" : "\n" + detail)
-                + (action == null ? "" : "\n" + action)
-                + "\n" + countdownText;
+        return new WarningCard(
+                title,
+                detail.isBlank() ? null : detail,
+                action,
+                countdownText
+        );
+    }
+
+    private record WarningCard(String title, String detail, String action, String countdown) {
     }
 }
