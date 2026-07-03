@@ -81,6 +81,8 @@ public final class TerrariumPanel extends JPanel {
     private String bannerText;
     private long bannerStartedAt;
     private boolean levelUpBanner;
+    private String levelCompleteTitle;
+    private String levelCompleteDetail;
     private long lastDeathId;
     private long lastBirthId;
 
@@ -153,6 +155,18 @@ public final class TerrariumPanel extends JPanel {
         if (!effectTimer.isRunning()) {
             effectTimer.start();
         }
+        repaint();
+    }
+
+    public void showLevelCompleteOverlay(String title, String detail) {
+        levelCompleteTitle = title;
+        levelCompleteDetail = detail;
+        repaint();
+    }
+
+    public void clearLevelCompleteOverlay() {
+        levelCompleteTitle = null;
+        levelCompleteDetail = null;
         repaint();
     }
 
@@ -247,6 +261,7 @@ public final class TerrariumPanel extends JPanel {
         drawHover(g, metrics);
         drawCrisisEdge(g, metrics);
         drawBanner(g, metrics);
+        drawLevelCompleteOverlay(g, metrics);
         drawMechanicPopups(g, metrics);
 
         g.dispose();
@@ -862,6 +877,48 @@ public final class TerrariumPanel extends JPanel {
                 card.dispose();
             }
             y += height + 10;
+        }
+    }
+
+    private void drawLevelCompleteOverlay(Graphics2D g, BoardMetrics metrics) {
+        if (levelCompleteTitle == null || levelCompleteDetail == null) {
+            return;
+        }
+
+        int cardWidth = Math.min(500, Math.max(360, metrics.width / 2));
+        int cardHeight = 170;
+        int x = metrics.offsetX + (metrics.width - cardWidth) / 2;
+        int y = metrics.offsetY + (metrics.height - cardHeight) / 2;
+
+        g.setColor(new Color(18, 22, 20, 135));
+        g.fillRect(metrics.offsetX, metrics.offsetY, metrics.width, metrics.height);
+
+        Graphics2D card = (Graphics2D) g.create();
+        try {
+            card.setColor(new Color(28, 35, 30, 240));
+            card.fillRoundRect(x, y, cardWidth, cardHeight, 16, 16);
+            card.setColor(new Color(214, 198, 106, 225));
+            card.setStroke(new BasicStroke(3f));
+            card.drawRoundRect(x, y, cardWidth, cardHeight, 16, 16);
+
+            card.setFont(card.getFont().deriveFont(Font.BOLD, 30f));
+            card.setColor(new Color(244, 239, 218));
+            FontMetrics titleMetrics = card.getFontMetrics();
+            String title = levelCompleteTitle;
+            int titleX = x + (cardWidth - titleMetrics.stringWidth(title)) / 2;
+            card.drawString(title, titleX, y + 50);
+
+            card.setFont(card.getFont().deriveFont(Font.PLAIN, 18f));
+            card.setColor(new Color(226, 222, 205));
+            List<String> lines = wrappedLines(card, card.getFont(), levelCompleteDetail, cardWidth - 50);
+            int lineY = y + 86;
+            for (String line : lines) {
+                int lineX = x + (cardWidth - card.getFontMetrics().stringWidth(line)) / 2;
+                card.drawString(line, lineX, lineY);
+                lineY += 24;
+            }
+        } finally {
+            card.dispose();
         }
     }
 

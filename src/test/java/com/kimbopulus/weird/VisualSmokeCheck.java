@@ -44,6 +44,7 @@ public final class VisualSmokeCheck {
 
         File output = new File(args.length == 0 ? "out/visual-check.png" : args[0]);
         File failureOutput = new File(output.getParentFile(), "failure-check.png");
+        File completeOutput = new File(output.getParentFile(), "complete-check.png");
         File levelOutput = new File(output.getParentFile(), "level-up-check.png");
         File birthOutput = new File(output.getParentFile(), "birth-check.png");
         File sexOutput = new File(output.getParentFile(), "rabbit-sex-check.png");
@@ -55,6 +56,7 @@ public final class VisualSmokeCheck {
         SwingUtilities.invokeAndWait(() -> {
             render(output);
             renderFailure(failureOutput);
+            renderCompleteOverlay(completeOutput);
             renderLevelUp(levelOutput);
             renderBirth(birthOutput);
             renderRabbitSexes(sexOutput);
@@ -66,6 +68,7 @@ public final class VisualSmokeCheck {
         });
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
+        System.out.println("Complete check saved " + completeOutput.getAbsolutePath());
         System.out.println("Level-up check saved " + levelOutput.getAbsolutePath());
         System.out.println("Birth check saved " + birthOutput.getAbsolutePath());
         System.out.println("Rabbit sex check saved " + sexOutput.getAbsolutePath());
@@ -139,6 +142,19 @@ public final class VisualSmokeCheck {
                 training.update(simulation);
             }
             renderPanels(simulation, training, output, "LEVEL 2  GREEN RHYTHM");
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderCompleteOverlay(File output) {
+        try {
+            Simulation simulation = balancedLevelSimulation(23L);
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            renderPanels(simulation, training, output, null, board -> board.showLevelCompleteOverlay(
+                    "Level complete",
+                    "+45 tokens. Click Next Level on the right to continue."
+            ));
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
         }

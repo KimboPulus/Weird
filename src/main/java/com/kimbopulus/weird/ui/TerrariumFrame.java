@@ -267,6 +267,14 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void stepSimulation() {
+        if (training.levelComplete()) {
+            terrariumPanel.showBanner("Click Next Level to continue");
+            return;
+        }
+        if (training.levelFailed()) {
+            terrariumPanel.showBanner("Restart Level to try again");
+            return;
+        }
         boolean wasComplete = training.levelComplete();
         boolean wasFailed = training.levelFailed();
         simulation.tick();
@@ -277,9 +285,16 @@ public final class TerrariumFrame extends JFrame {
         showPassiveMechanicTips();
         updateAudioTension();
         if (!wasComplete && training.levelComplete()) {
-            terrariumPanel.showBanner("Level complete: +" + training.lastLevelReward());
+            stopSimulation();
+            audio.play(SoundCue.COMPLETE);
+            terrariumPanel.showLevelCompleteOverlay(
+                    "Level complete",
+                    "+" + training.lastLevelReward() + " tokens. Click Next Level on the right to continue."
+            );
         } else if (!wasFailed && training.levelFailed()) {
+            stopSimulation();
             training.progression().resetPurchases();
+            terrariumPanel.clearLevelCompleteOverlay();
             terrariumPanel.showBanner("LEVEL LOST: " + training.failureReason());
         }
         terrariumPanel.repaint();
@@ -312,6 +327,7 @@ public final class TerrariumFrame extends JFrame {
         simulation.restart();
         training.reset();
         terrariumPanel.resetMechanicPopups();
+        terrariumPanel.clearLevelCompleteOverlay();
         lastDeathSoundId = 0L;
         lastPopupDeathId = 0L;
         lastPopupBirthId = 0L;
@@ -322,6 +338,7 @@ public final class TerrariumFrame extends JFrame {
         updateToolAvailability();
         updateStatus();
         updateToolHint(hoveredBoardPosition);
+        startSimulation();
     }
 
     private void updateStatus() {
@@ -439,6 +456,7 @@ public final class TerrariumFrame extends JFrame {
         training.progression().resetPurchases();
         simulation.restart();
         terrariumPanel.resetMechanicPopups();
+        terrariumPanel.clearLevelCompleteOverlay();
         lastDeathSoundId = 0L;
         lastPopupDeathId = 0L;
         lastPopupBirthId = 0L;
@@ -449,6 +467,7 @@ public final class TerrariumFrame extends JFrame {
         trainingPanel.refresh();
         updateStatus();
         updateToolAvailability();
+        startSimulation();
     }
 
     private void playToolSound() {
@@ -471,7 +490,10 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void celebrateLevel() {
+        terrariumPanel.clearLevelCompleteOverlay();
+        audio.play(SoundCue.LEVEL_UP);
         terrariumPanel.showLevelUp("LEVEL " + training.levelNumber() + "  " + training.levelTitle());
+        startSimulation();
     }
 
     private void playDeathSounds() {
@@ -529,6 +551,10 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void startSimulation() {
+        if (training.levelComplete() || training.levelFailed()) {
+            pauseButton.setText("Resume");
+            return;
+        }
         if (!timer.isRunning()) {
             timer.start();
         }
