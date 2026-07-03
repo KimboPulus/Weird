@@ -170,15 +170,15 @@ public final class TrainingSessionSmokeCheck {
         require(training.balanceStatus(wolvesLow).startsWith("Wolves low"), "Low wolves snapshot should trigger the wolf warning.");
 
         forceDanger(training, "Temperature high");
-        require("Do this: use Rain on the hottest 4 x 4 patch.".equals(training.dangerAction()),
+        require("Fix: Rain hottest 4 x 4.".equals(training.dangerAction()),
                 "Hot warnings should explain that rain is the fix.");
 
         forceDanger(training, "Moisture high");
-        require("Do this: use Drought on the wettest 4 x 4 patch.".equals(training.dangerAction()),
+        require("Fix: Drought wettest 4 x 4.".equals(training.dangerAction()),
                 "Wet warnings should explain that drought is the fix.");
 
         forceDanger(training, "Wolves low");
-        require("Do this: add a Wolf.".equals(training.dangerAction()),
+        require("Fix: Add Wolf.".equals(training.dangerAction()),
                 "Wolf shortages should explain that the player needs to add a wolf.");
     }
 

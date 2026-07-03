@@ -106,6 +106,7 @@ public final class TerrariumFrame extends JFrame {
                     return;
                 }
                 String targetDescription = terrariumPanel.describe(position);
+                boolean rainWillCoolWorld = toolMode == ToolMode.RAIN && simulation.rainWillCoolWorld(position);
                 if (toolMode == ToolMode.LIGHTNING) {
                     if (simulation.organismAt(position) == null) {
                         terrariumPanel.showBanner("Lightning needs a target");
@@ -123,6 +124,13 @@ public final class TerrariumFrame extends JFrame {
                 playToolSound();
                 terrariumPanel.showToolEffect(position, toolMode);
                 showToolMechanicTip(toolMode);
+                if (rainWillCoolWorld) {
+                    terrariumPanel.showMechanicPopup(
+                            "rain-drought-cool",
+                            "Rain hit drought soil",
+                            "That combo cools the whole board by 1 C."
+                    );
+                }
                 training.noteAction(toolMode.label(), targetDescription);
                 terrariumPanel.repaint();
                 trainingPanel.refresh();
@@ -582,48 +590,48 @@ public final class TerrariumFrame extends JFrame {
         switch (mode) {
             case RAIN -> terrariumPanel.showMechanicPopup(
                     "tool-rain",
-                    "Rain affects a 4 x 4 patch",
-                    "It cools that patch hard right away and keeps cooling it while delayed growth builds."
+                    "Rain hits a 4 x 4 patch",
+                    "Cools hard. On active drought soil, it also cools the whole board by 1 C."
             );
             case DROUGHT -> terrariumPanel.showMechanicPopup(
                     "tool-drought",
-                    "Drought lingers after the click",
-                    "It heavily dries and warms a 4 x 4 patch. Clicking directly on a creature also kills it."
+                    "Drought hits a 4 x 4 patch",
+                    "Dries hard, warms soil, and direct hits kill animals."
             );
             case COMPOST -> terrariumPanel.showMechanicPopup(
                     "tool-compost",
-                    "Compost boosts one square",
-                    "It raises fertility right away. Overuse can cause a local plant spike."
+                    "Compost boosts one tile",
+                    "Raises fertility fast. Overuse can spike plants."
             );
             case HUMAN -> terrariumPanel.showMechanicPopup(
                     "tool-human",
-                    "Humans roam and defend themselves",
-                    "They move over plants without crushing them, sometimes plant nearby soil, breed once when they meet, and stab wolves that step next to them."
+                    "Humans plant and fight",
+                    "They walk over plants, breed once, and kill nearby wolves."
             );
             case BEAR -> terrariumPanel.showMechanicPopup(
                     "tool-bear",
                     "Bears hunt humans",
-                    "A bear keeps chasing humans until it has eaten 2 of them, then it leaves."
+                    "A bear leaves after 2 kills."
             );
             case RABBIT -> terrariumPanel.showMechanicPopup(
                     "tool-rabbit",
-                    "This tool places a male rabbit",
-                    "Males breed once. When one reaches a female, 3 female rabbits can appear."
+                    "This tool adds a male rabbit",
+                    "One male meeting one female can add 3 females once."
             );
             case WOLF -> terrariumPanel.showMechanicPopup(
                     "tool-wolf",
-                    "Wolves hunt hard and leave full",
-                    "They chase rabbits, can breed once, and leave the map after 3 rabbit kills."
+                    "Wolves hunt rabbits",
+                    "They can breed once and leave after 3 kills."
             );
             case LIGHTNING -> terrariumPanel.showMechanicPopup(
                     "tool-lightning",
-                    "Lightning hits one exact creature",
-                    "It costs 10 tokens and only works if you click directly on a living target."
+                    "Lightning hits one target",
+                    "Costs 10 tokens. Click a living creature."
             );
             case SANCTUARY -> terrariumPanel.showMechanicPopup(
                     "tool-sanctuary",
                     "Sanctuary protects a 2 x 2 patch",
-                    "That soil resists seasons and global weather, so it is useful as an anchor area."
+                    "That soil ignores season and weather drift."
             );
         }
     }
@@ -640,8 +648,8 @@ public final class TerrariumFrame extends JFrame {
         if (training.dangerWarning() != null) {
             terrariumPanel.showMechanicPopup(
                     "danger-timer",
-                    "Red warning means danger is ticking",
-                    "If one band stays out of range for 30 seconds, the level is lost."
+                    "Red warning started",
+                    "Fix the red band within 30 seconds."
             );
         }
 
@@ -667,31 +675,31 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "rabbit-starvation",
                     "Rabbits can starve",
-                    "Rabbits lose energy every tick. If they do not reach plants in time, they die on their own."
+                    "No plant in time means death."
             );
             return;
         }
         if (death.kind() == OrganismKind.WOLF && death.cause() == DeathCause.NATURAL) {
             terrariumPanel.showMechanicPopup(
                     "wolf-starvation",
-                    "Wolves can starve too",
-                    "Wolves burn energy fast. If rabbits thin out, wolf numbers can collapse."
+                    "Wolves can starve",
+                    "No rabbits means wolves start dying."
             );
             return;
         }
         if (death.kind() == OrganismKind.WOLF && death.cause() == DeathCause.HUMAN_ATTACK) {
             terrariumPanel.showMechanicPopup(
                     "human-vs-wolf",
-                    "Humans kill nearby wolves",
-                    "If a wolf steps next to a human, the human can stab it before moving."
+                    "Humans kill wolves nearby",
+                    "A wolf next to a human can die first."
             );
             return;
         }
         if (death.kind() == OrganismKind.HUMAN && death.cause() == DeathCause.NATURAL) {
             terrariumPanel.showMechanicPopup(
                     "bear-kill",
-                    "That human was killed by a bear",
-                    "Bear kills count as natural deaths here. Bears leave after 2 human kills."
+                    "Bear killed a human",
+                    "That bear leaves after 2 kills."
             );
         }
     }
@@ -701,7 +709,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "rabbit-birth",
                     "Rabbit breeding spike",
-                    "A male rabbit can trigger a one-time burst of 3 female rabbits when he reaches a female."
+                    "One male can add 3 females once."
             );
             return;
         }
@@ -709,15 +717,15 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "wolf-birth",
                     "Wolves can reproduce",
-                    "When two wolves meet and there is room, they can add 1 extra wolf."
+                    "Two wolves can add 1 more wolf."
             );
             return;
         }
         if (birth.kind() == OrganismKind.HUMAN) {
             terrariumPanel.showMechanicPopup(
                     "human-birth",
-                    "Humans can add one more human",
-                    "The first time 2 humans meet, that pair can create 1 extra human if a nearby cell is empty."
+                    "Humans can add one more",
+                    "First meeting can add 1 human nearby."
             );
         }
     }

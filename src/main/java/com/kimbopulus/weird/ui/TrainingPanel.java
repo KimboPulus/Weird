@@ -258,9 +258,9 @@ public final class TrainingPanel extends JPanel {
     }
 
     private String formatFailureWarning(String reason, String action) {
-        return "<html><body style='width:292px'><span style='font-size:17px;font-weight:bold;'>Level failed</span>"
-                + "<br><span style='font-size:13px;'>" + reason + "</span>"
-                + (action == null ? "" : "<br><span style='font-size:13px;color:#f6dfca;'>" + action + "</span>")
+        return "<html><body style='width:250px'><span style='font-size:16px;font-weight:bold;'>Level failed</span>"
+                + "<br><span style='font-size:12px;'>" + reason + "</span>"
+                + (action == null ? "" : "<br><span style='font-size:12px;color:#f6dfca;'>" + action + "</span>")
                 + "</body></html>";
     }
 
@@ -271,12 +271,12 @@ public final class TrainingPanel extends JPanel {
         int split = reason.indexOf(" (");
         String title = split <= 0 ? reason : reason.substring(0, split);
         String detail = split <= 0 ? "" : reason.substring(split);
-        return "<html><body style='width:292px'><span style='font-size:17px;font-weight:bold;'>"
+        return "<html><body style='width:250px'><span style='font-size:16px;font-weight:bold;'>"
                 + title
                 + "</span>"
-                + (detail.isBlank() ? "" : "<br><span style='font-size:13px;'>" + detail + "</span>")
-                + (action == null ? "" : "<br><span style='font-size:13px;color:#f6dfca;'>" + action + "</span>")
-                + "<br><span style='font-size:12px;color:#f6dfca;'>" + countdownText + "</span>"
+                + (detail.isBlank() ? "" : "<br><span style='font-size:12px;'>" + detail + "</span>")
+                + (action == null ? "" : "<br><span style='font-size:12px;color:#f6dfca;'>" + action + "</span>")
+                + "<br><span style='font-size:11px;color:#f6dfca;'>" + countdownText + "</span>"
                 + "</body></html>";
     }
 }

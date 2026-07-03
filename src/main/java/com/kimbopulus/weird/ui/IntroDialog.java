@@ -28,14 +28,16 @@ public final class IntroDialog extends JDialog {
         JTextArea body = new JTextArea("""
 Keep the board balanced.
 
-Plants feed rabbits. Rabbits feed wolves. Humans plant nearby soil, can add 1 more human the first time 2 of them meet, and do not crush plants when they walk. Bears pressure humans.
-Rabbits and wolves lose energy every turn, so they can starve if they do not find food in time.
+Plants feed rabbits. Rabbits feed wolves.
+Humans plant and can add 1 more human once.
+Bears hunt humans.
 
-If any group gets too low or too high for 30 seconds, the level fails.
-Rain and drought change a 4 x 4 patch at a time and strongly move temperature.
-Direct drought clicks kill creatures on that square.
-Lightning costs 10 tokens and strikes one exact creature.
-The right panel shows the exact target bands for the current level and explains why a warning or failure happened.
+Rabbits and wolves can starve.
+Rain and Drought hit a 4 x 4 patch.
+Rain on active drought soil cools the whole board by 1 C.
+Direct Drought clicks kill animals on that square.
+Lightning costs 10 tokens.
+If a red warning stays for 30 seconds, the level fails.
 
 Use the How to play button in the top bar anytime to reopen this guide.
 """);

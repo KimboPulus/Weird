@@ -339,20 +339,20 @@ public final class TrainingSession {
             return null;
         }
         return switch (category) {
-            case "Plants low" -> "Do this: use Rain or Compost.";
-            case "Plants high" -> "Do this: use Drought on dense patches or add a Rabbit.";
-            case "Rabbits low" -> "Do this: add a Rabbit.";
-            case "Rabbits high" -> "Do this: add a Wolf.";
-            case "Wolves low" -> "Do this: add a Wolf.";
-            case "Wolves high" -> "Do this: stop adding wolves and add Rabbits.";
-            case "Humans low" -> "Do this: add a Human.";
-            case "Humans high" -> "Do this: add a Bear.";
-            case "Bears low" -> "Do this: if humans are high, add a Bear.";
-            case "Bears high" -> "Do this: stop adding bears and let them leave after 2 kills.";
-            case "Moisture low" -> "Do this: use Rain on the driest 4 x 4 patch.";
-            case "Moisture high" -> "Do this: use Drought on the wettest 4 x 4 patch.";
-            case "Temperature low" -> "Do this: use Drought on cold squares.";
-            case "Temperature high" -> "Do this: use Rain on the hottest 4 x 4 patch.";
+            case "Plants low" -> "Fix: Rain or Compost.";
+            case "Plants high" -> "Fix: Drought dense patch or add Rabbit.";
+            case "Rabbits low" -> "Fix: Add Rabbit.";
+            case "Rabbits high" -> "Fix: Add Wolf.";
+            case "Wolves low" -> "Fix: Add Wolf.";
+            case "Wolves high" -> "Fix: Stop wolves. Add Rabbits.";
+            case "Humans low" -> "Fix: Add Human.";
+            case "Humans high" -> "Fix: Add Bear.";
+            case "Bears low" -> "Fix: Add Bear if humans spike.";
+            case "Bears high" -> "Fix: Stop bears. Let them leave.";
+            case "Moisture low" -> "Fix: Rain driest 4 x 4.";
+            case "Moisture high" -> "Fix: Drought wettest 4 x 4.";
+            case "Temperature low" -> "Fix: Drought cold patch.";
+            case "Temperature high" -> "Fix: Rain hottest 4 x 4.";
             default -> null;
         };
     }

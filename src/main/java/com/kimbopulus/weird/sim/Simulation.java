@@ -362,6 +362,13 @@ public final class Simulation {
         return false;
     }
 
+    public boolean rainWillCoolWorld(Position center) {
+        if (!grid.contains(center)) {
+            return false;
+        }
+        return overlapsActiveDrought(patchOrigin(center, 4, 4), 4, 4);
+    }
+
     public boolean rainBoost(Position center) {
         if (grid.contains(center)) {
             Position origin = patchOrigin(center, 4, 4);

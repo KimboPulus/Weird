@@ -224,12 +224,12 @@ public final class VisualSmokeCheck {
             Simulation simulation = balancedLevelSimulation(77L);
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             renderPanels(simulation, training, output, null, board -> {
-                board.showMechanicPopup("rain-tip", "Rain affects a 4 x 4 patch",
-                        "It cools that patch now and can trigger delayed plant growth.");
+                board.showMechanicPopup("rain-tip", "Rain hit drought soil",
+                        "That combo cools the whole board by 1 C.");
                 board.showMechanicPopup("rabbit-tip", "Rabbits can starve",
-                        "Rabbits lose energy every tick. If they miss plants for too long, they die.");
+                        "No plant in time means death.");
                 board.showMechanicPopup("bear-tip", "Bears leave after 2 kills",
-                        "A bear keeps chasing humans until it has eaten 2 of them, then it walks off.");
+                        "A bear leaves after 2 kills.");
             });
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
