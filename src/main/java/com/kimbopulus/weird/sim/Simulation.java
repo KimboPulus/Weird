@@ -12,6 +12,8 @@ public final class Simulation {
     public static final int DEFAULT_HEIGHT = 26;
     private static final double DROUGHT_RAIN_GLOBAL_COOLING = 1.0;
     private static final double DROUGHT_STACK_GLOBAL_HEATING = 2.0;
+    private static final double DROUGHT_INITIAL_DRYING = 1.64;
+    private static final double DROUGHT_LINGER_DRYING = 0.60;
 
     private final Random random;
     private final WorldGrid grid;
@@ -412,10 +414,22 @@ public final class Simulation {
                 grid.cellAt(center).addFertility(0.08);
             }
             Position origin = patchOrigin(center, 4, 4);
-            grid.dryPatch(origin, 4, 4, 0.82);
+            grid.dryPatch(origin, 4, 4, DROUGHT_INITIAL_DRYING);
             grid.warmPatch(origin, 4, 4, 3.2);
             grid.spendFertilityPatch(origin, 4, 4, 0.18);
-            areaEffects.add(new AreaEffect(EffectKind.DROUGHT, origin, 4, 4, 0, 0, 24, 0.30, 0.10, 0, 0.24));
+            areaEffects.add(new AreaEffect(
+                    EffectKind.DROUGHT,
+                    origin,
+                    4,
+                    4,
+                    0,
+                    0,
+                    24,
+                    DROUGHT_LINGER_DRYING,
+                    0.10,
+                    0,
+                    0.24
+            ));
             return true;
         }
         return false;

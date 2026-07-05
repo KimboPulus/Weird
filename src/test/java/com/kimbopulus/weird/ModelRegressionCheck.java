@@ -36,6 +36,7 @@ public final class ModelRegressionCheck {
         checkSimulationPlacements();
         checkSimulationMovementAndSearch();
         checkSimulationHistoryAndEvents();
+        checkDroughtDriesMoistureAggressively();
         checkRainAfterDroughtCoolsGlobalTemperature();
         checkDroughtAfterDroughtHeatsGlobalTemperature();
         checkTrainingLabelsAndReset();
@@ -255,6 +256,23 @@ public final class ModelRegressionCheck {
 
         require(Math.abs(actualDrop - expectedDrop) < 0.0001,
                 "Rain on an active drought patch should cool the whole board by 1 extra degree.");
+    }
+
+    private static void checkDroughtDriesMoistureAggressively() {
+        Simulation simulation = new Simulation(6, 6, 22L);
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                simulation.grid().cellAt(x, y).reset(0.95, 20.0, 0.50);
+            }
+        }
+
+        Position center = new Position(3, 3);
+        require(simulation.drought(center), "Drought should apply to the test patch.");
+
+        double averageMoisture = averageMoisture(simulation);
+        double expectedAverage = (20.0 * 0.95) / 36.0;
+        require(Math.abs(averageMoisture - expectedAverage) < 0.0001,
+                "Drought should now strip essentially all moisture from the 4 x 4 patch on impact.");
     }
 
     private static void checkDroughtAfterDroughtHeatsGlobalTemperature() {
@@ -532,6 +550,17 @@ public final class ModelRegressionCheck {
         for (int y = 0; y < simulation.grid().height(); y++) {
             for (int x = 0; x < simulation.grid().width(); x++) {
                 total += simulation.grid().cellAt(x, y).temperature();
+            }
+        }
+        return total / cells;
+    }
+
+    private static double averageMoisture(Simulation simulation) {
+        double total = 0.0;
+        int cells = simulation.grid().width() * simulation.grid().height();
+        for (int y = 0; y < simulation.grid().height(); y++) {
+            for (int x = 0; x < simulation.grid().width(); x++) {
+                total += simulation.grid().cellAt(x, y).moisture();
             }
         }
         return total / cells;
