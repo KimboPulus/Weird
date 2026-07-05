@@ -22,6 +22,7 @@ public final class TrainingPanel extends JPanel {
     private static final Color BACKGROUND = new Color(247, 243, 232);
     private static final Color TEXT = new Color(38, 42, 38);
     private static final Color MUTED = new Color(92, 96, 88);
+    private static final int WARNING_SLOT_HEIGHT = 152;
 
     private final Simulation simulation;
     private final TrainingSession training;
@@ -42,6 +43,7 @@ public final class TrainingPanel extends JPanel {
     private final JLabel warningDetailLabel = new JLabel();
     private final JLabel warningActionLabel = new JLabel();
     private final JLabel warningCountdownLabel = new JLabel();
+    private final JPanel warningSlotPanel = new JPanel(new BorderLayout());
     private final JLabel feedbackLabel = new JLabel();
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton nextLevelButton = new JButton("Next Level");
@@ -105,6 +107,12 @@ public final class TrainingPanel extends JPanel {
         warningPanel.setAlignmentX(LEFT_ALIGNMENT);
         warningPanel.setVisible(false);
 
+        warningSlotPanel.setOpaque(false);
+        warningSlotPanel.setAlignmentX(LEFT_ALIGNMENT);
+        warningSlotPanel.setMinimumSize(new Dimension(0, WARNING_SLOT_HEIGHT));
+        warningSlotPanel.setPreferredSize(new Dimension(360, WARNING_SLOT_HEIGHT));
+        warningSlotPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, WARNING_SLOT_HEIGHT));
+
         configureWarningLine(warningTitleLabel, Font.BOLD, 17f);
         configureWarningLine(warningDetailLabel, Font.BOLD, 15f);
         configureWarningLine(warningActionLabel, Font.BOLD, 14f);
@@ -117,6 +125,7 @@ public final class TrainingPanel extends JPanel {
         warningPanel.add(warningActionLabel);
         warningPanel.add(Box.createVerticalStrut(4));
         warningPanel.add(warningCountdownLabel);
+        warningSlotPanel.add(warningPanel, BorderLayout.CENTER);
 
         levelProgress.setStringPainted(true);
         levelProgress.setForeground(new Color(77, 143, 85));
@@ -140,15 +149,13 @@ public final class TrainingPanel extends JPanel {
         top.add(Box.createVerticalStrut(2));
         top.add(eventLabel);
         top.add(Box.createVerticalStrut(8));
-        top.add(warningPanel);
+        top.add(warningSlotPanel);
         add(top, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout(0, 8));
-        center.setOpaque(false);
-        center.add(createDetailPanel(), BorderLayout.NORTH);
-        add(center, BorderLayout.CENTER);
-
-        add(feedbackLabel, BorderLayout.SOUTH);
+        JPanel filler = new JPanel();
+        filler.setOpaque(false);
+        add(filler, BorderLayout.CENTER);
+        add(createBottomPanel(), BorderLayout.SOUTH);
 
         refresh();
     }
@@ -188,11 +195,18 @@ public final class TrainingPanel extends JPanel {
         feedbackLabel.setForeground(MUTED);
     }
 
-    private JPanel createDetailPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 7));
+    private JPanel createBottomPanel() {
+        JPanel panel = new JPanel();
         panel.setOpaque(false);
-        panel.add(detailLabel, BorderLayout.CENTER);
-        panel.add(levelActionsPanel, BorderLayout.SOUTH);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        detailLabel.setAlignmentX(LEFT_ALIGNMENT);
+        levelActionsPanel.setAlignmentX(LEFT_ALIGNMENT);
+        feedbackLabel.setAlignmentX(LEFT_ALIGNMENT);
+        panel.add(detailLabel);
+        panel.add(Box.createVerticalStrut(12));
+        panel.add(levelActionsPanel);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(feedbackLabel);
 
         nextLevelButton.setFocusable(false);
         nextLevelButton.setPreferredSize(new Dimension(280, 38));

@@ -4,55 +4,55 @@ import com.kimbopulus.weird.sim.Position;
 import com.kimbopulus.weird.sim.Simulation;
 
 public enum ToolMode {
-    RAIN("Rain", "Water a 4 x 4 patch and cool it hard. Repeated use can flood the world.", 0) {
+    RAIN("Rain", "Use when heat is high or land is too dry. Best on hot dry 4 x 4 patches.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.rain(position);
         }
     },
-    DROUGHT("Drought", "Dry a 4 x 4 patch hard. Clicking a creature also kills it.", 0) {
+    DROUGHT("Drought", "Use when moisture or plants are too high. Best on wet dense 4 x 4 patches.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.drought(position);
         }
     },
-    COMPOST("Compost", "Boost one square. Overuse can cause plant surges.", 0) {
+    COMPOST("Compost", "Use when one weak square needs a fast fertility push.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.compost(position);
         }
     },
-    HUMAN("Human", "Place one human on an empty cell.", 0) {
+    HUMAN("Human", "Use when humans are below target or you need more planting pressure.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.addHuman(position);
         }
     },
-    BEAR("Bear", "Place one bear on an empty cell.", 0) {
+    BEAR("Bear", "Use when humans are too high. Bears reduce human count.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.addBear(position);
         }
     },
-    RABBIT("Rabbit", "Place one male rabbit on an empty cell.", 0) {
+    RABBIT("Rabbit", "Use when rabbits are low or plants are taking over. This adds one male.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.addRabbit(position, com.kimbopulus.weird.sim.RabbitSex.MALE);
         }
     },
-    WOLF("Wolf", "Place one predator on an empty cell.", 0) {
+    WOLF("Wolf", "Use when rabbits are too high or wolves are below target.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.addWolf(position);
         }
     },
-    LIGHTNING("Lightning", "Strike one exact creature with blue lightning for 10 tokens.", 10) {
+    LIGHTNING("Lightning", "Use when one exact creature must die now. Costs 10 tokens.", 10) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.lightning(position);
         }
     },
-    SANCTUARY("Sanctuary", "Protect one 2 x 2 seed patch from seasons and world weather.", 0) {
+    SANCTUARY("Sanctuary", "Use to lock one 2 x 2 patch against weather and season drift.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.addSanctuary(position);
