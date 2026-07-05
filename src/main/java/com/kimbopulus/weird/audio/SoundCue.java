@@ -11,6 +11,7 @@ public enum SoundCue {
     FAILURE(110, 0.45, 0.13),
     ANIMAL_DEATH(145, 0.34, 0.11),
     HUMAN_DEATH(92, 0.75, 0.16),
+    BEAR_ATTACK(92, 3.05, 0.18),
     LIGHTNING(147, 0.24, 0.12),
     RESTART(392, 0.24, 0.10);
 

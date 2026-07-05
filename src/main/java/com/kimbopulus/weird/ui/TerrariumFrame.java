@@ -514,6 +514,7 @@ public final class TerrariumFrame extends JFrame {
     private void playDeathSounds() {
         boolean humanDeath = false;
         boolean animalDeath = false;
+        boolean bearAttack = false;
         long newest = lastDeathSoundId;
         for (DeathEvent death : simulation.recentDeathEvents()) {
             if (death.id() <= lastDeathSoundId) {
@@ -525,6 +526,7 @@ public final class TerrariumFrame extends JFrame {
             }
             if (death.kind() == OrganismKind.HUMAN) {
                 humanDeath = true;
+                bearAttack |= death.cause() == DeathCause.BEAR_ATTACK;
             } else {
                 animalDeath = true;
             }
@@ -534,6 +536,9 @@ public final class TerrariumFrame extends JFrame {
             audio.play(SoundCue.HUMAN_DEATH);
         } else if (animalDeath) {
             audio.play(SoundCue.ANIMAL_DEATH);
+        }
+        if (bearAttack) {
+            audio.play(SoundCue.BEAR_ATTACK);
         }
     }
 
@@ -702,7 +707,7 @@ public final class TerrariumFrame extends JFrame {
             );
             return;
         }
-        if (death.kind() == OrganismKind.HUMAN && death.cause() == DeathCause.NATURAL) {
+        if (death.kind() == OrganismKind.HUMAN && death.cause() == DeathCause.BEAR_ATTACK) {
             terrariumPanel.showMechanicPopup(
                     "bear-kill",
                     "Bear killed a human",

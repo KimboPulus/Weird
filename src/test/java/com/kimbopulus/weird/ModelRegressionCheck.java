@@ -56,6 +56,7 @@ public final class ModelRegressionCheck {
         checkSpriteContent();
         checkRabbitStarvationDeath();
         checkRabbitReproductionCostsEnergy();
+        checkBearAttackRecordsCause();
         checkLightningStrikeCostsAndRecordsDeath();
         checkMechanicPopupReset();
         checkToolCosts();
@@ -730,6 +731,24 @@ public final class ModelRegressionCheck {
 
         require(maleRabbit.energy() < before, "Mating should spend rabbit energy.");
         require(simulation.count(OrganismKind.RABBIT) >= 3, "A mating pair should create offspring.");
+    }
+
+    private static void checkBearAttackRecordsCause() throws IOException {
+        Simulation simulation = new Simulation(8, 8, 151L);
+        Position bearPosition = new Position(2, 2);
+        Position humanPosition = new Position(3, 2);
+        Bear bear = new Bear();
+        require(simulation.placeOrganism(bearPosition, bear), "Bear should place for attack test.");
+        require(simulation.addHuman(humanPosition), "Human should place next to bear.");
+
+        bear.tick(simulation, bearPosition);
+
+        require(simulation.count(OrganismKind.HUMAN) == 0, "Bear attack should remove the human.");
+        require(simulation.recentDeathEvents().stream().anyMatch(death ->
+                        death.kind() == OrganismKind.HUMAN && death.cause() == DeathCause.BEAR_ATTACK),
+                "Bear kills should be recorded as bear attacks.");
+        require(resourceExists("/com/kimbopulus/weird/audio/bear-attack.wav"),
+                "Bear attack sound should be bundled on the classpath.");
     }
 
     private static void checkLightningStrikeCostsAndRecordsDeath() {

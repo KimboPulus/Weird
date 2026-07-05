@@ -26,7 +26,7 @@ public final class Bear extends Organism {
 
         Position human = first(simulation.neighborsWithKind(position, OrganismKind.HUMAN));
         if (human != null) {
-            simulation.removeOrganism(human);
+            simulation.removeOrganism(human, DeathCause.BEAR_ATTACK);
             humansEaten++;
             if (humansEaten >= 2) {
                 simulation.removeOrganismQuietly(position);

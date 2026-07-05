@@ -10,7 +10,9 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.SourceDataLine;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,6 +26,7 @@ public final class AudioEngine implements AutoCloseable {
     private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
     private static final Path COMPLETE_WAV = Paths.get("data", "music", "level-complete.wav");
     private static final Path LIGHTNING_WAV = Paths.get("data", "music", "lightning.wav");
+    private static final String BEAR_ATTACK_RESOURCE = "/com/kimbopulus/weird/audio/bear-attack.wav";
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
@@ -203,6 +206,10 @@ public final class AudioEngine implements AutoCloseable {
                     && playTrackClip(LIGHTNING_WAV, cue.volume() * effectsVolume)) {
                 return;
             }
+            if (cue == SoundCue.BEAR_ATTACK
+                    && playResourceClip(BEAR_ATTACK_RESOURCE, cue.volume() * effectsVolume)) {
+                return;
+            }
             Clip clip = AudioSystem.getClip();
             byte[] data;
             if (cue == SoundCue.HUMAN_DEATH) {
@@ -226,6 +233,26 @@ public final class AudioEngine implements AutoCloseable {
 
     private boolean playTrackClip(Path track, double volume) throws Exception {
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(track.toFile())) {
+            Clip clip = AudioSystem.getClip();
+            clip.open(stream);
+            applyClipGain(clip, volume);
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    clip.close();
+                }
+            });
+            clip.start();
+            return true;
+        }
+    }
+
+    private boolean playResourceClip(String resourcePath, double volume) throws Exception {
+        InputStream resource = AudioEngine.class.getResourceAsStream(resourcePath);
+        if (resource == null) {
+            return false;
+        }
+        try (BufferedInputStream buffered = new BufferedInputStream(resource);
+             AudioInputStream stream = AudioSystem.getAudioInputStream(buffered)) {
             Clip clip = AudioSystem.getClip();
             clip.open(stream);
             applyClipGain(clip, volume);
