@@ -13,7 +13,11 @@ import com.kimbopulus.weird.sim.Rabbit;
 import com.kimbopulus.weird.sim.RabbitSex;
 import com.kimbopulus.weird.sim.Season;
 import com.kimbopulus.weird.sim.Simulation;
+import com.kimbopulus.weird.sim.WorldEvent;
 import com.kimbopulus.weird.sim.WorldGrid;
+import com.kimbopulus.weird.training.BalanceBand;
+import com.kimbopulus.weird.training.BalanceTarget;
+import com.kimbopulus.weird.training.TrainingLevel;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
 import com.kimbopulus.weird.ui.ToolMode;
@@ -42,7 +46,12 @@ public final class ModelRegressionCheck {
         checkTrainingLabelsAndReset();
         checkProgressionPersistence();
         checkProgressionNormalization();
+        checkProgressionMinimumTokenGain();
+        checkProgressionSpendTokenGuards();
+        checkProgressionSanctuaryUnlockFlag();
         checkSettingsPersistence();
+        checkSettingsDefaultValues();
+        checkSettingsClampBounds();
         checkSpriteResources();
         checkSpriteContent();
         checkRabbitStarvationDeath();
@@ -50,6 +59,21 @@ public final class ModelRegressionCheck {
         checkLightningStrikeCostsAndRecordsDeath();
         checkMechanicPopupReset();
         checkToolCosts();
+        checkTrainingLevelWraps();
+        checkTrainingLevelObjectiveBandCopy();
+        checkBalanceTargetSelectiveMatch();
+        checkBalanceTargetSelectiveStatus();
+        checkWorldEventMetadata();
+        checkShopItemMetadata();
+        checkToolModeMetadata();
+        checkWorldGridPatchClipsAtEdges();
+        checkWorldGridGlobalEffectsRespectSanctuary();
+        checkSimulationOutOfBoundsActionsFail();
+        checkSimulationLightningRejectsEmptyTarget();
+        checkSimulationClearPatchEmptyReturnsZero();
+        checkSimulationPassableNeighborsIncludePlants();
+        checkSimulationEmptyNeighborsExcludeOccupied();
+        checkSimulationCurrentSnapshotLazyInit();
         System.out.println("Model regression check passed.");
     }
 
@@ -383,6 +407,30 @@ public final class ModelRegressionCheck {
         }
     }
 
+    private static void checkProgressionMinimumTokenGain() {
+        ProgressionProfile profile = ProgressionProfile.inMemory();
+        profile.addFocusXp(1);
+        require(profile.totalScore() == 1, "Positive score gains should increase total score.");
+        require(profile.tokens() == 1, "Very small score gains should still grant one token.");
+    }
+
+    private static void checkProgressionSpendTokenGuards() {
+        ProgressionProfile profile = ProgressionProfile.inMemory();
+        profile.addFocusXp(60);
+        int before = profile.tokens();
+        require(!profile.spendTokens(0), "Spending zero tokens should fail.");
+        require(!profile.spendTokens(-5), "Spending a negative amount should fail.");
+        require(!profile.spendTokens(before + 1), "Spending more tokens than owned should fail.");
+        require(profile.tokens() == before, "Failed token spends must not change the balance.");
+    }
+
+    private static void checkProgressionSanctuaryUnlockFlag() {
+        ProgressionProfile profile = ProgressionProfile.inMemory();
+        profile.addFocusXp(600);
+        require(profile.buy(ShopItem.SANCTUARY), "The sanctuary upgrade should be purchasable with enough tokens.");
+        require(profile.sanctuaryUnlocked(), "Buying the sanctuary upgrade should flip the unlock flag.");
+    }
+
     private static void checkSettingsPersistence() throws IOException {
         Path file = Files.createTempFile("weird-settings", ".properties");
         try {
@@ -400,6 +448,22 @@ public final class ModelRegressionCheck {
         } finally {
             Files.deleteIfExists(file);
         }
+    }
+
+    private static void checkSettingsDefaultValues() {
+        GameSettings settings = GameSettings.inMemory();
+        require(settings.audioEnabled(), "In-memory settings should default audio to on.");
+        require(settings.musicVolume() == 15, "Music volume should default to the quiet first-run level.");
+        require(settings.effectsVolume() == 70, "Effects volume should default to the standard level.");
+        require(!settings.introSeen(), "Intro should default to unseen.");
+    }
+
+    private static void checkSettingsClampBounds() {
+        GameSettings settings = GameSettings.inMemory();
+        settings.setMusicVolume(140);
+        settings.setEffectsVolume(-20);
+        require(settings.musicVolume() == 100, "Music volume should clamp to 100.");
+        require(settings.effectsVolume() == 0, "Effects volume should clamp to 0.");
     }
 
     private static void checkSpriteResources() throws IOException {
@@ -437,6 +501,150 @@ public final class ModelRegressionCheck {
 
     private static void checkToolCosts() {
         require(ToolMode.LIGHTNING.tokenCost() == 10, "Lightning should cost 10 tokens.");
+    }
+
+    private static void checkTrainingLevelWraps() {
+        require(TrainingLevel.FLEX_SHIFT.next() == TrainingLevel.STEADY_START,
+                "The final training level should wrap back to the first.");
+    }
+
+    private static void checkTrainingLevelObjectiveBandCopy() {
+        BalanceBand[] bands = TrainingLevel.FLEX_SHIFT.objectiveBands();
+        bands[0] = BalanceBand.PLANTS;
+        require(TrainingLevel.FLEX_SHIFT.objectiveBands()[0] == BalanceBand.PLANTS
+                        && TrainingLevel.FLEX_SHIFT.objectiveBands().length > 1
+                        && TrainingLevel.FLEX_SHIFT.objectiveBands()[1] == BalanceBand.RABBITS,
+                "Training level objective bands should be returned as a defensive copy.");
+    }
+
+    private static void checkBalanceTargetSelectiveMatch() {
+        PopulationSnapshot snapshot = new PopulationSnapshot(0, Season.SPRING, 320, 20, 0, 4, 0, 0.50, 0.50, 21.0);
+        require(TrainingLevel.MEMORY_SCAN.objectiveMatches(snapshot),
+                "Level 2 should care only about plants and rabbits for its displayed objective.");
+        require(!TrainingLevel.PREDATOR_CHECK.objectiveMatches(snapshot),
+                "The predator level should fail its objective when wolves are missing.");
+    }
+
+    private static void checkBalanceTargetSelectiveStatus() {
+        BalanceTarget target = TrainingLevel.MEMORY_SCAN.balanceTarget();
+        PopulationSnapshot snapshot = new PopulationSnapshot(0, Season.SPRING, 320, 20, 0, 4, 0, 0.50, 0.50, 21.0);
+        require("Objective in range".equals(target.status(snapshot, "Objective in range",
+                        TrainingLevel.MEMORY_SCAN.objectiveBands())),
+                "Selective objective status should ignore non-objective bands.");
+    }
+
+    private static void checkWorldEventMetadata() {
+        for (WorldEvent event : WorldEvent.values()) {
+            require(!event.title().isBlank(), "Every world event should have a title.");
+            require(!event.description().isBlank(), "Every world event should have a description.");
+        }
+        require(WorldEvent.HEAT_WAVE.description().contains("dries"),
+                "Heat wave text should explain the dry effect.");
+    }
+
+    private static void checkShopItemMetadata() {
+        require(ShopItem.SANCTUARY.cost() > ShopItem.RAIN_BARREL.cost(),
+                "Sanctuary should stay the most expensive shop item.");
+        for (ShopItem item : ShopItem.values()) {
+            require(!item.title().isBlank(), "Every shop item should have a title.");
+            require(!item.description().isBlank(), "Every shop item should have a description.");
+            require(item.cost() > 0, "Every shop item should cost a positive number of tokens.");
+        }
+    }
+
+    private static void checkToolModeMetadata() {
+        for (ToolMode mode : ToolMode.values()) {
+            require(!mode.label().isBlank(), "Every tool should have a label.");
+            require(!mode.description().isBlank(), "Every tool should have a hover description.");
+        }
+        require(ToolMode.RAIN.description().startsWith("Use when"),
+                "Tool descriptions should explain when to use the tool.");
+        require(ToolMode.LIGHTNING.tokenCost() == 10 && ToolMode.RAIN.tokenCost() == 0,
+                "Only lightning should currently cost tokens.");
+    }
+
+    private static void checkWorldGridPatchClipsAtEdges() {
+        WorldGrid grid = new WorldGrid(4, 4, new Random(17L));
+        for (int y = 0; y < grid.height(); y++) {
+            for (int x = 0; x < grid.width(); x++) {
+                grid.cellAt(x, y).reset(0.50, 20.0, 0.50);
+            }
+        }
+        grid.rainPatch(new Position(-2, -1), 4, 4, 0.25);
+        require(grid.cellAt(0, 0).moisture() > 0.50, "Patch effects should clip into the top-left corner.");
+        require(grid.cellAt(3, 3).moisture() == 0.50, "Clipped patch effects should not spill to the far corner.");
+    }
+
+    private static void checkWorldGridGlobalEffectsRespectSanctuary() {
+        WorldGrid grid = new WorldGrid(4, 4, new Random(18L));
+        grid.createSanctuary(new Position(1, 1));
+        double sanctuaryMoisture = grid.cellAt(1, 1).moisture();
+        double sanctuaryTemperature = grid.cellAt(1, 1).temperature();
+        grid.rainAll(0.20);
+        grid.dryAndWarmAll(0.20, 3.0);
+        require(grid.cellAt(1, 1).moisture() == sanctuaryMoisture,
+                "Sanctuary cells should ignore global rain and drought drift.");
+        require(grid.cellAt(1, 1).temperature() == sanctuaryTemperature,
+                "Sanctuary cells should ignore global heat changes too.");
+    }
+
+    private static void checkSimulationOutOfBoundsActionsFail() {
+        Simulation simulation = new Simulation(6, 6, 41L);
+        Position outside = new Position(-1, -1);
+        require(!simulation.addPlant(outside), "Out-of-bounds plant placement should fail.");
+        require(!simulation.addHuman(outside), "Out-of-bounds human placement should fail.");
+        require(!simulation.addBear(outside), "Out-of-bounds bear placement should fail.");
+        require(!simulation.addRabbit(outside, RabbitSex.FEMALE), "Out-of-bounds rabbit placement should fail.");
+        require(!simulation.addWolf(outside), "Out-of-bounds wolf placement should fail.");
+        require(!simulation.rain(outside), "Out-of-bounds rain should fail.");
+        require(!simulation.drought(outside), "Out-of-bounds drought should fail.");
+        require(!simulation.lightning(outside), "Out-of-bounds lightning should fail.");
+    }
+
+    private static void checkSimulationLightningRejectsEmptyTarget() {
+        Simulation simulation = new Simulation(6, 6, 42L);
+        require(!simulation.lightning(new Position(2, 2)),
+                "Lightning should reject empty cells.");
+    }
+
+    private static void checkSimulationClearPatchEmptyReturnsZero() {
+        Simulation simulation = new Simulation(6, 6, 43L);
+        require(simulation.clearPatch(new Position(3, 3)) == 0,
+                "Clearing an empty patch should remove nothing.");
+    }
+
+    private static void checkSimulationPassableNeighborsIncludePlants() {
+        Simulation simulation = new Simulation(6, 6, 44L);
+        Position center = new Position(2, 2);
+        Position plant = new Position(3, 2);
+        Position empty = new Position(2, 3);
+        Position blocked = new Position(1, 2);
+        simulation.placeOrganism(center, new Rabbit(RabbitSex.FEMALE));
+        simulation.addPlant(plant);
+        simulation.addWolf(blocked);
+        var neighbors = simulation.passableNeighbors(center, OrganismKind.RABBIT);
+        require(neighbors.contains(plant), "Plant tiles should count as passable neighbors.");
+        require(neighbors.contains(empty), "Empty tiles should count as passable neighbors.");
+        require(!neighbors.contains(blocked), "Occupied predator tiles should not count as passable.");
+    }
+
+    private static void checkSimulationEmptyNeighborsExcludeOccupied() {
+        Simulation simulation = new Simulation(6, 6, 45L);
+        Position center = new Position(2, 2);
+        Position occupied = new Position(3, 2);
+        simulation.placeOrganism(center, new Rabbit(RabbitSex.FEMALE));
+        simulation.addPlant(occupied);
+        var neighbors = simulation.emptyNeighbors(center);
+        require(!neighbors.contains(occupied), "Occupied tiles should not appear in empty-neighbor lists.");
+        require(neighbors.size() == 3, "One occupied side should leave three empty neighbors.");
+    }
+
+    private static void checkSimulationCurrentSnapshotLazyInit() {
+        Simulation simulation = new Simulation(6, 6, 46L);
+        PopulationSnapshot snapshot = simulation.currentSnapshot();
+        require(snapshot != null, "Current snapshot should be created lazily on first access.");
+        require(simulation.recentHistory(5).size() == 1,
+                "Lazy snapshot creation should populate the history with one entry.");
     }
 
     private static boolean hasOpaquePixel(String path) throws IOException {
