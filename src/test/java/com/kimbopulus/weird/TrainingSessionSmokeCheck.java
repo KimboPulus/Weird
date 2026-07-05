@@ -21,6 +21,7 @@ public final class TrainingSessionSmokeCheck {
         checkLevelAdvance();
         checkLevelFailure();
         checkPlantOvergrowthFailure();
+        checkNonPlantFailureStillUsesThirtySeconds();
         checkRecoveredWarningClearsAfterCompletion();
         checkWarningActions();
         checkShopPurchases();
@@ -88,10 +89,10 @@ public final class TrainingSessionSmokeCheck {
 
         training.update(simulation);
         require(training.dangerWarning() != null, "A sustained crisis should show a warning.");
-        require("30.0s to fix".equals(training.dangerCountdownLabel()),
-                "The warning should start with a full 30 second grace period.");
+        require("60.0s to fix".equals(training.dangerCountdownLabel()),
+                "A plant warning should start with a full 60 second grace period.");
 
-        now.addAndGet(29_900L);
+        now.addAndGet(59_900L);
         training.update(simulation);
         require(!training.levelFailed(), "The level should not fail before the grace period expires.");
 
@@ -102,8 +103,8 @@ public final class TrainingSessionSmokeCheck {
                 "A failed level should report the exact reason.");
         require(training.failureReason().contains("range 90-700"),
                 "A failed level should include the target range.");
-        require(training.failureReason().contains("30.0 seconds"),
-                "A failed level should explain that the band stayed bad for 30 seconds.");
+        require(training.failureReason().contains("60.0 seconds"),
+                "A failed plant level should explain that the band stayed bad for 60 seconds.");
         require(training.restartLevel(), "A failed level should be restartable.");
         require(!training.levelFailed(), "Restart should clear the failed state.");
         require(training.levelNumber() == 1, "Restart should keep the current level.");
@@ -119,9 +120,31 @@ public final class TrainingSessionSmokeCheck {
         training.update(simulation);
         require(training.dangerWarning() != null, "Excess plants should trigger a warning.");
 
-        now.addAndGet(30_000L);
+        now.addAndGet(59_900L);
+        training.update(simulation);
+        require(!training.levelFailed(), "Plant overgrowth should allow the full 60 second recovery window.");
+
+        now.addAndGet(100L);
         training.update(simulation);
         require(training.levelFailed(), "Excess plants should lose the level.");
+    }
+
+    private static void checkNonPlantFailureStillUsesThirtySeconds() {
+        Simulation simulation = new Simulation(48, 32, 124L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedHumans(6);
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
+
+        training.update(simulation);
+        require(training.dangerDetail().startsWith("Wolves low"), "The test should trigger a wolf warning.");
+        require("30.0s to fix".equals(training.dangerCountdownLabel()),
+                "Non-plant warnings should retain the 30 second grace period.");
+
+        now.addAndGet(30_000L);
+        training.update(simulation);
+        require(training.levelFailed(), "An unresolved non-plant warning should fail after 30 seconds.");
     }
 
     private static void checkRecoveredWarningClearsAfterCompletion() {

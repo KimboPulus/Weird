@@ -7,7 +7,8 @@ import com.kimbopulus.weird.sim.Simulation;
 import java.util.function.LongSupplier;
 
 public final class TrainingSession {
-    private static final long FAILURE_GRACE_MS = 30_000L;
+    private static final long DEFAULT_FAILURE_GRACE_MS = 30_000L;
+    private static final long PLANT_FAILURE_GRACE_MS = 60_000L;
 
     private final ProgressionProfile progression;
     private final LongSupplier clock;
@@ -131,7 +132,8 @@ public final class TrainingSession {
         if (levelFailed || dangerReason == null || dangerStartedAtMillis < 0L) {
             return null;
         }
-        long remainingMs = Math.max(0L, FAILURE_GRACE_MS - (clock.getAsLong() - dangerStartedAtMillis));
+        long graceMs = failureGraceMs(dangerReason);
+        long remainingMs = Math.max(0L, graceMs - (clock.getAsLong() - dangerStartedAtMillis));
         return String.format("%.1fs to fix", remainingMs / 1000.0);
     }
 
@@ -312,13 +314,20 @@ public final class TrainingSession {
             dangerStartedAtMillis = now;
         }
         dangerDetail = currentDetail;
-        if (allowFailure && dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= FAILURE_GRACE_MS) {
+        long graceMs = failureGraceMs(dangerReason);
+        if (allowFailure && dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= graceMs) {
             levelFailed = true;
             failureDetail = dangerDetail == null
                     ? "The ecosystem collapsed."
-                    : dangerDetail + String.format(" stayed out of range for %.1f seconds.", FAILURE_GRACE_MS / 1000.0);
+                    : dangerDetail + String.format(" stayed out of range for %.1f seconds.", graceMs / 1000.0);
             feedback = "Level lost: " + failureDetail + "\nRestart to try again.";
         }
+    }
+
+    private long failureGraceMs(String category) {
+        return "Plants low".equals(category) || "Plants high".equals(category)
+                ? PLANT_FAILURE_GRACE_MS
+                : DEFAULT_FAILURE_GRACE_MS;
     }
 
     private String dangerReason(PopulationSnapshot snapshot) {

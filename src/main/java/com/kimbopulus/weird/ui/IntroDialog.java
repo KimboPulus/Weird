@@ -38,7 +38,7 @@ Rain on active drought soil cools the whole board by 1 C.
 Drought twice on one patch heats the whole board by 2 C.
 Direct Drought clicks kill animals on that square.
 Lightning costs 10 tokens.
-If a red warning stays for 30 seconds, the level fails.
+Plant warnings allow 60 seconds. Other red warnings allow 30 seconds.
 
 Use the How to play button in the top bar anytime to reopen this guide.
 """);

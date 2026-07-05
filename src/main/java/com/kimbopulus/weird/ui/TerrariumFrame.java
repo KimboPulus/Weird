@@ -506,7 +506,6 @@ public final class TerrariumFrame extends JFrame {
 
     private void celebrateLevel() {
         terrariumPanel.clearLevelCompleteOverlay();
-        audio.play(SoundCue.LEVEL_UP);
         terrariumPanel.showLevelUp("LEVEL " + training.levelNumber() + "  " + training.levelTitle());
         startSimulation();
     }
@@ -532,13 +531,12 @@ public final class TerrariumFrame extends JFrame {
             }
         }
         lastDeathSoundId = newest;
-        if (humanDeath) {
+        if (bearAttack) {
+            audio.play(SoundCue.BEAR_ATTACK);
+        } else if (humanDeath) {
             audio.play(SoundCue.HUMAN_DEATH);
         } else if (animalDeath) {
             audio.play(SoundCue.ANIMAL_DEATH);
-        }
-        if (bearAttack) {
-            audio.play(SoundCue.BEAR_ATTACK);
         }
     }
 
@@ -661,7 +659,7 @@ public final class TerrariumFrame extends JFrame {
             terrariumPanel.showMechanicPopup(
                     "danger-timer",
                     "Red warning started",
-                    "Fix the red band within 30 seconds."
+                    "Fix it before the visible timer reaches zero."
             );
         }
 

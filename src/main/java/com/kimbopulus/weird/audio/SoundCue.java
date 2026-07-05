@@ -7,7 +7,6 @@ public enum SoundCue {
     PLACE(220, 0.10, 0.09),
     WARNING(165, 0.22, 0.12),
     COMPLETE(247, 0.30, 0.154),
-    LEVEL_UP(294, 0.42, 0.13),
     FAILURE(110, 0.45, 0.13),
     ANIMAL_DEATH(145, 0.34, 0.11),
     HUMAN_DEATH(92, 0.75, 0.16),

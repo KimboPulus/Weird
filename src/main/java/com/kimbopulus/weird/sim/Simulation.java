@@ -357,9 +357,9 @@ public final class Simulation {
                 grid.coolAll(DROUGHT_RAIN_GLOBAL_COOLING);
             }
             grid.rainPatch(origin, 4, 4, 0.18);
-            grid.coolPatch(origin, 4, 4, 5.6);
+            grid.coolPatch(origin, 4, 4, 11.2);
             grid.fertilizePatch(origin, 4, 4, 0.16);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.08, 0.04, 2, 0.85));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 4, 0, 10, 0.08, 0.08, 2, 0.85));
             return true;
         }
         return false;
@@ -395,9 +395,9 @@ public final class Simulation {
                 grid.coolAll(DROUGHT_RAIN_GLOBAL_COOLING);
             }
             grid.rainPatch(origin, 4, 4, 0.14);
-            grid.coolPatch(origin, 4, 4, 6.8);
+            grid.coolPatch(origin, 4, 4, 13.6);
             grid.fertilizePatch(origin, 4, 4, 0.22);
-            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.10, 0.05, 3, 1.05));
+            areaEffects.add(new AreaEffect(EffectKind.RAIN, origin, 4, 4, 2, 0, 12, 0.10, 0.10, 3, 1.05));
             return true;
         }
         return false;

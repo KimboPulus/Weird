@@ -242,7 +242,7 @@ public final class SimulationSmokeCheck {
 
         require(simulation.rain(center), "Rain should still be usable after a heat spike.");
         double afterRain = simulation.grid().cellAt(center).temperature();
-        require(afterRain <= afterHeatWave - 5.0,
+        require(afterRain <= afterHeatWave - 10.0,
                 "Rain should cool a hot patch hard enough to counter a heat wave quickly.");
 
         for (int i = 0; i < 4; i++) {
@@ -270,7 +270,7 @@ public final class SimulationSmokeCheck {
                 "Drought then rain should bring a hot square back below its starting temperature.");
         require(afterRainMoisture <= 0.25,
                 "Rain should not re-flood the square when used to cool a droughted patch.");
-        require(afterRainTemperature <= afterDroughtTemperature - 5.0,
+        require(afterRainTemperature <= afterDroughtTemperature - 10.0,
                 "Rain should reverse most of the drought heat quickly.");
     }
 
