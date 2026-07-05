@@ -23,6 +23,7 @@ public final class AudioEngine implements AutoCloseable {
     private static final Path MUSIC_WAV = Paths.get("data", "music", "domowka-theme.wav");
     private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
     private static final Path COMPLETE_WAV = Paths.get("data", "music", "level-complete.wav");
+    private static final Path LIGHTNING_WAV = Paths.get("data", "music", "lightning.wav");
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
@@ -196,6 +197,10 @@ public final class AudioEngine implements AutoCloseable {
     private void playClip(SoundCue cue) {
         try {
             if (cue == SoundCue.COMPLETE && Files.exists(COMPLETE_WAV) && playTrackClip(COMPLETE_WAV, cue.volume() * effectsVolume)) {
+                return;
+            }
+            if (cue == SoundCue.LIGHTNING && Files.exists(LIGHTNING_WAV)
+                    && playTrackClip(LIGHTNING_WAV, cue.volume() * effectsVolume)) {
                 return;
             }
             Clip clip = AudioSystem.getClip();
