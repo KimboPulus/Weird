@@ -87,6 +87,8 @@ public final class TrainingPanel extends JPanel {
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 25f));
         titleLabel.setForeground(TEXT);
+        titleLabel.setAlignmentX(LEFT_ALIGNMENT);
+        titleLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         top.add(titleLabel);
         top.add(Box.createVerticalStrut(6));
 
@@ -132,6 +134,7 @@ public final class TrainingPanel extends JPanel {
         levelProgress.setBackground(new Color(222, 216, 199));
         levelProgress.setBorderPainted(false);
         levelProgress.setPreferredSize(new Dimension(330, 20));
+        levelProgress.setAlignmentX(LEFT_ALIGNMENT);
 
         top.add(levelLabel);
         top.add(Box.createVerticalStrut(4));
@@ -175,12 +178,12 @@ public final class TrainingPanel extends JPanel {
         levelProgress.setForeground(training.levelComplete()
                 ? new Color(189, 137, 56)
                 : new Color(77, 143, 85));
-        balanceLabel.setText(training.objectiveStatus(snapshot));
+        balanceLabel.setText(html(training.objectiveStatus(snapshot), 352));
         balanceLabel.setForeground(training.objectiveOnTrack(snapshot) ? new Color(75, 101, 67) : new Color(126, 78, 56));
         countsLabel.setText(html(training.currentSummary(snapshot), 336));
         detailLabel.setText(html(training.balanceGuide(snapshot, boardCells), 336));
         climateLabel.setText(String.format(
-                "Water %.0f%%   Soil %.0f%%   %.1f C",
+                "Moisture %.0f%%   Soil %.0f%%   %.1f C",
                 snapshot.averageMoisture() * 100.0,
                 snapshot.averageFertility() * 100.0,
                 snapshot.averageTemperature()
@@ -231,6 +234,8 @@ public final class TrainingPanel extends JPanel {
     private JPanel createEconomyRow() {
         JPanel row = new JPanel(new BorderLayout(8, 0));
         row.setOpaque(false);
+        row.setAlignmentX(LEFT_ALIGNMENT);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         JButton shopButton = new JButton("Shop");
         shopButton.setFocusable(false);
         shopButton.addActionListener(event -> ShopDialog.show(
@@ -249,6 +254,8 @@ public final class TrainingPanel extends JPanel {
     private void configureLabel(JLabel label, int style, float size, Color color) {
         label.setFont(label.getFont().deriveFont(style, size));
         label.setForeground(color);
+        label.setAlignmentX(LEFT_ALIGNMENT);
+        label.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
     }
 
     private void configureWarningLine(JLabel label, int style, float size) {

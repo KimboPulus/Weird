@@ -276,11 +276,11 @@ public final class ModelRegressionCheck {
 
         require(simulation.rain(center), "Rain should apply to the droughted patch.");
         double afterRain = averageTemperature(simulation);
-        double expectedDrop = (11.2 * 16.0 / 36.0) + 1.0;
+        double expectedDrop = (11.2 * 16.0 / 36.0) + 2.5;
         double actualDrop = beforeRain - afterRain;
 
         require(Math.abs(actualDrop - expectedDrop) < 0.0001,
-                "Rain on an active drought patch should cool the whole board by 1 extra degree.");
+                "Rain on an active drought patch should cool the whole board by 2.5 extra degrees.");
     }
 
     private static void checkDroughtDriesMoistureAggressively() {

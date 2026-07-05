@@ -2,7 +2,7 @@ package com.kimbopulus.weird.progression;
 
 public enum ShopItem {
     SANCTUARY("Sanctuary Permit", "Unlock the protected 2 x 2 sanctuary.", 80),
-    RAIN_BARREL("Rain Barrel", "Rain adds 50% more water.", 60),
+    RAIN_BARREL("Rain Barrel", "Rain adds 50% more moisture.", 60),
     RICH_COMPOST("Rich Compost", "Compost adds 50% more fertility.", 60);
 
     private final String title;

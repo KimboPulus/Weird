@@ -116,7 +116,7 @@ public final class VisualSmokeCheck {
                 removeSpecies(simulation, OrganismKind.PLANT);
                 training.update(simulation);
             }
-            now.addAndGet(30_000L);
+            now.addAndGet(60_000L);
             training.update(simulation);
             require(training.levelFailed(), "Failure scenario did not lose the level.");
             renderPanels(simulation, training, output);
@@ -225,7 +225,7 @@ public final class VisualSmokeCheck {
             TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
             renderPanels(simulation, training, output, null, board -> {
                 board.showMechanicPopup("rain-tip", "Rain hit drought soil",
-                        "That combo cools the whole board by 1 C.");
+                        "That combo cools the whole board by 2.5 C.");
                 board.showMechanicPopup("drought-tip", "Drought hit dry soil",
                         "That combo heats the whole board by 2 C.");
                 board.showMechanicPopup("rabbit-tip", "Rabbits can starve",

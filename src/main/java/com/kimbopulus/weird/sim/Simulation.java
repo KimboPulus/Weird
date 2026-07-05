@@ -10,7 +10,7 @@ import java.util.Set;
 public final class Simulation {
     public static final int DEFAULT_WIDTH = 38;
     public static final int DEFAULT_HEIGHT = 26;
-    private static final double DROUGHT_RAIN_GLOBAL_COOLING = 1.0;
+    private static final double DROUGHT_RAIN_GLOBAL_COOLING = 2.5;
     private static final double DROUGHT_STACK_GLOBAL_HEATING = 2.0;
     private static final double DROUGHT_INITIAL_DRYING = 1.64;
     private static final double DROUGHT_LINGER_DRYING = 0.60;

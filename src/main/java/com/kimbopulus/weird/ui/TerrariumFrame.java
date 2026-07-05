@@ -129,7 +129,7 @@ public final class TerrariumFrame extends JFrame {
                     terrariumPanel.showMechanicPopup(
                             "rain-drought-cool",
                             "Rain hit drought soil",
-                            "That combo cools the whole board by 1 C."
+                            "That combo cools the whole board by 2.5 C."
                     );
                 } else if (droughtWillHeatWorld) {
                     terrariumPanel.showMechanicPopup(
@@ -601,7 +601,7 @@ public final class TerrariumFrame extends JFrame {
             case RAIN -> terrariumPanel.showMechanicPopup(
                     "tool-rain",
                     "Rain hits a 4 x 4 patch",
-                    "Cools hard. On active drought soil, it also cools the whole board by 1 C."
+                    "Cools hard. On active drought soil, it also cools the whole board by 2.5 C."
             );
             case DROUGHT -> terrariumPanel.showMechanicPopup(
                     "tool-drought",
