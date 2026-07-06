@@ -29,6 +29,7 @@ public final class TrainingPanel extends JPanel {
     private final Runnable onProgressionChanged;
     private final Runnable onRestartLevel;
     private final Runnable onLevelAdvanced;
+    private final Runnable onRestartGame;
     private final JLabel titleLabel = new JLabel("OBJECTIVE");
     private final JLabel levelLabel = new JLabel();
     private final JLabel scoreLabel = new JLabel();
@@ -48,10 +49,12 @@ public final class TrainingPanel extends JPanel {
     private final JProgressBar levelProgress = new JProgressBar();
     private final JButton nextLevelButton = new JButton("Next Level");
     private final JButton restartLevelButton = new JButton("Restart Level");
+    private final JButton restartGameButton = new JButton("Restart Game");
     private final JPanel levelActionsPanel = new JPanel(new GridLayout(0, 1, 0, 5));
 
     public TrainingPanel(Simulation simulation, TrainingSession training) {
         this(simulation, training, () -> {
+        }, () -> {
         }, () -> {
         }, () -> {
         });
@@ -59,6 +62,7 @@ public final class TrainingPanel extends JPanel {
 
     public TrainingPanel(Simulation simulation, TrainingSession training, Runnable onProgressionChanged) {
         this(simulation, training, onProgressionChanged, () -> {
+        }, () -> {
         }, () -> {
         });
     }
@@ -68,13 +72,15 @@ public final class TrainingPanel extends JPanel {
             TrainingSession training,
             Runnable onProgressionChanged,
             Runnable onRestartLevel,
-            Runnable onLevelAdvanced
+            Runnable onLevelAdvanced,
+            Runnable onRestartGame
     ) {
         this.simulation = simulation;
         this.training = training;
         this.onProgressionChanged = onProgressionChanged;
         this.onRestartLevel = onRestartLevel;
         this.onLevelAdvanced = onLevelAdvanced;
+        this.onRestartGame = onRestartGame;
 
         setBackground(BACKGROUND);
         setPreferredSize(new Dimension(432, 700));
@@ -191,9 +197,10 @@ public final class TrainingPanel extends JPanel {
         eventLabel.setText("Weather: " + simulation.currentEvent().title());
         refreshWarningPanel();
 
-        nextLevelButton.setVisible(training.levelComplete());
+        nextLevelButton.setVisible(training.levelComplete() && !training.gameComplete());
         restartLevelButton.setVisible(training.levelFailed());
-        levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed());
+        restartGameButton.setVisible(training.gameComplete());
+        levelActionsPanel.setVisible(training.levelComplete() || training.levelFailed() || training.gameComplete());
         feedbackLabel.setText(html(training.feedback(), 336));
         feedbackLabel.setForeground(MUTED);
     }
@@ -225,9 +232,14 @@ public final class TrainingPanel extends JPanel {
         restartLevelButton.setPreferredSize(new Dimension(280, 38));
         restartLevelButton.addActionListener(event -> onRestartLevel.run());
 
+        restartGameButton.setFocusable(false);
+        restartGameButton.setPreferredSize(new Dimension(280, 38));
+        restartGameButton.addActionListener(event -> onRestartGame.run());
+
         levelActionsPanel.setOpaque(false);
         levelActionsPanel.add(nextLevelButton);
         levelActionsPanel.add(restartLevelButton);
+        levelActionsPanel.add(restartGameButton);
         return panel;
     }
 

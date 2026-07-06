@@ -45,6 +45,7 @@ public final class VisualSmokeCheck {
         File output = new File(args.length == 0 ? "out/visual-check.png" : args[0]);
         File failureOutput = new File(output.getParentFile(), "failure-check.png");
         File completeOutput = new File(output.getParentFile(), "complete-check.png");
+        File gameCompleteOutput = new File(output.getParentFile(), "game-complete-check.png");
         File levelOutput = new File(output.getParentFile(), "level-up-check.png");
         File birthOutput = new File(output.getParentFile(), "birth-check.png");
         File sexOutput = new File(output.getParentFile(), "rabbit-sex-check.png");
@@ -57,6 +58,7 @@ public final class VisualSmokeCheck {
             render(output);
             renderFailure(failureOutput);
             renderCompleteOverlay(completeOutput);
+            renderGameComplete(gameCompleteOutput);
             renderLevelUp(levelOutput);
             renderBirth(birthOutput);
             renderRabbitSexes(sexOutput);
@@ -69,6 +71,7 @@ public final class VisualSmokeCheck {
         System.out.println("Visual check saved " + output.getAbsolutePath());
         System.out.println("Failure check saved " + failureOutput.getAbsolutePath());
         System.out.println("Complete check saved " + completeOutput.getAbsolutePath());
+        System.out.println("Game complete check saved " + gameCompleteOutput.getAbsolutePath());
         System.out.println("Level-up check saved " + levelOutput.getAbsolutePath());
         System.out.println("Birth check saved " + birthOutput.getAbsolutePath());
         System.out.println("Rabbit sex check saved " + sexOutput.getAbsolutePath());
@@ -154,6 +157,21 @@ public final class VisualSmokeCheck {
             renderPanels(simulation, training, output, null, board -> board.showLevelCompleteOverlay(
                     "Level complete",
                     "+45 tokens. Click Next Level on the right to continue."
+            ));
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static void renderGameComplete(File output) {
+        try {
+            Simulation simulation = balancedLevelSimulation(29L);
+            TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+            forceLevel(training, TrainingLevel.FLEX_SHIFT);
+            setField(training, "levelComplete", true);
+            renderPanels(simulation, training, output, null, board -> board.showLevelCompleteOverlay(
+                    "You're a warrior for passing my game!",
+                    "Final level complete. Use Restart Game on the right to play again."
             ));
         } catch (Exception exception) {
             throw new IllegalStateException(exception);

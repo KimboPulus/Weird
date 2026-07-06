@@ -26,6 +26,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
 import javax.swing.Timer;
@@ -63,6 +64,7 @@ public final class TerrariumFrame extends JFrame {
     private Position hoveredBoardPosition;
     private WorldEvent lastWorldEvent = WorldEvent.CALM;
     private boolean startupHandled;
+    private boolean completionVideoOpened;
 
     public TerrariumFrame() {
         super("Weird");
@@ -78,7 +80,8 @@ public final class TerrariumFrame extends JFrame {
                 training,
                 this::updateToolAvailability,
                 this::restartFailedLevel,
-                this::celebrateLevel
+                this::celebrateLevel,
+                this::restartCompletedGame
         );
         toolHintLabel = new JLabel();
         toolHintLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
@@ -283,7 +286,9 @@ public final class TerrariumFrame extends JFrame {
 
     private void stepSimulation() {
         if (training.levelComplete()) {
-            terrariumPanel.showBanner("Click Next Level to continue");
+            terrariumPanel.showBanner(training.gameComplete()
+                    ? "You passed the game. Use Restart Game to play again."
+                    : "Click Next Level to continue");
             return;
         }
         if (training.levelFailed()) {
@@ -302,10 +307,18 @@ public final class TerrariumFrame extends JFrame {
         if (!wasComplete && training.levelComplete()) {
             stopSimulation();
             audio.play(SoundCue.COMPLETE);
-            terrariumPanel.showLevelCompleteOverlay(
-                    "Level complete",
-                    "+" + training.lastLevelReward() + " tokens. Click Next Level on the right to continue."
-            );
+            if (training.gameComplete()) {
+                terrariumPanel.showLevelCompleteOverlay(
+                        "You're a warrior for passing my game!",
+                        "Final level complete. Use Restart Game on the right to play again."
+                );
+                showCompletionVideo();
+            } else {
+                terrariumPanel.showLevelCompleteOverlay(
+                        "Level complete",
+                        "+" + training.lastLevelReward() + " tokens. Click Next Level on the right to continue."
+                );
+            }
         } else if (!wasFailed && training.levelFailed()) {
             stopSimulation();
             training.progression().resetPurchases();
@@ -338,6 +351,14 @@ public final class TerrariumFrame extends JFrame {
         if (answer != JOptionPane.YES_OPTION) {
             return;
         }
+        resetWholeRun();
+    }
+
+    private void restartCompletedGame() {
+        resetWholeRun();
+    }
+
+    private void resetWholeRun() {
         training.progression().resetPurchases();
         simulation.restart();
         training.reset();
@@ -347,6 +368,7 @@ public final class TerrariumFrame extends JFrame {
         lastPopupDeathId = 0L;
         lastPopupBirthId = 0L;
         lastWorldEvent = simulation.currentEvent();
+        completionVideoOpened = false;
         updateAudioTension();
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -354,6 +376,14 @@ public final class TerrariumFrame extends JFrame {
         updateStatus();
         updateToolHint(hoveredBoardPosition);
         startSimulation();
+    }
+
+    private void showCompletionVideo() {
+        if (completionVideoOpened) {
+            return;
+        }
+        completionVideoOpened = true;
+        SwingUtilities.invokeLater(() -> CompletionVideoDialog.show(this));
     }
 
     private void updateStatus() {

@@ -3,6 +3,7 @@ package com.kimbopulus.weird;
 import com.kimbopulus.weird.ui.TerrariumFrame;
 import com.kimbopulus.weird.ui.ShopDialog;
 import com.kimbopulus.weird.ui.AudioSettingsDialog;
+import com.kimbopulus.weird.ui.CompletionVideoDialog;
 import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.settings.GameSettings;
 
@@ -11,9 +12,11 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Arrays;
 
 public final class WindowVisualCheck {
     private WindowVisualCheck() {
@@ -75,6 +78,19 @@ public final class WindowVisualCheck {
         ImageIO.write(audioImage, "png", audioOutput);
         SwingUtilities.invokeAndWait(audioDialog::dispose);
 
+        File videoOutput = new File(output.getParentFile(), "completion-video-check.png");
+        SwingUtilities.invokeLater(() -> CompletionVideoDialog.show(frame));
+        Thread.sleep(3000);
+        JDialog videoDialog = Arrays.stream(Window.getWindows())
+                .filter(window -> window instanceof JDialog)
+                .map(window -> (JDialog) window)
+                .filter(window -> "Game Complete".equals(window.getTitle()) && window.isShowing())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Completion video window did not open."));
+        BufferedImage videoImage = new Robot().createScreenCapture(videoDialog.getBounds());
+        ImageIO.write(videoImage, "png", videoOutput);
+        SwingUtilities.invokeAndWait(videoDialog::dispose);
+
         SwingUtilities.invokeAndWait(() -> {
             frame.setAlwaysOnTop(false);
             frame.dispose();
@@ -82,6 +98,7 @@ public final class WindowVisualCheck {
         System.out.println("Window check saved " + output.getAbsolutePath());
         System.out.println("Shop check saved " + shopOutput.getAbsolutePath());
         System.out.println("Audio settings check saved " + audioOutput.getAbsolutePath());
+        System.out.println("Completion video check saved " + videoOutput.getAbsolutePath());
         System.exit(0);
     }
 }

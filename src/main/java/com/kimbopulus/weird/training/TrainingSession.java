@@ -105,6 +105,10 @@ public final class TrainingSession {
         return levelComplete;
     }
 
+    public boolean gameComplete() {
+        return levelComplete && level == TrainingLevel.FLEX_SHIFT;
+    }
+
     public int lastLevelReward() {
         return lastLevelReward;
     }
@@ -208,7 +212,7 @@ public final class TrainingSession {
     }
 
     public boolean advanceLevel() {
-        if (!levelComplete || levelFailed) {
+        if (!levelComplete || levelFailed || gameComplete()) {
             return false;
         }
         level = level.next();

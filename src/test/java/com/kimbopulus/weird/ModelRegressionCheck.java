@@ -472,6 +472,8 @@ public final class ModelRegressionCheck {
         require(resourceExists("/com/kimbopulus/weird/sprites/wolf.png"), "Wolf sprite should be on the classpath.");
         require(resourceExists("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should be on the classpath.");
         require(resourceExists("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should be on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/media/game-complete.mp4"),
+                "Completion video should be bundled on the classpath.");
     }
 
     private static boolean resourceExists(String path) throws IOException {

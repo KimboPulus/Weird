@@ -1,0 +1,135 @@
+package com.kimbopulus.weird.ui;
+
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Window;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.concurrent.atomic.AtomicReference;
+
+public final class CompletionVideoDialog {
+    private static final String VIDEO_RESOURCE = "/com/kimbopulus/weird/media/game-complete.mp4";
+
+    private CompletionVideoDialog() {
+    }
+
+    public static void show(Window owner) {
+        Path video = extractVideo();
+        if (video == null) {
+            return;
+        }
+
+        JDialog dialog = new JDialog(owner, "Game Complete", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout());
+
+        JLabel message = new JLabel("You're a warrior for passing my game!", SwingConstants.CENTER);
+        message.setOpaque(true);
+        message.setBackground(new Color(28, 31, 27));
+        message.setForeground(new Color(245, 228, 178));
+        message.setFont(message.getFont().deriveFont(Font.BOLD, 25f));
+        message.setBorder(BorderFactory.createEmptyBorder(14, 12, 14, 12));
+        dialog.add(message, BorderLayout.NORTH);
+
+        JFXPanel videoPanel = new JFXPanel();
+        videoPanel.setPreferredSize(new Dimension(960, 540));
+        dialog.add(videoPanel, BorderLayout.CENTER);
+
+        AtomicReference<MediaPlayer> playerReference = new AtomicReference<>();
+        JButton pauseButton = new JButton("Pause");
+        JButton closeButton = new JButton("Close");
+        pauseButton.setFocusable(false);
+        closeButton.setFocusable(false);
+
+        pauseButton.addActionListener(event -> Platform.runLater(() -> {
+            MediaPlayer player = playerReference.get();
+            if (player == null) {
+                return;
+            }
+            if (player.getStatus() == MediaPlayer.Status.PLAYING) {
+                player.pause();
+                SwingUtilities.invokeLater(() -> pauseButton.setText("Resume"));
+            } else {
+                player.play();
+                SwingUtilities.invokeLater(() -> pauseButton.setText("Pause"));
+            }
+        }));
+        closeButton.addActionListener(event -> dialog.dispose());
+
+        JPanel controls = new JPanel();
+        controls.setBackground(new Color(239, 233, 218));
+        controls.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        controls.add(pauseButton);
+        controls.add(closeButton);
+        dialog.add(controls, BorderLayout.SOUTH);
+
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent event) {
+                Platform.runLater(() -> {
+                    MediaPlayer player = playerReference.getAndSet(null);
+                    if (player != null) {
+                        player.dispose();
+                    }
+                });
+            }
+        });
+
+        Platform.runLater(() -> {
+            Media media = new Media(video.toUri().toString());
+            MediaPlayer player = new MediaPlayer(media);
+            playerReference.set(player);
+            MediaView view = new MediaView(player);
+            view.setPreserveRatio(true);
+
+            StackPane root = new StackPane(view);
+            root.setStyle("-fx-background-color: black;");
+            view.fitWidthProperty().bind(root.widthProperty());
+            view.fitHeightProperty().bind(root.heightProperty());
+            videoPanel.setScene(new Scene(root, 960, 540, javafx.scene.paint.Color.BLACK));
+            player.setOnEndOfMedia(() -> SwingUtilities.invokeLater(dialog::dispose));
+            player.setOnError(() -> SwingUtilities.invokeLater(dialog::dispose));
+            player.play();
+        });
+
+        dialog.pack();
+        dialog.setMinimumSize(new Dimension(720, 480));
+        dialog.setLocationRelativeTo(owner);
+        dialog.setVisible(true);
+    }
+
+    private static Path extractVideo() {
+        try (InputStream source = CompletionVideoDialog.class.getResourceAsStream(VIDEO_RESOURCE)) {
+            if (source == null) {
+                return null;
+            }
+            Path directory = Path.of(System.getProperty("java.io.tmpdir"), "Weird");
+            Files.createDirectories(directory);
+            Path video = directory.resolve("game-complete.mp4");
+            Files.copy(source, video, StandardCopyOption.REPLACE_EXISTING);
+            return video;
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+}

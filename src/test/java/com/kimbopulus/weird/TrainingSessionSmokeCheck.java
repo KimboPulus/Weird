@@ -19,6 +19,7 @@ public final class TrainingSessionSmokeCheck {
 
     public static void main(String[] args) {
         checkLevelAdvance();
+        checkFinalLevelCompletion();
         checkLevelFailure();
         checkPlantOvergrowthFailure();
         checkNonPlantFailureStillUsesThirtySeconds();
@@ -72,6 +73,22 @@ public final class TrainingSessionSmokeCheck {
                 "The second level objective should be blunt.");
         require(training.drill() == TrainingDrill.BALANCE, "Every level should train ecosystem balance.");
         require(training.score() >= 45, "Level completion should award points.");
+    }
+
+    private static void checkFinalLevelCompletion() {
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory());
+        forceLevel(training, TrainingLevel.FLEX_SHIFT);
+        try {
+            setBooleanField(training, "levelComplete", true);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        require(training.gameComplete(), "Completing Level 6 should finish the game.");
+        require(!training.advanceLevel(), "The final level must not wrap back to Level 1.");
+        training.reset();
+        require(!training.gameComplete() && training.levelNumber() == 1,
+                "Restarting the game should return to Level 1.");
     }
 
     private static void checkLevelFailure() {

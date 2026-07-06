@@ -8,7 +8,9 @@ The current version includes illustrated terrain and wildlife, six balance-maint
 
 - Java 17
 - Java Swing
-- No external dependencies
+- JavaFX 21.0.11 for embedded victory-video playback
+
+The local JavaFX SDK and jmods are stored under `D:\java\dependencies`. The portable release includes the required runtime, so players do not install JavaFX separately.
 
 ## Run in IntelliJ
 
@@ -98,6 +100,7 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 ## Focus training
 
 - Six levels give the run a clear objective. Each level asks you to keep plants, rabbits, wolves, humans, bears, moisture, and temperature inside an explicit target band, then press `Next Level`.
+- Completing Level 6 ends the run, shows the victory screen, and plays the bundled video inside the game. `Restart Game` begins again at Level 1.
 - The right panel shows the exact current values and target ranges for the active level under the `OBJECTIVE` heading.
 - Level changes appear briefly over the board with a stronger celebration animation.
 - Ecosystem crises add a bold labeled border and an always-visible warning strip.
@@ -110,7 +113,7 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 
 Rain, Drought, and Compost have strong local effects. Repeated use can flood the terrarium, create lethal dry soil, or trigger uncontrolled plant growth.
 
-A crisis warning appears when a tracked band leaves its safe range. If extinction, runaway rabbits, flooding, lethal dryness, lethal temperature, or human collapse continues for 30 seconds, the current level is lost. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
+A crisis warning appears when a tracked band leaves its safe range. Plant warnings allow 60 seconds to recover; other warnings allow 30 seconds. `Restart Level` rebuilds the terrarium on the same level and deducts 15 run-score points. Restarting the whole run shows a confirmation warning.
 
 Ambient music and sound effects are generated through built-in Java Sound. Audio failure never prevents the simulation from running.
 

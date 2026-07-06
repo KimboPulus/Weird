@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Weird" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="com.kimbopulus.weird.Main" />
+    <option name="VM_PARAMETERS" value="--module-path &quot;$PROJECT_DIR$/../dependencies/javafx-sdk-21.0.11/lib&quot; --add-modules javafx.swing,javafx.media" />
     <module name="Weird" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
   </configuration>
 </component>
-
