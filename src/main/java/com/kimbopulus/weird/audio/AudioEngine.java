@@ -26,6 +26,8 @@ public final class AudioEngine implements AutoCloseable {
     private static final Path MUSIC_SOURCE = Paths.get("data", "music", "DOM\u00d3WKA MIXTAPE CD.1.mp4");
     private static final Path COMPLETE_WAV = Paths.get("data", "music", "level-complete.wav");
     private static final Path LIGHTNING_WAV = Paths.get("data", "music", "lightning.wav");
+    private static final String COMPLETE_RESOURCE = "/com/kimbopulus/weird/audio/level-complete.wav";
+    private static final String LIGHTNING_RESOURCE = "/com/kimbopulus/weird/audio/lightning.wav";
     private static final String BEAR_ATTACK_RESOURCE = "/com/kimbopulus/weird/audio/bear-attack.wav";
 
     private volatile boolean enabled = true;
@@ -202,8 +204,16 @@ public final class AudioEngine implements AutoCloseable {
             if (cue == SoundCue.COMPLETE && Files.exists(COMPLETE_WAV) && playTrackClip(COMPLETE_WAV, cue.volume() * effectsVolume)) {
                 return;
             }
+            if (cue == SoundCue.COMPLETE
+                    && playResourceClip(COMPLETE_RESOURCE, cue.volume() * effectsVolume)) {
+                return;
+            }
             if (cue == SoundCue.LIGHTNING && Files.exists(LIGHTNING_WAV)
                     && playTrackClip(LIGHTNING_WAV, cue.volume() * effectsVolume)) {
+                return;
+            }
+            if (cue == SoundCue.LIGHTNING
+                    && playResourceClip(LIGHTNING_RESOURCE, cue.volume() * effectsVolume)) {
                 return;
             }
             if (cue == SoundCue.BEAR_ATTACK

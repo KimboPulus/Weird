@@ -1,0 +1,214 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v2026.07.07.1
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: "17"
+  JAVAFX_VERSION: "21.0.11"
+  MAIN_CLASS: com.kimbopulus.weird.Main
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Download JavaFX
+        shell: pwsh
+        run: |
+          $version = "${env:JAVAFX_VERSION}"
+          New-Item -ItemType Directory -Force -Path build\deps | Out-Null
+          Invoke-WebRequest "https://download2.gluonhq.com/openjfx/$version/openjfx-${version}_windows-x64_bin-sdk.zip" -OutFile build\deps\javafx-sdk.zip
+          Invoke-WebRequest "https://download2.gluonhq.com/openjfx/$version/openjfx-${version}_windows-x64_bin-jmods.zip" -OutFile build\deps\javafx-jmods.zip
+          Expand-Archive build\deps\javafx-sdk.zip -DestinationPath build\deps -Force
+          Expand-Archive build\deps\javafx-jmods.zip -DestinationPath build\deps -Force
+          "JAVAFX_SDK=$((Resolve-Path build\deps\javafx-sdk-$version).Path)" >> $env:GITHUB_ENV
+          "JAVAFX_JMODS=$((Resolve-Path build\deps\javafx-jmods-$version).Path)" >> $env:GITHUB_ENV
+
+      - name: Compile and test
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build\classes, build\test-classes | Out-Null
+          Get-ChildItem src\main\java -Recurse -Filter *.java | ForEach-Object FullName | Set-Content build\sources.txt
+          javac --module-path "$env:JAVAFX_SDK\lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -d build\classes "@build\sources.txt"
+          if (Test-Path src\main\resources) {
+            Copy-Item src\main\resources\* build\classes -Recurse -Force
+          }
+          New-Item -ItemType Directory -Force -Path build\classes\com\kimbopulus\weird\audio | Out-Null
+          Copy-Item data\music\level-complete.wav build\classes\com\kimbopulus\weird\audio\level-complete.wav -Force
+          Copy-Item data\music\lightning.wav build\classes\com\kimbopulus\weird\audio\lightning.wav -Force
+          Get-ChildItem src\test\java -Recurse -Filter *.java | ForEach-Object FullName | Set-Content build\tests.txt
+          javac --module-path "$env:JAVAFX_SDK\lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -cp build\classes -d build\test-classes "@build\tests.txt"
+          $tests = @(
+            "com.kimbopulus.weird.SimulationSmokeCheck",
+            "com.kimbopulus.weird.ModelRegressionCheck",
+            "com.kimbopulus.weird.TrainingSessionSmokeCheck",
+            "com.kimbopulus.weird.SettingsSmokeCheck"
+          )
+          foreach ($test in $tests) {
+            java --module-path "$env:JAVAFX_SDK\lib" --add-modules javafx.swing,javafx.media -cp build\classes`;build\test-classes $test
+          }
+
+      - name: Package portable app
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag }}"
+          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          $appVersion = $tag.TrimStart([char]"v")
+          "Main-Class: ${env:MAIN_CLASS}`n" | Set-Content build\MANIFEST.MF -NoNewline
+          jar cfm build\Weird.jar build\MANIFEST.MF -C build\classes .
+          New-Item -ItemType Directory -Force -Path build\portable\Weird\app | Out-Null
+          Copy-Item build\Weird.jar build\portable\Weird\app\Weird.jar -Force
+          jlink --module-path "$env:JAVA_HOME\jmods;$env:JAVAFX_JMODS" --add-modules javafx.swing,javafx.media --output build\portable\Weird\runtime --strip-debug --no-header-files --no-man-pages --compress=2
+          if (Test-Path data\music) {
+            New-Item -ItemType Directory -Force -Path build\portable\Weird\data | Out-Null
+            Copy-Item data\music build\portable\Weird\data\music -Recurse -Force
+          }
+          "@echo off`r`ncd /d ""%~dp0""`r`n""%~dp0runtime\bin\java.exe"" -cp ""%~dp0app\Weird.jar"" ${env:MAIN_CLASS}`r`n" | Set-Content build\portable\Weird\RUN-WEIRD.bat -Encoding ASCII
+          Compress-Archive -Path build\portable\Weird -DestinationPath build\Weird-windows-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weird-windows-x64
+          path: build/Weird-windows-x64.zip
+
+  linux:
+    name: Ubuntu 24.04 x64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev xvfb
+
+      - name: Download JavaFX
+        run: |
+          mkdir -p build/deps
+          version="${JAVAFX_VERSION}"
+          curl -L "https://download2.gluonhq.com/openjfx/${version}/openjfx-${version}_linux-x64_bin-sdk.zip" -o build/deps/javafx-sdk.zip
+          curl -L "https://download2.gluonhq.com/openjfx/${version}/openjfx-${version}_linux-x64_bin-jmods.zip" -o build/deps/javafx-jmods.zip
+          unzip -q build/deps/javafx-sdk.zip -d build/deps
+          unzip -q build/deps/javafx-jmods.zip -d build/deps
+          echo "JAVAFX_SDK=${GITHUB_WORKSPACE}/build/deps/javafx-sdk-${version}" >> "$GITHUB_ENV"
+          echo "JAVAFX_JMODS=${GITHUB_WORKSPACE}/build/deps/javafx-jmods-${version}" >> "$GITHUB_ENV"
+
+      - name: Compile and test
+        run: |
+          mkdir -p build/classes build/test-classes build/classes/com/kimbopulus/weird/audio
+          find src/main/java -name "*.java" > build/sources.txt
+          javac --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -d build/classes @build/sources.txt
+          cp -R src/main/resources/. build/classes/
+          cp data/music/level-complete.wav build/classes/com/kimbopulus/weird/audio/level-complete.wav
+          cp data/music/lightning.wav build/classes/com/kimbopulus/weird/audio/lightning.wav
+          find src/test/java -name "*.java" > build/tests.txt
+          javac --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -cp build/classes -d build/test-classes @build/tests.txt
+          for test in \
+            com.kimbopulus.weird.SimulationSmokeCheck \
+            com.kimbopulus.weird.ModelRegressionCheck \
+            com.kimbopulus.weird.TrainingSessionSmokeCheck \
+            com.kimbopulus.weird.SettingsSmokeCheck
+          do
+            xvfb-run -a java --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -cp build/classes:build/test-classes "$test"
+          done
+
+      - name: Package app
+        run: |
+          tag="${{ github.event.inputs.tag }}"
+          if [ -z "$tag" ]; then tag="${GITHUB_REF_NAME}"; fi
+          app_version="${tag#v}"
+          printf "Main-Class: %s\n" "$MAIN_CLASS" > build/MANIFEST.MF
+          jar cfm build/Weird.jar build/MANIFEST.MF -C build/classes .
+          mkdir -p build/portable/Weird/app build/portable/Weird/data
+          cp build/Weird.jar build/portable/Weird/app/Weird.jar
+          jlink --module-path "$JAVA_HOME/jmods:$JAVAFX_JMODS" --add-modules javafx.swing,javafx.media --output build/portable/Weird/runtime --strip-debug --no-header-files --no-man-pages --compress=2
+          cp -R data/music build/portable/Weird/data/music
+          cat > build/portable/Weird/run-weird.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -e
+          DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          "$DIR/runtime/bin/java" -cp "$DIR/app/Weird.jar" com.kimbopulus.weird.Main
+          EOF
+          chmod +x build/portable/Weird/run-weird.sh
+          tar -czf build/Weird-linux-x64-ubuntu24.04.tar.gz -C build/portable Weird
+          mkdir -p build/debroot/DEBIAN build/debroot/opt build/debroot/usr/bin build/debroot/usr/share/applications
+          cp -R build/portable/Weird build/debroot/opt/weird
+          ln -s /opt/weird/run-weird.sh build/debroot/usr/bin/weird
+          cat > build/debroot/usr/share/applications/weird.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=Weird
+          Comment=Ecosystem balance game
+          Exec=/opt/weird/run-weird.sh
+          Terminal=false
+          Categories=Game;
+          EOF
+          cat > build/debroot/DEBIAN/control <<EOF
+          Package: weird
+          Version: $app_version
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: KimboPulus
+          Description: Weird ecosystem balance game
+           A small Java ecosystem balance game with bundled runtime.
+          EOF
+          dpkg-deb --build build/debroot build/Weird-linux-x64-ubuntu24.04.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weird-linux-x64-ubuntu24.04
+          path: |
+            build/Weird-linux-x64-ubuntu24.04.tar.gz
+            build/Weird-linux-x64-ubuntu24.04.deb
+
+  release:
+    name: Publish GitHub release
+    needs:
+      - windows
+      - linux
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.inputs.tag }}"
+          if [ -z "$tag" ]; then tag="${GITHUB_REF_NAME}"; fi
+          gh release create "$tag" artifacts/**/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Weird $tag" \
+            --notes "Portable Windows build and Ubuntu 24.04/TUXEDO OS compatible Linux builds. Download the zip or tar.gz, extract it, then use RUN-WEIRD.bat on Windows or run-weird.sh on Linux. The .deb installs the same bundled-runtime Linux build."
