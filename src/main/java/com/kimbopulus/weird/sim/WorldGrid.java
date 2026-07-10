@@ -153,6 +153,14 @@ public final class WorldGrid {
         });
     }
 
+    public void dryAll(double amount) {
+        forEachCell(cell -> {
+            if (!cell.sanctuary()) {
+                cell.dry(amount);
+            }
+        });
+    }
+
     public void coolAll(double amount) {
         forEachCell(cell -> cell.cool(amount));
     }

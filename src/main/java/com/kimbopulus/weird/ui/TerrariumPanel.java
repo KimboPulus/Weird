@@ -182,11 +182,20 @@ public final class TerrariumPanel extends JPanel {
 
     public void syncBirthEffects() {
         List<BirthEvent> births = simulation.recentBirthEvents();
-        if (!births.isEmpty() && births.get(births.size() - 1).id() > lastBirthId) {
-            lastBirthId = births.get(births.size() - 1).id();
-            if (!effectTimer.isRunning()) {
-                effectTimer.start();
+        long newest = lastBirthId;
+        boolean visualBirth = false;
+        for (BirthEvent birth : births) {
+            if (birth.id() <= lastBirthId) {
+                continue;
             }
+            newest = Math.max(newest, birth.id());
+            if (birth.kind() != OrganismKind.RABBIT) {
+                visualBirth = true;
+            }
+        }
+        lastBirthId = newest;
+        if (visualBirth && !effectTimer.isRunning()) {
+            effectTimer.start();
         }
     }
 
@@ -686,6 +695,9 @@ public final class TerrariumPanel extends JPanel {
     private void drawBirthEffects(Graphics2D g, BoardMetrics metrics) {
         long now = System.currentTimeMillis();
         for (BirthEvent birth : simulation.recentBirthEvents()) {
+            if (birth.kind() == OrganismKind.RABBIT) {
+                continue;
+            }
             double progress = (now - birth.createdAtMillis()) / (double) BIRTH_DURATION_MS;
             if (progress < 0.0 || progress >= 1.0) {
                 continue;
@@ -901,17 +913,21 @@ public final class TerrariumPanel extends JPanel {
             card.setStroke(new BasicStroke(3f));
             card.drawRoundRect(x, y, cardWidth, cardHeight, 16, 16);
 
-            card.setFont(card.getFont().deriveFont(Font.BOLD, 30f));
+            Font titleFont = card.getFont().deriveFont(Font.BOLD, 28f);
+            card.setFont(titleFont);
             card.setColor(new Color(244, 239, 218));
-            FontMetrics titleMetrics = card.getFontMetrics();
-            String title = levelCompleteTitle;
-            int titleX = x + (cardWidth - titleMetrics.stringWidth(title)) / 2;
-            card.drawString(title, titleX, y + 50);
+            List<String> titleLines = wrappedLines(card, titleFont, levelCompleteTitle, cardWidth - 48);
+            int titleY = y + 44;
+            for (String line : titleLines) {
+                int titleX = x + (cardWidth - card.getFontMetrics().stringWidth(line)) / 2;
+                card.drawString(line, titleX, titleY);
+                titleY += 32;
+            }
 
             card.setFont(card.getFont().deriveFont(Font.PLAIN, 18f));
             card.setColor(new Color(226, 222, 205));
             List<String> lines = wrappedLines(card, card.getFont(), levelCompleteDetail, cardWidth - 50);
-            int lineY = y + 86;
+            int lineY = Math.max(y + 96, titleY + 10);
             for (String line : lines) {
                 int lineX = x + (cardWidth - card.getFontMetrics().stringWidth(line)) / 2;
                 card.drawString(line, lineX, lineY);

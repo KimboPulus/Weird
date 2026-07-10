@@ -408,6 +408,7 @@ public final class Simulation {
             if (droughtWillHeatWorld(center)) {
                 grid.warmAll(DROUGHT_STACK_GLOBAL_HEATING);
             }
+            grid.dryAll(0.01);
             Organism target = organismAt(center);
             if (target != null && target.kind() != OrganismKind.PLANT) {
                 removeOrganism(center, DeathCause.NATURAL);
@@ -437,8 +438,9 @@ public final class Simulation {
 
     public boolean compost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 0, 0.30);
-            grid.rainAround(center, 0, 0.08);
+            Position origin = patchOrigin(center, 4, 4);
+            grid.fertilizePatch(origin, 4, 4, 0.30);
+            grid.rainPatch(origin, 4, 4, 0.08);
             return true;
         }
         return false;
@@ -446,7 +448,8 @@ public final class Simulation {
 
     public boolean compostBoost(Position center) {
         if (grid.contains(center)) {
-            grid.fertilizeAround(center, 0, 0.15);
+            Position origin = patchOrigin(center, 4, 4);
+            grid.fertilizePatch(origin, 4, 4, 0.15);
             return true;
         }
         return false;

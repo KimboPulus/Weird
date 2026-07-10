@@ -295,9 +295,9 @@ public final class ModelRegressionCheck {
         require(simulation.drought(center), "Drought should apply to the test patch.");
 
         double averageMoisture = averageMoisture(simulation);
-        double expectedAverage = (20.0 * 0.95) / 36.0;
-        require(Math.abs(averageMoisture - expectedAverage) < 0.0001,
-                "Drought should now strip essentially all moisture from the 4 x 4 patch on impact.");
+        double expectedWithGlobalDrying = (20.0 * 0.94) / 36.0;
+        require(Math.abs(averageMoisture - expectedWithGlobalDrying) < 0.0001,
+                "Drought should strip the 4 x 4 patch and lower total moisture by 1%.");
     }
 
     private static void checkDroughtAfterDroughtHeatsGlobalTemperature() {
@@ -454,7 +454,7 @@ public final class ModelRegressionCheck {
     private static void checkSettingsDefaultValues() {
         GameSettings settings = GameSettings.inMemory();
         require(settings.audioEnabled(), "In-memory settings should default audio to on.");
-        require(settings.musicVolume() == 15, "Music volume should default to the quiet first-run level.");
+        require(settings.musicVolume() == 12, "Music volume should default to the quieter first-run level.");
         require(settings.effectsVolume() == 70, "Effects volume should default to the standard level.");
         require(!settings.introSeen(), "Intro should default to unseen.");
     }
@@ -474,6 +474,8 @@ public final class ModelRegressionCheck {
         require(resourceExists("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should be on the classpath.");
         require(resourceExists("/com/kimbopulus/weird/media/game-complete.mp4"),
                 "Completion video should be bundled on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/audio/human-attack.wav"),
+                "Human attack sound should be bundled on the classpath.");
     }
 
     private static boolean resourceExists(String path) throws IOException {

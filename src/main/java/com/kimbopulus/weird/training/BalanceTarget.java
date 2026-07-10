@@ -68,7 +68,7 @@ public record BalanceTarget(
     public String guide(PopulationSnapshot snapshot, int boardCells) {
         int safeBoardCells = Math.max(1, boardCells);
         return String.format(
-                "Fail if:<br>"
+                "<b><font size='+1'>Fail if:</font></b><br>"
                         + "Plants outside %s<br>"
                         + "Rabbits outside %s<br>"
                         + "Wolves outside %s<br>"

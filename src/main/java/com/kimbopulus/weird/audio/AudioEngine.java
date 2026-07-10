@@ -29,13 +29,16 @@ public final class AudioEngine implements AutoCloseable {
     private static final String COMPLETE_RESOURCE = "/com/kimbopulus/weird/audio/level-complete.wav";
     private static final String LIGHTNING_RESOURCE = "/com/kimbopulus/weird/audio/lightning.wav";
     private static final String BEAR_ATTACK_RESOURCE = "/com/kimbopulus/weird/audio/bear-attack.wav";
+    private static final String HUMAN_ATTACK_RESOURCE = "/com/kimbopulus/weird/audio/human-attack.wav";
 
     private volatile boolean enabled = true;
     private volatile boolean running = true;
+    private volatile boolean musicSuspended;
     private volatile SourceDataLine musicLine;
-    private volatile double musicVolume = 0.35;
+    private volatile double musicVolume = 0.12;
     private volatile double effectsVolume = 0.70;
     private volatile double tension;
+    private volatile long musicFramePosition;
 
     public AudioEngine() {
         Thread musicThread = new Thread(this::runMusic, "weird-ambient-music");
@@ -50,7 +53,7 @@ public final class AudioEngine implements AutoCloseable {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         if (!enabled && musicLine != null) {
-            musicLine.flush();
+            pauseMusicLine();
         }
     }
 
@@ -63,6 +66,15 @@ public final class AudioEngine implements AutoCloseable {
 
     public void setTension(double tension) {
         this.tension = Math.max(0.0, Math.min(1.0, tension));
+    }
+
+    public void suspendMusic() {
+        musicSuspended = true;
+        pauseMusicLine();
+    }
+
+    public void resumeMusic() {
+        musicSuspended = false;
     }
 
     public void play(SoundCue cue) {
@@ -110,7 +122,7 @@ public final class AudioEngine implements AutoCloseable {
         musicLine = line;
         int noteIndex = 0;
         while (running) {
-            if (!enabled) {
+            if (!enabled || musicSuspended) {
                 Thread.sleep(80);
                 continue;
             }
@@ -126,14 +138,16 @@ public final class AudioEngine implements AutoCloseable {
 
     private boolean playMusicTrack(Path track) throws Exception {
         while (running) {
-            if (!enabled) {
+            if (!enabled || musicSuspended) {
                 Thread.sleep(80);
                 continue;
             }
 
             SourceDataLine line = null;
+            boolean reachedEnd = false;
             try (AudioInputStream stream = AudioSystem.getAudioInputStream(track.toFile())) {
                 AudioFormat format = stream.getFormat();
+                skipFrames(stream, format, musicFramePosition);
                 DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
                 line = (SourceDataLine) AudioSystem.getLine(info);
                 line.open(format, 4096);
@@ -143,13 +157,27 @@ public final class AudioEngine implements AutoCloseable {
 
                 byte[] buffer = new byte[4096];
                 int read;
-                while (running && enabled && (read = stream.read(buffer, 0, buffer.length)) >= 0) {
+                while (running && enabled && !musicSuspended) {
+                    read = stream.read(buffer, 0, buffer.length);
+                    if (read < 0) {
+                        reachedEnd = true;
+                        break;
+                    }
                     line.write(buffer, 0, read);
+                    int frameSize = Math.max(1, format.getFrameSize());
+                    musicFramePosition += read / frameSize;
+                }
+                if (reachedEnd) {
+                    musicFramePosition = 0L;
                 }
             } finally {
                 if (line != null) {
                     try {
-                        line.drain();
+                        if (reachedEnd && running && enabled && !musicSuspended) {
+                            line.drain();
+                        } else {
+                            line.flush();
+                        }
                     } finally {
                         line.stop();
                         line.close();
@@ -161,6 +189,21 @@ public final class AudioEngine implements AutoCloseable {
             }
         }
         return true;
+    }
+
+    private void skipFrames(AudioInputStream stream, AudioFormat format, long frames) throws IOException {
+        if (frames <= 0L) {
+            return;
+        }
+        long bytes = frames * Math.max(1, format.getFrameSize());
+        while (bytes > 0L) {
+            long skipped = stream.skip(bytes);
+            if (skipped <= 0L) {
+                musicFramePosition = 0L;
+                return;
+            }
+            bytes -= skipped;
+        }
     }
 
     private Path prepareMusicTrack() throws IOException, InterruptedException {
@@ -220,6 +263,10 @@ public final class AudioEngine implements AutoCloseable {
                     && playResourceClip(BEAR_ATTACK_RESOURCE, cue.volume() * effectsVolume)) {
                 return;
             }
+            if (cue == SoundCue.HUMAN_ATTACK
+                    && playResourceClip(HUMAN_ATTACK_RESOURCE, cue.volume() * effectsVolume)) {
+                return;
+            }
             Clip clip = AudioSystem.getClip();
             byte[] data;
             if (cue == SoundCue.HUMAN_DEATH) {
@@ -238,6 +285,14 @@ public final class AudioEngine implements AutoCloseable {
             clip.start();
         } catch (Exception ignored) {
             // Sound effects are optional for the same reason as music.
+        }
+    }
+
+    private void pauseMusicLine() {
+        SourceDataLine line = musicLine;
+        if (line != null) {
+            line.stop();
+            line.flush();
         }
     }
 

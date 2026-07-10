@@ -16,7 +16,7 @@ public enum ToolMode {
             return simulation.drought(position);
         }
     },
-    COMPOST("Compost", "Use when one weak square needs a fast fertility push.", 0) {
+    COMPOST("Compost", "Use when a weak 4 x 4 patch needs a fast fertility push.", 0) {
         @Override
         public boolean apply(Simulation simulation, Position position) {
             return simulation.compost(position);

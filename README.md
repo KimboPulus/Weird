@@ -73,7 +73,7 @@ The same gallery is published in `docs/index.md` for the GitHub Pages view.
 
 - `Rain` cools a 4 x 4 patch hard while adding a smaller amount of moisture.
 - `Drought` dries and warms a 4 x 4 patch centered on the click, and kills a creature if you click directly on it.
-- `Compost` raises fertility on the clicked cell.
+- `Compost` raises fertility across a 4 x 4 patch.
 - `Rabbit` and `Wolf` place one organism on an empty clicked cell.
 - `Human` plants nearby soil, can breed once when two humans meet, and walks over plants without destroying them.
 - `Bear` hunts humans and also walks over plants without destroying them.

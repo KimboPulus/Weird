@@ -46,10 +46,13 @@ public final class SimulationSmokeCheck {
                 "The rain upgrade should increase moisture.");
         simulation.drought(upgradeTarget);
         double fertilityBefore = simulation.grid().cellAt(upgradeTarget).fertility();
+        double farFertilityBefore = simulation.grid().cellAt(new Position(12, 10)).fertility();
         simulation.compost(upgradeTarget);
         simulation.compostBoost(upgradeTarget);
         require(simulation.grid().cellAt(upgradeTarget).fertility() > fertilityBefore,
                 "The compost upgrade should increase fertility.");
+        require(simulation.grid().cellAt(new Position(12, 10)).fertility() > farFertilityBefore,
+                "Compost should now affect the full 4x4 patch.");
         require(simulation.addSanctuary(new Position(2, 2)), "The first sanctuary should be accepted.");
         require(!simulation.addSanctuary(new Position(5, 5)), "Only one sanctuary should be allowed per run.");
         require(simulation.grid().cellAt(new Position(2, 2)).sanctuary(), "Sanctuary soil should be marked.");

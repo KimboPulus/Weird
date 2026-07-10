@@ -43,7 +43,10 @@ public final class CompletionVideoDialog {
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setLayout(new BorderLayout());
 
-        JLabel message = new JLabel("You're a warrior for passing my game!", SwingConstants.CENTER);
+        JLabel message = new JLabel(
+                "<html><div style='text-align:center;width:620px'>You're a warrior for passing my game!</div></html>",
+                SwingConstants.CENTER
+        );
         message.setOpaque(true);
         message.setBackground(new Color(28, 31, 27));
         message.setForeground(new Color(245, 228, 178));
@@ -98,6 +101,7 @@ public final class CompletionVideoDialog {
         Platform.runLater(() -> {
             Media media = new Media(video.toUri().toString());
             MediaPlayer player = new MediaPlayer(media);
+            player.setVolume(0.5);
             playerReference.set(player);
             MediaView view = new MediaView(player);
             view.setPreserveRatio(true);

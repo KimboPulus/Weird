@@ -383,7 +383,11 @@ public final class TerrariumFrame extends JFrame {
             return;
         }
         completionVideoOpened = true;
-        SwingUtilities.invokeLater(() -> CompletionVideoDialog.show(this));
+        SwingUtilities.invokeLater(() -> {
+            audio.suspendMusic();
+            CompletionVideoDialog.show(this);
+            audio.resumeMusic();
+        });
     }
 
     private void updateStatus() {
@@ -544,6 +548,7 @@ public final class TerrariumFrame extends JFrame {
         boolean humanDeath = false;
         boolean animalDeath = false;
         boolean bearAttack = false;
+        boolean humanAttack = false;
         long newest = lastDeathSoundId;
         for (DeathEvent death : simulation.recentDeathEvents()) {
             if (death.id() <= lastDeathSoundId) {
@@ -556,6 +561,8 @@ public final class TerrariumFrame extends JFrame {
             if (death.kind() == OrganismKind.HUMAN) {
                 humanDeath = true;
                 bearAttack |= death.cause() == DeathCause.BEAR_ATTACK;
+            } else if (death.kind() == OrganismKind.WOLF && death.cause() == DeathCause.HUMAN_ATTACK) {
+                humanAttack = true;
             } else {
                 animalDeath = true;
             }
@@ -563,6 +570,8 @@ public final class TerrariumFrame extends JFrame {
         lastDeathSoundId = newest;
         if (bearAttack) {
             audio.play(SoundCue.BEAR_ATTACK);
+        } else if (humanAttack) {
+            audio.play(SoundCue.HUMAN_ATTACK);
         } else if (humanDeath) {
             audio.play(SoundCue.HUMAN_DEATH);
         } else if (animalDeath) {
@@ -640,8 +649,8 @@ public final class TerrariumFrame extends JFrame {
             );
             case COMPOST -> terrariumPanel.showMechanicPopup(
                     "tool-compost",
-                    "Compost boosts one tile",
-                    "Raises fertility fast. Overuse can spike plants."
+                    "Compost boosts a 4 x 4 patch",
+                    "Raises fertility across the patch. Overuse can spike plants."
             );
             case HUMAN -> terrariumPanel.showMechanicPopup(
                     "tool-human",
