@@ -21,6 +21,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +62,7 @@ public final class TerrariumPanel extends JPanel {
     private static final BufferedImage WOLF_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/wolf.png");
     private static final BufferedImage HUMAN_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/human.png");
     private static final BufferedImage BEAR_SPRITE = loadSprite("/com/kimbopulus/weird/sprites/bear.png");
+    private static final BufferedImage BLOOD_SPLATTER = loadSprite("/com/kimbopulus/weird/effects/blood-splatter.png");
     private static final BasicStroke GRID_STROKE = new BasicStroke(1f);
     private static final BasicStroke PLANT_STROKE = new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     private static final BasicStroke VETERAN_STROKE = new BasicStroke(1.5f);
@@ -717,30 +720,19 @@ public final class TerrariumPanel extends JPanel {
             drawLightningDeath(g, x, y, size, alpha, progress);
             return;
         }
+        if (kind != OrganismKind.PLANT) {
+            drawBloodSplatter(g, x, y, size, alpha, progress);
+        }
+        if (kind == OrganismKind.HUMAN || kind == OrganismKind.RABBIT) {
+            return;
+        }
         Color color = switch (kind) {
-            case RABBIT -> new Color(188, 48, 52, alpha);
             case WOLF -> new Color(145, 153, 164, alpha);
-            case HUMAN -> new Color(176, 48, 56, alpha);
             case BEAR -> new Color(151, 96, 58, alpha);
-            case PLANT -> new Color(96, 175, 91, alpha);
+            default -> new Color(96, 175, 91, alpha);
         };
         g.setColor(color);
-        if (kind == OrganismKind.HUMAN || kind == OrganismKind.RABBIT) {
-            int center = x + size / 2;
-            int splatter = Math.max(2, size / 5);
-            g.fillOval(center - 3, y, 6, 6);
-            g.fillOval(x + 1, y + size / 2, 4, 4);
-            g.fillOval(x + size - 5, y + size / 2, 4, 4);
-            g.setStroke(new BasicStroke(kind == OrganismKind.HUMAN ? 3f : 2.4f));
-            g.drawLine(center, y + 5, center, y + size - 1);
-            g.drawLine(center, y + size / 2, x, y + size - 1);
-            g.drawLine(center, y + size / 2, x + size - 1, y + size - 1);
-            g.setColor(new Color(120, 10, 18, alpha));
-            g.fillOval(center - 1, y + size / 2, 2, 2);
-            g.fillOval(x + size / 3, y + size / 2, splatter, splatter);
-            g.fillOval(x + size / 2, y + size / 3, splatter, splatter);
-            g.fillOval(x + size / 4, y + size / 2 + 1, splatter + 1, splatter);
-        } else if (kind == OrganismKind.WOLF && cause == DeathCause.HUMAN_ATTACK) {
+        if (kind == OrganismKind.WOLF && cause == DeathCause.HUMAN_ATTACK) {
             drawKnifeKill(g, x, y, size, alpha, progress);
         } else if (kind == OrganismKind.WOLF) {
             g.fillPolygon(
@@ -752,6 +744,21 @@ public final class TerrariumPanel extends JPanel {
             g.fillOval(x, y + size / 3, size, size * 2 / 3);
             g.fillOval(x + size / 2, y, size / 2, size / 2);
         }
+    }
+
+    private void drawBloodSplatter(Graphics2D g, int x, int y, int size, int alpha, double progress) {
+        if (BLOOD_SPLATTER == null) {
+            g.setColor(new Color(155, 18, 24, alpha));
+            g.fillOval(x, y, size, size);
+            return;
+        }
+        int splatterSize = Math.max(size, (int) (size * (1.25 + progress * 0.25)));
+        int drawX = x + (size - splatterSize) / 2;
+        int drawY = y + (size - splatterSize) / 2;
+        Composite previous = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0f, Math.min(1f, alpha / 255f))));
+        g.drawImage(BLOOD_SPLATTER, drawX, drawY, splatterSize, splatterSize, null);
+        g.setComposite(previous);
     }
 
     private void drawLightningDeath(Graphics2D g, int x, int y, int size, int alpha, double progress) {
@@ -775,7 +782,7 @@ public final class TerrariumPanel extends JPanel {
         int bladeTop = y - (int) (progress * size * 0.4);
         int bladeBottom = y + size - (int) (progress * size * 0.08);
 
-        g.setColor(new Color(176, 58, 56, alpha));
+        g.setColor(new Color(96, 101, 108, Math.max(0, alpha - 25)));
         g.fillOval(x + 1, y + size / 3, size - 2, size / 2);
         g.fillOval(x + size / 3, y + 1, size / 3, size / 3);
         g.setColor(new Color(72, 52, 43, alpha));

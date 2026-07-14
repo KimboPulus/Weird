@@ -476,6 +476,8 @@ public final class ModelRegressionCheck {
                 "Completion video should be bundled on the classpath.");
         require(resourceExists("/com/kimbopulus/weird/audio/human-attack.wav"),
                 "Human attack sound should be bundled on the classpath.");
+        require(resourceExists("/com/kimbopulus/weird/effects/blood-splatter.png"),
+                "Blood splatter effect should be bundled on the classpath.");
     }
 
     private static boolean resourceExists(String path) throws IOException {
@@ -489,6 +491,8 @@ public final class ModelRegressionCheck {
         require(hasOpaquePixel("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should contain visible pixels.");
         require(hasWhiteCorners("/com/kimbopulus/weird/sprites/bear.png"), "Bear sprite should keep a white square background.");
         require(hasWhiteCorners("/com/kimbopulus/weird/sprites/human.png"), "Human sprite should keep a white square background.");
+        require(hasTransparentCorners("/com/kimbopulus/weird/effects/blood-splatter.png"),
+                "Blood splatter should have a transparent background.");
     }
 
     private static void checkMechanicPopupReset() throws ReflectiveOperationException {
@@ -701,6 +705,31 @@ public final class ModelRegressionCheck {
                 int green = (argb >>> 8) & 0xff;
                 int blue = argb & 0xff;
                 if (alpha < 250 || red < 245 || green < 245 || blue < 245) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    private static boolean hasTransparentCorners(String path) throws IOException {
+        try (var input = TerrariumPanel.class.getResourceAsStream(path)) {
+            if (input == null) {
+                return false;
+            }
+            BufferedImage image = ImageIO.read(input);
+            if (image == null) {
+                return false;
+            }
+            int[][] corners = {
+                    {0, 0},
+                    {image.getWidth() - 1, 0},
+                    {0, image.getHeight() - 1},
+                    {image.getWidth() - 1, image.getHeight() - 1}
+            };
+            for (int[] corner : corners) {
+                int alpha = (image.getRGB(corner[0], corner[1]) >>> 24) & 0xff;
+                if (alpha > 5) {
                     return false;
                 }
             }

@@ -608,6 +608,7 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void startSimulation() {
+        training.resumeDangerClock();
         if (training.levelComplete() || training.levelFailed()) {
             pauseButton.setText("Resume");
             return;
@@ -619,6 +620,7 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void stopSimulation() {
+        training.pauseDangerClock();
         if (timer.isRunning()) {
             timer.stop();
         }

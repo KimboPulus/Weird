@@ -24,6 +24,7 @@ public final class TrainingSession {
     private String dangerReason;
     private String dangerDetail;
     private long dangerStartedAtMillis = -1L;
+    private long dangerPausedAtMillis = -1L;
     private String failureDetail;
     private int gardenerActions;
 
@@ -137,7 +138,7 @@ public final class TrainingSession {
             return null;
         }
         long graceMs = failureGraceMs(dangerReason);
-        long remainingMs = Math.max(0L, graceMs - (clock.getAsLong() - dangerStartedAtMillis));
+        long remainingMs = Math.max(0L, graceMs - (warningClockMillis() - dangerStartedAtMillis));
         return String.format("%.1fs to fix", remainingMs / 1000.0);
     }
 
@@ -211,6 +212,22 @@ public final class TrainingSession {
         feedback = tool + " used.";
     }
 
+    public void pauseDangerClock() {
+        if (dangerPausedAtMillis < 0L) {
+            dangerPausedAtMillis = clock.getAsLong();
+        }
+    }
+
+    public void resumeDangerClock() {
+        if (dangerPausedAtMillis < 0L) {
+            return;
+        }
+        if (dangerStartedAtMillis >= 0L) {
+            dangerStartedAtMillis += Math.max(0L, clock.getAsLong() - dangerPausedAtMillis);
+        }
+        dangerPausedAtMillis = -1L;
+    }
+
     public boolean advanceLevel() {
         if (!levelComplete || levelFailed || gameComplete()) {
             return false;
@@ -224,6 +241,7 @@ public final class TrainingSession {
         dangerReason = null;
         dangerDetail = null;
         dangerStartedAtMillis = -1L;
+        dangerPausedAtMillis = -1L;
         gardenerActions = 0;
         feedback = "Level " + levelNumber() + " started.";
         return true;
@@ -242,6 +260,7 @@ public final class TrainingSession {
         dangerReason = null;
         dangerDetail = null;
         dangerStartedAtMillis = -1L;
+        dangerPausedAtMillis = -1L;
         failureDetail = null;
         gardenerActions = 0;
         feedback = "Level restarted. -15 run score.";
@@ -261,6 +280,7 @@ public final class TrainingSession {
         dangerReason = null;
         dangerDetail = null;
         dangerStartedAtMillis = -1L;
+        dangerPausedAtMillis = -1L;
         failureDetail = null;
         gardenerActions = 0;
     }
@@ -299,8 +319,18 @@ public final class TrainingSession {
     }
 
     private void updateDanger(PopulationSnapshot snapshot, boolean allowFailure) {
+        long now = warningClockMillis();
+        if (dangerReason != null) {
+            String activeDetail = level.balanceTarget().statusForCategory(snapshot, dangerReason);
+            if (activeDetail != null) {
+                dangerTicks++;
+                dangerDetail = activeDetail;
+                maybeFailDanger(allowFailure, now);
+                return;
+            }
+        }
+
         String currentDanger = dangerReason(snapshot);
-        long now = clock.getAsLong();
         if (currentDanger == null) {
             dangerTicks = 0;
             dangerReason = null;
@@ -318,6 +348,10 @@ public final class TrainingSession {
             dangerStartedAtMillis = now;
         }
         dangerDetail = currentDetail;
+        maybeFailDanger(allowFailure, now);
+    }
+
+    private void maybeFailDanger(boolean allowFailure, long now) {
         long graceMs = failureGraceMs(dangerReason);
         if (allowFailure && dangerStartedAtMillis >= 0L && now - dangerStartedAtMillis >= graceMs) {
             levelFailed = true;
@@ -326,6 +360,10 @@ public final class TrainingSession {
                     : dangerDetail + String.format(" stayed out of range for %.1f seconds.", graceMs / 1000.0);
             feedback = "Level lost: " + failureDetail + "\nRestart to try again.";
         }
+    }
+
+    private long warningClockMillis() {
+        return dangerPausedAtMillis >= 0L ? dangerPausedAtMillis : clock.getAsLong();
     }
 
     private long failureGraceMs(String category) {

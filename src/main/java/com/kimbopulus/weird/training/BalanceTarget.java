@@ -54,6 +54,19 @@ public record BalanceTarget(
         return null;
     }
 
+    public String statusForCategory(PopulationSnapshot snapshot, String category) {
+        if (category == null) {
+            return null;
+        }
+        for (BalanceBand band : BalanceBand.values()) {
+            String current = categoryForBand(snapshot, band);
+            if (category.equals(current)) {
+                return formatCategory(snapshot, current);
+            }
+        }
+        return null;
+    }
+
     public String currentSummary(PopulationSnapshot snapshot) {
         return String.format(
                 "Plants %d   Rabbits %d<br>Wolves %d   Humans %d   Bears %d",

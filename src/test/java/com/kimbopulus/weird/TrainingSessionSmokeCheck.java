@@ -23,6 +23,8 @@ public final class TrainingSessionSmokeCheck {
         checkLevelFailure();
         checkPlantOvergrowthFailure();
         checkNonPlantFailureStillUsesThirtySeconds();
+        checkWarningPriorityUntilFixed();
+        checkPauseFreezesWarningCountdown();
         checkRecoveredWarningClearsAfterCompletion();
         checkWarningActions();
         checkShopPurchases();
@@ -164,6 +166,61 @@ public final class TrainingSessionSmokeCheck {
         require(training.levelFailed(), "An unresolved non-plant warning should fail after 30 seconds.");
     }
 
+    private static void checkWarningPriorityUntilFixed() {
+        Simulation simulation = new Simulation(48, 32, 125L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedHumans(6);
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
+        forceLevel(training, TrainingLevel.PREDATOR_CHECK);
+
+        training.update(simulation);
+        require(training.dangerDetail().startsWith("Wolves low"), "The first warning should be wolves low.");
+        now.addAndGet(20_000L);
+        removeSpecies(simulation, OrganismKind.PLANT);
+        simulation.tick();
+        training.update(simulation);
+        require(training.dangerDetail().startsWith("Wolves low"),
+                "A later plant warning must not replace the active wolf warning.");
+        require("10.0s to fix".equals(training.dangerCountdownLabel()),
+                "The pinned warning timer should not reset when another warning appears.");
+
+        placeWolf(simulation, 0, 0);
+        placeWolf(simulation, 1, 0);
+        placeWolf(simulation, 2, 0);
+        simulation.tick();
+        training.update(simulation);
+        require(training.dangerDetail().startsWith("Plants low"),
+                "After fixing the pinned warning, the next active warning should appear.");
+    }
+
+    private static void checkPauseFreezesWarningCountdown() {
+        Simulation simulation = new Simulation(48, 32, 126L);
+        simulation.seedPlants(220);
+        simulation.seedRabbits(48);
+        simulation.seedHumans(6);
+        AtomicLong now = new AtomicLong();
+        TrainingSession training = new TrainingSession(ProgressionProfile.inMemory(), now::get);
+
+        training.update(simulation);
+        require("30.0s to fix".equals(training.dangerCountdownLabel()),
+                "Warning should start at 30 seconds.");
+        training.pauseDangerClock();
+        now.addAndGet(120_000L);
+        require("30.0s to fix".equals(training.dangerCountdownLabel()),
+                "Pause should freeze warning countdown.");
+        training.resumeDangerClock();
+        training.update(simulation);
+        require(!training.levelFailed(), "Paused time should not cause failure on resume.");
+        now.addAndGet(29_900L);
+        training.update(simulation);
+        require(!training.levelFailed(), "Warning should still respect remaining time after pause.");
+        now.addAndGet(100L);
+        training.update(simulation);
+        require(training.levelFailed(), "Warning should fail after active unpaused time expires.");
+    }
+
     private static void checkRecoveredWarningClearsAfterCompletion() {
         Simulation simulation = new Simulation(48, 32, 211L);
         simulation.seedPlants(220);
@@ -284,6 +341,7 @@ public final class TrainingSessionSmokeCheck {
             setField(training, "dangerReason", null);
             setField(training, "dangerDetail", null);
             setLongField(training, "dangerStartedAtMillis", -1L);
+            setLongField(training, "dangerPausedAtMillis", -1L);
             setField(training, "failureDetail", null);
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException(exception);
@@ -330,6 +388,12 @@ public final class TrainingSessionSmokeCheck {
                 }
             }
         }
+    }
+
+    private static void placeWolf(Simulation simulation, int x, int y) {
+        Position position = new Position(x, y);
+        simulation.removeOrganismQuietly(position);
+        require(simulation.addWolf(position), "Test wolf should be placeable.");
     }
 
     private static void fillPlantsExcept(Simulation simulation, int targetPlants) {
