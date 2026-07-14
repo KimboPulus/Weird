@@ -79,8 +79,9 @@ public final class WindowVisualCheck {
         SwingUtilities.invokeAndWait(audioDialog::dispose);
 
         File videoOutput = new File(output.getParentFile(), "completion-video-check.png");
+        File videoMotionOutput = new File(output.getParentFile(), "completion-video-motion-check.png");
         SwingUtilities.invokeLater(() -> CompletionVideoDialog.show(frame));
-        Thread.sleep(3000);
+        Thread.sleep(2200);
         JDialog videoDialog = Arrays.stream(Window.getWindows())
                 .filter(window -> window instanceof JDialog)
                 .map(window -> (JDialog) window)
@@ -89,6 +90,12 @@ public final class WindowVisualCheck {
                 .orElseThrow(() -> new IllegalStateException("Completion video window did not open."));
         BufferedImage videoImage = new Robot().createScreenCapture(videoDialog.getBounds());
         ImageIO.write(videoImage, "png", videoOutput);
+        Thread.sleep(2500);
+        BufferedImage videoMotionImage = new Robot().createScreenCapture(videoDialog.getBounds());
+        ImageIO.write(videoMotionImage, "png", videoMotionOutput);
+        if (frameDifference(videoImage, videoMotionImage) < 2.0) {
+            throw new IllegalStateException("Completion video appears frozen.");
+        }
         SwingUtilities.invokeAndWait(videoDialog::dispose);
 
         SwingUtilities.invokeAndWait(() -> {
@@ -99,6 +106,25 @@ public final class WindowVisualCheck {
         System.out.println("Shop check saved " + shopOutput.getAbsolutePath());
         System.out.println("Audio settings check saved " + audioOutput.getAbsolutePath());
         System.out.println("Completion video check saved " + videoOutput.getAbsolutePath());
+        System.out.println("Completion video motion check saved " + videoMotionOutput.getAbsolutePath());
         System.exit(0);
+    }
+
+    private static double frameDifference(BufferedImage first, BufferedImage second) {
+        int width = Math.min(first.getWidth(), second.getWidth());
+        int height = Math.min(first.getHeight(), second.getHeight());
+        long total = 0;
+        long samples = 0;
+        for (int y = height / 8; y < height * 7 / 8; y += 4) {
+            for (int x = width / 8; x < width * 7 / 8; x += 4) {
+                int a = first.getRGB(x, y);
+                int b = second.getRGB(x, y);
+                total += Math.abs(((a >>> 16) & 0xff) - ((b >>> 16) & 0xff));
+                total += Math.abs(((a >>> 8) & 0xff) - ((b >>> 8) & 0xff));
+                total += Math.abs((a & 0xff) - (b & 0xff));
+                samples += 3;
+            }
+        }
+        return samples == 0 ? 0.0 : total / (double) samples;
     }
 }
