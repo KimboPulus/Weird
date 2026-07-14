@@ -9,7 +9,10 @@ import com.kimbopulus.weird.settings.GameSettings;
 
 import javax.imageio.ImageIO;
 import javax.swing.JDialog;
+import javax.swing.JButton;
 import javax.swing.SwingUtilities;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Window;
@@ -43,10 +46,25 @@ public final class WindowVisualCheck {
         ImageIO.write(image, "png", output);
 
         File shopOutput = new File(output.getParentFile(), "shop-check.png");
+        JButton realShopButton = findButton(frame, "Shop");
+        if (realShopButton == null) {
+            throw new IllegalStateException("Real Shop button was not found.");
+        }
+        SwingUtilities.invokeLater(realShopButton::doClick);
+        Thread.sleep(800);
+        JDialog realShop = visibleDialog("Terrarium Shop");
+        if (realShop == null) {
+            throw new IllegalStateException("Real Shop button did not open the shop.");
+        }
+        BufferedImage realShopImage = new Robot().createScreenCapture(realShop.getBounds());
+        ImageIO.write(realShopImage, "png", shopOutput);
+        SwingUtilities.invokeAndWait(realShop::dispose);
+
+        File shopPurchaseOutput = new File(output.getParentFile(), "shop-purchase-check.png");
         AtomicReference<JDialog> shopRef = new AtomicReference<>();
         SwingUtilities.invokeLater(() -> {
             ProgressionProfile profile = ProgressionProfile.inMemory();
-            profile.addFocusXp(120);
+            profile.addFocusXp(600);
             JDialog shop = ShopDialog.createForVisualCheck(frame, profile);
             shop.setAlwaysOnTop(true);
             shopRef.set(shop);
@@ -57,8 +75,14 @@ public final class WindowVisualCheck {
         if (shop == null) {
             throw new IllegalStateException("Shop window did not open.");
         }
+        JButton buyButton = findEnabledTokenButton(shop);
+        if (buyButton == null) {
+            throw new IllegalStateException("Shop buy button was not enabled.");
+        }
+        SwingUtilities.invokeAndWait(buyButton::doClick);
+        Thread.sleep(200);
         BufferedImage shopImage = new Robot().createScreenCapture(shop.getBounds());
-        ImageIO.write(shopImage, "png", shopOutput);
+        ImageIO.write(shopImage, "png", shopPurchaseOutput);
         SwingUtilities.invokeAndWait(shop::dispose);
 
         File audioOutput = new File(output.getParentFile(), "audio-settings-check.png");
@@ -104,10 +128,53 @@ public final class WindowVisualCheck {
         });
         System.out.println("Window check saved " + output.getAbsolutePath());
         System.out.println("Shop check saved " + shopOutput.getAbsolutePath());
+        System.out.println("Shop purchase check saved " + shopPurchaseOutput.getAbsolutePath());
         System.out.println("Audio settings check saved " + audioOutput.getAbsolutePath());
         System.out.println("Completion video check saved " + videoOutput.getAbsolutePath());
         System.out.println("Completion video motion check saved " + videoMotionOutput.getAbsolutePath());
         System.exit(0);
+    }
+
+    private static JDialog visibleDialog(String title) {
+        return Arrays.stream(Window.getWindows())
+                .filter(window -> window instanceof JDialog)
+                .map(window -> (JDialog) window)
+                .filter(window -> title.equals(window.getTitle()) && window.isShowing())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static JButton findButton(Container container, String text) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JButton button && text.equals(button.getText())) {
+                return button;
+            }
+            if (component instanceof Container child) {
+                JButton found = findButton(child, text);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static JButton findEnabledTokenButton(Container container) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JButton button
+                    && button.isEnabled()
+                    && button.getText() != null
+                    && button.getText().contains("tokens")) {
+                return button;
+            }
+            if (component instanceof Container child) {
+                JButton found = findEnabledTokenButton(child);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     private static double frameDifference(BufferedImage first, BufferedImage second) {

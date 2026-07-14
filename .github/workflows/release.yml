@@ -62,7 +62,8 @@ jobs:
             "com.kimbopulus.weird.SimulationSmokeCheck",
             "com.kimbopulus.weird.ModelRegressionCheck",
             "com.kimbopulus.weird.TrainingSessionSmokeCheck",
-            "com.kimbopulus.weird.SettingsSmokeCheck"
+            "com.kimbopulus.weird.SettingsSmokeCheck",
+            "com.kimbopulus.weird.PackagingSmokeCheck"
           )
           foreach ($test in $tests) {
             java --module-path "$env:JAVAFX_SDK\lib" --add-modules javafx.swing,javafx.media -cp build\classes`;build\test-classes $test
@@ -76,6 +77,18 @@ jobs:
           $appVersion = $tag.TrimStart([char]"v")
           "Main-Class: ${env:MAIN_CLASS}`n" | Set-Content build\MANIFEST.MF -NoNewline
           jar cfm build\Weird.jar build\MANIFEST.MF -C build\classes .
+          $jarEntries = jar tf build\Weird.jar
+          foreach ($entry in @(
+            "com/kimbopulus/weird/ui/ShopDialog.class",
+            "com/kimbopulus/weird/ui/CompletionVideoDialog.class",
+            "com/kimbopulus/weird/effects/blood-splatter.png",
+            "com/kimbopulus/weird/media/game-complete.mp4"
+          )) {
+            if ($jarEntries -notcontains $entry) {
+              throw "Packaged jar missing $entry"
+            }
+          }
+          java --module-path "$env:JAVAFX_SDK\lib" --add-modules javafx.swing,javafx.media -cp "build\Weird.jar;build\test-classes" com.kimbopulus.weird.PackagingSmokeCheck
           New-Item -ItemType Directory -Force -Path build\portable\Weird\app | Out-Null
           Copy-Item build\Weird.jar build\portable\Weird\app\Weird.jar -Force
           jlink --module-path "$env:JAVA_HOME\jmods;$env:JAVAFX_JMODS" --add-modules javafx.swing,javafx.media --output build\portable\Weird\runtime --strip-debug --no-header-files --no-man-pages --compress=2
@@ -133,7 +146,8 @@ jobs:
             com.kimbopulus.weird.SimulationSmokeCheck \
             com.kimbopulus.weird.ModelRegressionCheck \
             com.kimbopulus.weird.TrainingSessionSmokeCheck \
-            com.kimbopulus.weird.SettingsSmokeCheck
+            com.kimbopulus.weird.SettingsSmokeCheck \
+            com.kimbopulus.weird.PackagingSmokeCheck
           do
             xvfb-run -a java --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -cp build/classes:build/test-classes "$test"
           done
@@ -145,6 +159,15 @@ jobs:
           app_version="${tag#v}"
           printf "Main-Class: %s\n" "$MAIN_CLASS" > build/MANIFEST.MF
           jar cfm build/Weird.jar build/MANIFEST.MF -C build/classes .
+          for entry in \
+            com/kimbopulus/weird/ui/ShopDialog.class \
+            com/kimbopulus/weird/ui/CompletionVideoDialog.class \
+            com/kimbopulus/weird/effects/blood-splatter.png \
+            com/kimbopulus/weird/media/game-complete.mp4
+          do
+            jar tf build/Weird.jar | grep -qx "$entry" || { echo "Packaged jar missing $entry"; exit 1; }
+          done
+          xvfb-run -a java --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -cp build/Weird.jar:build/test-classes com.kimbopulus.weird.PackagingSmokeCheck
           mkdir -p build/portable/Weird/app build/portable/Weird/data
           cp build/Weird.jar build/portable/Weird/app/Weird.jar
           jlink --module-path "$JAVA_HOME/jmods:$JAVAFX_JMODS" --add-modules javafx.swing,javafx.media --output build/portable/Weird/runtime --strip-debug --no-header-files --no-man-pages --compress=2
