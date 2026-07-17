@@ -9,8 +9,12 @@ public final class PackagingSmokeCheck {
             "com.kimbopulus.weird.ui.AudioSettingsDialog",
             "com.kimbopulus.weird.ui.IntroDialog",
             "com.kimbopulus.weird.ui.CompletionVideoDialog",
+            "com.kimbopulus.weird.game.GameCommand",
+            "com.kimbopulus.weird.game.ReplayLog",
+            "com.kimbopulus.weird.game.GameEventLog",
             "com.kimbopulus.weird.audio.AudioEngine",
             "com.kimbopulus.weird.training.TrainingSession",
+            "com.kimbopulus.weird.training.TrainingLevelCatalog",
             "com.kimbopulus.weird.sim.Simulation"
     };
 
@@ -22,6 +26,7 @@ public final class PackagingSmokeCheck {
             "/com/kimbopulus/weird/effects/blood-splatter.png",
             "/com/kimbopulus/weird/audio/human-attack.wav",
             "/com/kimbopulus/weird/audio/bear-attack.wav",
+            "/com/kimbopulus/weird/training/training-levels.properties",
             "/com/kimbopulus/weird/media/game-complete.mp4"
     };
 

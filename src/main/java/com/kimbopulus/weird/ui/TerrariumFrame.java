@@ -2,6 +2,11 @@ package com.kimbopulus.weird.ui;
 
 import com.kimbopulus.weird.audio.AudioEngine;
 import com.kimbopulus.weird.audio.SoundCue;
+import com.kimbopulus.weird.game.GameCommandType;
+import com.kimbopulus.weird.game.GameEvent;
+import com.kimbopulus.weird.game.GameEventLog;
+import com.kimbopulus.weird.game.GameEventType;
+import com.kimbopulus.weird.game.ReplayRecorder;
 import com.kimbopulus.weird.sim.BirthEvent;
 import com.kimbopulus.weird.sim.OrganismKind;
 import com.kimbopulus.weird.sim.DeathCause;
@@ -55,6 +60,8 @@ public final class TerrariumFrame extends JFrame {
     private final Timer timer;
     private final AudioEngine audio;
     private final GameSettings settings;
+    private final ReplayRecorder replayRecorder = ReplayRecorder.defaultRecorder();
+    private final GameEventLog eventLog = new GameEventLog();
     private final Map<ToolMode, JToggleButton> toolButtons = new EnumMap<>(ToolMode.class);
     private ToolMode toolMode = ToolMode.RAIN;
     private JButton pauseButton;
@@ -63,6 +70,7 @@ public final class TerrariumFrame extends JFrame {
     private long lastPopupBirthId;
     private Position hoveredBoardPosition;
     private WorldEvent lastWorldEvent = WorldEvent.CALM;
+    private String lastLoggedWarning;
     private boolean startupHandled;
     private boolean completionVideoOpened;
 
@@ -72,6 +80,8 @@ public final class TerrariumFrame extends JFrame {
         simulation = Simulation.createDefault();
         training = new TrainingSession();
         settings = GameSettings.loadDefault();
+        replayRecorder.startNewRun();
+        eventLog.add(0, GameEventType.SYSTEM, "Run started");
         audio = new AudioEngine();
         audio.applySettings(settings);
         terrariumPanel = new TerrariumPanel(simulation);
@@ -114,16 +124,20 @@ public final class TerrariumFrame extends JFrame {
                 if (toolMode == ToolMode.LIGHTNING) {
                     if (simulation.organismAt(position) == null) {
                         terrariumPanel.showBanner("Lightning needs a target");
+                        recordPlayerCommand(position, false, "Lightning rejected: no target");
                         return;
                     }
                     if (!training.progression().spendTokens(toolMode.tokenCost())) {
                         terrariumPanel.showBanner("Need 10 tokens");
+                        recordPlayerCommand(position, false, "Lightning rejected: low tokens");
                         return;
                     }
                 }
                 if (!toolMode.apply(simulation, position)) {
+                    recordPlayerCommand(position, false, toolMode.label() + " rejected");
                     return;
                 }
+                recordPlayerCommand(position, true, toolMode.label() + " at " + position.x() + "," + position.y());
                 applyPurchasedUpgrade(position);
                 playToolSound();
                 terrariumPanel.showToolEffect(position, toolMode);
@@ -307,6 +321,8 @@ public final class TerrariumFrame extends JFrame {
         if (!wasComplete && training.levelComplete()) {
             stopSimulation();
             audio.play(SoundCue.COMPLETE);
+            eventLog.add(simulation.tickCount(), GameEventType.LEVEL,
+                    training.gameComplete() ? "Game complete" : "Level complete");
             if (training.gameComplete()) {
                 terrariumPanel.showLevelCompleteOverlay(
                         "You're a warrior for passing my game!",
@@ -324,6 +340,7 @@ public final class TerrariumFrame extends JFrame {
             training.progression().resetPurchases();
             terrariumPanel.clearLevelCompleteOverlay();
             terrariumPanel.showBanner("LEVEL LOST: " + training.failureReason());
+            eventLog.add(simulation.tickCount(), GameEventType.LEVEL, "Level lost: " + training.failureReason());
         }
         terrariumPanel.repaint();
         trainingPanel.refresh();
@@ -362,6 +379,10 @@ public final class TerrariumFrame extends JFrame {
         training.progression().resetPurchases();
         simulation.restart();
         training.reset();
+        replayRecorder.startNewRun();
+        eventLog.clear();
+        eventLog.add(0, GameEventType.SYSTEM, "Run restarted");
+        lastLoggedWarning = null;
         terrariumPanel.resetMechanicPopups();
         terrariumPanel.clearLevelCompleteOverlay();
         lastDeathSoundId = 0L;
@@ -391,7 +412,7 @@ public final class TerrariumFrame extends JFrame {
     }
 
     private void updateStatus() {
-        statusLabel.setText(String.format(
+        String status = String.format(
                 "Tick %d   Season: %s   Event: %s   Plants: %d   Rabbits: %d   Wolves: %d   Humans: %d   Bears: %d",
                 simulation.tickCount(),
                 simulation.season(),
@@ -401,7 +422,12 @@ public final class TerrariumFrame extends JFrame {
                 simulation.count(OrganismKind.WOLF),
                 simulation.count(OrganismKind.HUMAN),
                 simulation.count(OrganismKind.BEAR)
-        ));
+        );
+        GameEvent latest = eventLog.latest();
+        if (latest != null) {
+            status += "   Last: " + latest.message();
+        }
+        statusLabel.setText(status);
     }
 
     private void updateToolHint(Position position) {
@@ -504,6 +530,10 @@ public final class TerrariumFrame extends JFrame {
         }
         training.progression().resetPurchases();
         simulation.restart();
+        replayRecorder.startNewRun();
+        eventLog.clear();
+        eventLog.add(0, GameEventType.SYSTEM, "Level restarted");
+        lastLoggedWarning = null;
         terrariumPanel.resetMechanicPopups();
         terrariumPanel.clearLevelCompleteOverlay();
         lastDeathSoundId = 0L;
@@ -530,6 +560,12 @@ public final class TerrariumFrame extends JFrame {
         audio.play(SoundCue.PLACE);
     }
 
+    private void recordPlayerCommand(Position position, boolean accepted, String message) {
+        GameCommandType type = GameCommandType.valueOf(toolMode.name());
+        replayRecorder.record(simulation.tickCount(), type, position, accepted);
+        eventLog.add(simulation.tickCount(), GameEventType.COMMAND, message);
+    }
+
     private String shortcutLabel(int index) {
         return index == 10 ? "0" : Integer.toString(index);
     }
@@ -541,6 +577,9 @@ public final class TerrariumFrame extends JFrame {
     private void celebrateLevel() {
         terrariumPanel.clearLevelCompleteOverlay();
         terrariumPanel.showLevelUp("LEVEL " + training.levelNumber() + "  " + training.levelTitle());
+        eventLog.add(simulation.tickCount(), GameEventType.LEVEL,
+                "Level " + training.levelNumber() + " started");
+        lastLoggedWarning = null;
         startSimulation();
     }
 
@@ -697,11 +736,18 @@ public final class TerrariumFrame extends JFrame {
         }
 
         if (training.dangerWarning() != null) {
+            String danger = training.dangerDetail();
+            if (danger != null && !danger.equals(lastLoggedWarning)) {
+                lastLoggedWarning = danger;
+                eventLog.add(simulation.tickCount(), GameEventType.WARNING, danger);
+            }
             terrariumPanel.showMechanicPopup(
                     "danger-timer",
                     "Red warning started",
                     "Fix it before the visible timer reaches zero."
             );
+        } else {
+            lastLoggedWarning = null;
         }
 
         for (DeathEvent death : simulation.recentDeathEvents()) {

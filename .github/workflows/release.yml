@@ -81,7 +81,10 @@ jobs:
           foreach ($entry in @(
             "com/kimbopulus/weird/ui/ShopDialog.class",
             "com/kimbopulus/weird/ui/CompletionVideoDialog.class",
+            "com/kimbopulus/weird/game/ReplayLog.class",
+            "com/kimbopulus/weird/training/TrainingLevelCatalog.class",
             "com/kimbopulus/weird/effects/blood-splatter.png",
+            "com/kimbopulus/weird/training/training-levels.properties",
             "com/kimbopulus/weird/media/game-complete.mp4"
           )) {
             if ($jarEntries -notcontains $entry) {
@@ -162,7 +165,10 @@ jobs:
           for entry in \
             com/kimbopulus/weird/ui/ShopDialog.class \
             com/kimbopulus/weird/ui/CompletionVideoDialog.class \
+            com/kimbopulus/weird/game/ReplayLog.class \
+            com/kimbopulus/weird/training/TrainingLevelCatalog.class \
             com/kimbopulus/weird/effects/blood-splatter.png \
+            com/kimbopulus/weird/training/training-levels.properties \
             com/kimbopulus/weird/media/game-complete.mp4
           do
             jar tf build/Weird.jar | grep -qx "$entry" || { echo "Packaged jar missing $entry"; exit 1; }

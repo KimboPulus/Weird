@@ -120,6 +120,7 @@ public final class CompletionVideoDialog {
             Media media = new Media(video.toUri().toString());
             MediaPlayer player = new MediaPlayer(media);
             player.setVolume(0.5);
+            player.setAutoPlay(true);
             playerReference.set(player);
             MediaView view = new MediaView(player);
             view.setPreserveRatio(true);
@@ -132,8 +133,14 @@ public final class CompletionVideoDialog {
             videoPanel.setScene(new Scene(root, 960, 540, javafx.scene.paint.Color.BLACK));
             player.setOnEndOfMedia(() -> SwingUtilities.invokeLater(dialog::dispose));
             player.setOnError(() -> SwingUtilities.invokeLater(dialog::dispose));
-            player.setOnStalled(player::play);
-            player.setOnReady(player::play);
+            AtomicInteger startupRescues = new AtomicInteger();
+            player.setOnStalled(() -> rescuePlayback(player, startupRescues));
+            player.setOnReady(() -> {
+                startupRescues.set(0);
+                player.seek(Duration.millis(900));
+                player.play();
+            });
+            player.play();
             SwingUtilities.invokeLater(() -> startWatchdog(playerReference, watchdogReference));
         });
 
@@ -165,6 +172,7 @@ public final class CompletionVideoDialog {
     ) {
         AtomicReference<Duration> lastTime = new AtomicReference<>(Duration.UNKNOWN);
         AtomicInteger stalledChecks = new AtomicInteger();
+        AtomicInteger rescueAttempts = new AtomicInteger();
         javax.swing.Timer watchdog = new javax.swing.Timer(1500, event -> Platform.runLater(() -> {
             MediaPlayer player = playerReference.get();
             if (player == null) {
@@ -172,7 +180,7 @@ public final class CompletionVideoDialog {
             }
             MediaPlayer.Status status = player.getStatus();
             if (status == MediaPlayer.Status.STALLED || status == MediaPlayer.Status.READY) {
-                player.play();
+                rescuePlayback(player, rescueAttempts);
                 return;
             }
             if (status != MediaPlayer.Status.PLAYING) {
@@ -186,16 +194,24 @@ public final class CompletionVideoDialog {
             }
             if (Math.abs(current.toMillis() - previous.toMillis()) < 80.0) {
                 if (stalledChecks.incrementAndGet() >= 2) {
-                    player.seek(current.add(Duration.millis(400)));
-                    player.play();
+                    rescuePlayback(player, rescueAttempts);
                     stalledChecks.set(0);
                 }
             } else {
                 stalledChecks.set(0);
+                rescueAttempts.set(0);
             }
         }));
         watchdog.setRepeats(true);
         watchdog.start();
         watchdogReference.set(watchdog);
+    }
+
+    private static void rescuePlayback(MediaPlayer player, AtomicInteger attempts) {
+        int attempt = attempts.getAndIncrement();
+        double offsetMillis = Math.min(6500.0, 900.0 + attempt * 900.0);
+        player.stop();
+        player.seek(Duration.millis(offsetMillis));
+        player.play();
     }
 }

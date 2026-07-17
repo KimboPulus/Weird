@@ -12,6 +12,16 @@ The current version includes illustrated terrain and wildlife, six balance-maint
 
 The local JavaFX SDK and jmods are stored under `D:\java\dependencies`. The portable release includes the required runtime, so players do not install JavaFX separately.
 
+## Project structure
+
+- `sim` contains the pure terrarium model: grid, organisms, weather, births, deaths, and population history.
+- `training` contains objectives, warnings, score, level progress, and the level-data catalog.
+- `game` contains replayable player commands and the bounded event log.
+- `ui` contains Swing/JavaFX rendering and translates clicks into commands.
+- `audio`, `settings`, `progression`, and `support` contain small services.
+
+Detailed architecture notes are in `docs/architecture.md`.
+
 ## Run in IntelliJ
 
 1. Open this repository folder in IntelliJ IDEA.
@@ -108,6 +118,14 @@ Wet soil shows cool highlights, dry soil develops small cracks, and sanctuary ce
 - Deaths fade out over about 2.8 seconds, and lightning and human deaths use harsher sound cues.
 - Run score resets with the terrarium. Total score and tokens persist in `data/progress.properties`.
 - Shop purchases reset when a level is lost, when the full run restarts, and when the game is opened again.
+
+## Replay and diagnostics
+
+Every board click is recorded as a typed command in `data/replays/latest-run.wrpl`. Accepted and rejected clicks are both kept, so a failed action such as lightning on an empty cell is visible in the replay log.
+
+The bottom status line also shows the latest command, warning, level, or system event. This makes bug reports easier to reason about without guessing what happened.
+
+Past repeated bugs are covered by regression tests: Shop packaging, warning priority, pause countdown freeze, death-splatter transparency, completion-video motion, climate combo math, and creatures walking over plants.
 
 ## Risk and failure
 

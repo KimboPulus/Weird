@@ -2,6 +2,11 @@ package com.kimbopulus.weird;
 
 import com.kimbopulus.weird.progression.ProgressionProfile;
 import com.kimbopulus.weird.progression.ShopItem;
+import com.kimbopulus.weird.game.GameCommand;
+import com.kimbopulus.weird.game.GameCommandType;
+import com.kimbopulus.weird.game.GameEventLog;
+import com.kimbopulus.weird.game.GameEventType;
+import com.kimbopulus.weird.game.ReplayLog;
 import com.kimbopulus.weird.settings.GameSettings;
 import com.kimbopulus.weird.sim.Bear;
 import com.kimbopulus.weird.sim.Cell;
@@ -17,6 +22,8 @@ import com.kimbopulus.weird.sim.WorldEvent;
 import com.kimbopulus.weird.sim.WorldGrid;
 import com.kimbopulus.weird.training.BalanceBand;
 import com.kimbopulus.weird.training.BalanceTarget;
+import com.kimbopulus.weird.training.TrainingLevelCatalog;
+import com.kimbopulus.weird.training.TrainingLevelSpec;
 import com.kimbopulus.weird.training.TrainingLevel;
 import com.kimbopulus.weird.training.TrainingSession;
 import com.kimbopulus.weird.ui.TerrariumPanel;
@@ -26,6 +33,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -75,6 +84,9 @@ public final class ModelRegressionCheck {
         checkSimulationPassableNeighborsIncludePlants();
         checkSimulationEmptyNeighborsExcludeOccupied();
         checkSimulationCurrentSnapshotLazyInit();
+        checkReplayLogRoundTrip();
+        checkEventLogBounds();
+        checkTrainingLevelCatalog();
         System.out.println("Model regression check passed.");
     }
 
@@ -654,6 +666,63 @@ public final class ModelRegressionCheck {
         require(snapshot != null, "Current snapshot should be created lazily on first access.");
         require(simulation.recentHistory(5).size() == 1,
                 "Lazy snapshot creation should populate the history with one entry.");
+    }
+
+    private static void checkReplayLogRoundTrip() throws IOException {
+        ReplayLog log = new ReplayLog();
+        log.add(new GameCommand(1, 0, GameCommandType.HUMAN, new Position(2, 2), true));
+        log.add(new GameCommand(2, 0, GameCommandType.RABBIT, new Position(3, 2), true));
+        log.add(new GameCommand(3, 0, GameCommandType.WOLF, new Position(4, 2), true));
+        log.add(new GameCommand(4, 0, GameCommandType.LIGHTNING, new Position(4, 2), true));
+        log.add(new GameCommand(5, 0, GameCommandType.BEAR, new Position(9, 9), false));
+
+        Path file = Files.createTempFile("weird-replay", ".wrpl");
+        try {
+            log.save(file);
+            ReplayLog loaded = ReplayLog.load(file);
+            require(loaded.commands().size() == 5, "Replay should keep every recorded command.");
+            require(loaded.commands().get(1).type() == GameCommandType.RABBIT,
+                    "Replay should preserve command types.");
+            require(loaded.commands().get(4).accepted() == false,
+                    "Replay should preserve rejected commands for debugging.");
+
+            Simulation replayed = new Simulation(8, 8, 88L);
+            int applied = loaded.applyTo(replayed);
+            require(applied == 4, "Replay should apply only accepted commands that affect the board.");
+            require(replayed.count(OrganismKind.HUMAN) == 1, "Replay should add the human.");
+            require(replayed.count(OrganismKind.RABBIT) == 1, "Replay should add the rabbit.");
+            require(replayed.count(OrganismKind.WOLF) == 0, "Replay lightning should remove the wolf.");
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    private static void checkEventLogBounds() {
+        GameEventLog log = new GameEventLog();
+        for (int i = 0; i < 90; i++) {
+            log.add(i, GameEventType.COMMAND, "Event " + i);
+        }
+        require(log.recent(200).size() == 80, "Event log should cap old entries.");
+        require(log.recent(1).get(0).message().equals("Event 89"), "Event log should expose latest event.");
+        log.clear();
+        require(log.latest() == null && log.recent(10).isEmpty(), "Clearing event log should remove entries.");
+    }
+
+    private static void checkTrainingLevelCatalog() {
+        List<TrainingLevelSpec> specs = TrainingLevelCatalog.loadDefault();
+        TrainingLevel[] levels = TrainingLevel.values();
+        require(specs.size() == levels.length, "Level catalog should mirror enum level count.");
+        for (int i = 0; i < levels.length; i++) {
+            TrainingLevel level = levels[i];
+            TrainingLevelSpec spec = specs.get(i);
+            require(spec.number() == i + 1, "Level catalog numbers should stay ordered.");
+            require(spec.title().equals(level.title()), "Level catalog title should match runtime level.");
+            require(spec.objective().equals(level.objective()), "Level catalog objective should match runtime level.");
+            require(spec.challenge().equals(level.challenge()), "Level catalog challenge should match runtime level.");
+            require(spec.target() == level.target(), "Level catalog target should match runtime level.");
+            require(spec.objectiveBands().equals(Arrays.asList(level.objectiveBands())),
+                    "Level catalog bands should match runtime level.");
+        }
     }
 
     private static boolean hasOpaquePixel(String path) throws IOException {
