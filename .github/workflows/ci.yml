@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  JAVAFX_VERSION: "21.0.11"
+
+jobs:
+  compile-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Download JavaFX SDK
+        run: |
+          mkdir -p build/deps
+          curl -L "https://download2.gluonhq.com/openjfx/${JAVAFX_VERSION}/openjfx-${JAVAFX_VERSION}_linux-x64_bin-sdk.zip" -o build/deps/javafx-sdk.zip
+          unzip -q build/deps/javafx-sdk.zip -d build/deps
+          echo "JAVAFX_SDK=${GITHUB_WORKSPACE}/build/deps/javafx-sdk-${JAVAFX_VERSION}" >> "$GITHUB_ENV"
+      - name: Compile and run smoke checks
+        run: |
+          mkdir -p build/classes build/test-classes build/classes/com/kimbopulus/weird/audio
+          find src/main/java -name "*.java" > build/sources.txt
+          javac --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -d build/classes @build/sources.txt
+          cp -R src/main/resources/. build/classes/
+          cp data/music/level-complete.wav build/classes/com/kimbopulus/weird/audio/level-complete.wav
+          cp data/music/lightning.wav build/classes/com/kimbopulus/weird/audio/lightning.wav
+          find src/test/java -name "*.java" > build/tests.txt
+          javac --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -encoding UTF-8 -cp build/classes -d build/test-classes @build/tests.txt
+          for test in \
+            com.kimbopulus.weird.SimulationSmokeCheck \
+            com.kimbopulus.weird.ModelRegressionCheck \
+            com.kimbopulus.weird.TrainingSessionSmokeCheck \
+            com.kimbopulus.weird.SettingsSmokeCheck \
+            com.kimbopulus.weird.PackagingSmokeCheck
+          do
+            xvfb-run -a java --module-path "$JAVAFX_SDK/lib" --add-modules javafx.swing,javafx.media -cp build/classes:build/test-classes "$test"
+          done

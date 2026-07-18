@@ -1,0 +1,21 @@
+name: Player feedback
+description: Describe confusing balance, controls, level copy, or pacing
+title: "feedback: "
+body:
+  - type: input
+    id: level
+    attributes:
+      label: Level or screen
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What happened
+      description: Describe actual play session; do not invent metrics or user research.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Suggested change

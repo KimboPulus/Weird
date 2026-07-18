@@ -1,0 +1,40 @@
+name: Gameplay bug
+description: Report reproducible simulation, UI, audio, replay, or packaging behavior
+title: "bug: "
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows release ZIP
+        - Ubuntu DEB
+        - Linux TAR.GZ
+        - IntelliJ or source run
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release or commit
+      placeholder: v2026.07.14.2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include level, selected tool, warning state, and last actions.
+    validations:
+      required: true
+  - type: textarea
+    id: replay
+    attributes:
+      label: Replay excerpt
+      description: Paste only relevant lines from latest-run.wrpl after reviewing them.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Expected and observed result
+    validations:
+      required: true
